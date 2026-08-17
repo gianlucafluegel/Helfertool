@@ -9,7 +9,14 @@
       "Bash(git commit *)",
       "Bash(git config *)",
       "Bash(npx prisma *)",
-      "Bash(which docker *)"
+      "Bash(which docker *)",
+      "Bash(mkdir -p \"/Users/gianluca/helfertool/app/api/auth/[...nextauth]\")",
+      "Bash(npx tsc *)",
+      "Bash(node -e \"console.log\\(Object.keys\\(require\\('/Users/gianluca/helfertool/node_modules/next-auth/package.json'\\).exports\\)\\)\")",
+      "Bash(node -e \"const p=require\\('/Users/gianluca/helfertool/node_modules/next-auth/package.json'\\); console.log\\(JSON.stringify\\(p.exports['./jwt'], null, 2\\)\\)\")",
+      "Bash(cat > *)",
+      "Bash(npm view *)",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const v=JSON.parse\\(d\\);console.log\\(v.filter\\(x=>x.startsWith\\('8.'\\)\\).slice\\(-10\\)\\);console.log\\(v.filter\\(x=>x.startsWith\\('9.'\\)\\).slice\\(-10\\)\\);}\\)\")"
     ]
   }
 }
