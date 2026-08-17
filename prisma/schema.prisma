@@ -1,0 +1,289 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  GESCHAEFTSSTELLE
+  STUFENLEITER
+  FUNKTIONAER
+  MITGLIED
+}
+
+enum ShiftArea {
+  HELFER
+  FUNKTIONAER
+}
+
+enum EventType {
+  GAME
+  EXTERNAL
+}
+
+enum EventStatus {
+  SCHEDULED
+  CANCELLED
+  POSTPONED
+}
+
+enum SignupPayoutType {
+  HELFERKONTINGENT
+  PAUSCHALE
+  BARBEZUG
+}
+
+enum SignupStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum MailTemplateKey {
+  SIGNUP_CONFIRMATION
+  REMINDER_UNFILLED
+  ACCOUNT_SETUP
+  PASSWORD_RESET
+}
+
+enum EmailStatus {
+  SENT
+  FAILED
+}
+
+enum AuthTokenPurpose {
+  ACCOUNT_SETUP
+  PASSWORD_RESET
+}
+
+model Season {
+  id         String    @id @default(cuid())
+  label      String    @unique
+  startDate  DateTime
+  endDate    DateTime
+  isArchived Boolean   @default(false)
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  memberships SeasonMembership[]
+  events      Event[]
+}
+
+model AgeGroup {
+  id                     String  @id @default(cuid())
+  name                   String  @unique
+  sortOrder              Int     @default(0)
+  isActive               Boolean @default(true)
+  triggersBarbezugChoice Boolean @default(false)
+
+  memberships             SeasonMembership[]
+  shiftSlotRestrictions   ShiftSlotAgeGroup[]
+  stufenleiterAssignments StufenleiterAssignment[]
+}
+
+model Location {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  address  String?
+  isActive Boolean @default(true)
+
+  events Event[]
+}
+
+model Activity {
+  id                   String     @id @default(cuid())
+  name                 String     @unique
+  defaultArea          ShiftArea?
+  requiresPayoutChoice Boolean    @default(false)
+  isActive             Boolean    @default(true)
+
+  shiftSlots ShiftSlot[]
+}
+
+model Member {
+  id                String   @id @default(cuid())
+  firstName         String
+  lastName          String
+  email             String?
+  phone             String?
+  iban              String?
+  externalContactId String?  @unique
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  seasonMemberships SeasonMembership[]
+  userLinks         UserMemberLink[]
+  signups           Signup[]
+}
+
+model SeasonMembership {
+  id            String   @id @default(cuid())
+  memberId      String
+  seasonId      String
+  ageGroupId    String
+  targetHours   Decimal  @default(0) @db.Decimal(5, 2)
+  isActive      Boolean  @default(true)
+  importBatchId String?
+  createdAt     DateTime @default(now())
+
+  member   Member   @relation(fields: [memberId], references: [id])
+  season   Season   @relation(fields: [seasonId], references: [id])
+  ageGroup AgeGroup @relation(fields: [ageGroupId], references: [id])
+
+  @@unique([memberId, seasonId])
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String?
+  role         UserRole
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  memberLinks             UserMemberLink[]
+  stufenleiterAssignments StufenleiterAssignment[]
+  authTokens               AuthToken[]
+}
+
+model UserMemberLink {
+  id        String  @id @default(cuid())
+  userId    String
+  memberId  String
+  isPrimary Boolean @default(false)
+
+  user   User   @relation(fields: [userId], references: [id])
+  member Member @relation(fields: [memberId], references: [id])
+
+  @@unique([userId, memberId])
+}
+
+model AuthToken {
+  id        String           @id @default(cuid())
+  userId    String
+  purpose   AuthTokenPurpose
+  tokenHash String           @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, purpose])
+}
+
+model StufenleiterAssignment {
+  id         String @id @default(cuid())
+  userId     String
+  ageGroupId String
+
+  user     User     @relation(fields: [userId], references: [id])
+  ageGroup AgeGroup @relation(fields: [ageGroupId], references: [id])
+
+  @@unique([userId, ageGroupId])
+}
+
+model Event {
+  id            String      @id @default(cuid())
+  seasonId      String
+  type          EventType
+  title         String
+  opponent      String?
+  locationId    String?
+  startDateTime DateTime
+  endDateTime   DateTime?
+  status        EventStatus @default(SCHEDULED)
+  externalRef   String?
+  importBatchId String?
+  deletedAt     DateTime?
+  createdAt     DateTime    @default(now())
+
+  season     Season      @relation(fields: [seasonId], references: [id])
+  location   Location?   @relation(fields: [locationId], references: [id])
+  shiftSlots ShiftSlot[]
+
+  @@index([seasonId, startDateTime])
+}
+
+model ShiftSlot {
+  id          String    @id @default(cuid())
+  eventId     String
+  activityId  String
+  area        ShiftArea
+  capacity    Int       @default(1)
+  creditHours Decimal   @db.Decimal(4, 2)
+  notes       String?
+  deletedAt   DateTime?
+
+  event                Event               @relation(fields: [eventId], references: [id])
+  activity             Activity            @relation(fields: [activityId], references: [id])
+  ageGroupRestrictions ShiftSlotAgeGroup[]
+  signups              Signup[]
+
+  @@index([eventId])
+}
+
+model ShiftSlotAgeGroup {
+  id          String @id @default(cuid())
+  shiftSlotId String
+  ageGroupId  String
+
+  shiftSlot ShiftSlot @relation(fields: [shiftSlotId], references: [id])
+  ageGroup  AgeGroup  @relation(fields: [ageGroupId], references: [id])
+
+  @@unique([shiftSlotId, ageGroupId])
+}
+
+model Signup {
+  id               String           @id @default(cuid())
+  shiftSlotId      String
+  memberId         String
+  ageGroupSnapshot String
+  helperFirstName  String
+  helperLastName   String
+  helperEmail      String
+  helperPhone      String?
+  payoutType       SignupPayoutType @default(HELFERKONTINGENT)
+  ibanSnapshot     String?
+  status           SignupStatus     @default(CONFIRMED)
+  cancelledAt      DateTime?
+  cancelReason     String?
+  createdAt        DateTime         @default(now())
+
+  shiftSlot ShiftSlot @relation(fields: [shiftSlotId], references: [id])
+  member    Member    @relation(fields: [memberId], references: [id])
+
+  @@index([shiftSlotId, status])
+  @@index([memberId, status])
+}
+
+model MailTemplate {
+  id        String          @id @default(cuid())
+  key       MailTemplateKey @unique
+  subject   String
+  bodyText  String
+  updatedAt DateTime        @updatedAt
+}
+
+model EmailLog {
+  id           String          @id @default(cuid())
+  templateKey  MailTemplateKey
+  toEmail      String
+  subject      String
+  status       EmailStatus
+  errorMessage String?
+  sentAt       DateTime        @default(now())
+
+  @@index([sentAt])
+}
+
+model ImportBatch {
+  id         String   @id @default(cuid())
+  source     String
+  importedAt DateTime @default(now())
+  notes      String?
+}
