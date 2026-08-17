@@ -21,7 +21,12 @@
       "Bash(mkdir -p \"/Users/gianluca/helfertool/app/api/exports/shift/[shiftId]\" \"/Users/gianluca/helfertool/app/api/exports/event/[eventId]\")",
       "Bash(mkdir -p \"/Users/gianluca/helfertool/app/\\(authenticated\\)/geschaeftsstelle/events/[eventId]\" \\\\ *)",
       "Bash(npx eslint *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(cp -r public .next/standalone/public)",
+      "Bash(cp -r .next/static/* .next/standalone/.next/static/)",
+      "Bash(DATABASE_URL='postgres://postgres:postgres@localhost:51214/template1?sslmode=disable&connection_limit=10&connect_timeout=0&max_idle_connection_lifetime=0&pool_timeout=0&socket_timeout=0' AUTH_SECRET=local-dev-secret-change-me-1234567890 NEXTAUTH_URL=http://localhost:3100 PORT=3100 NODE_ENV=production node server.js)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3100/login)",
+      "Bash(curl -s http://localhost:3100/login)"
     ]
   }
 }

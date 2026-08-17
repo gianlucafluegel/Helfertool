@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Helfertool HC Dragon Thun
 
-## Getting Started
+Helfereinsatz-Verwaltung für den HC Dragon Thun: Geschäftsstelle, Stufenleiter,
+Helfer/Mitglieder und Funktionäre verwalten und übernehmen Helfereinsätze rund um Spiele
+und externe Events.
 
-First, run the development server:
+Stack: Next.js (App Router) · PostgreSQL + Prisma · Auth.js (Credentials) · nodemailer.
+
+## Lokale Entwicklung
+
+Voraussetzungen: Node 20.9+ (getestet mit Node 24), npm.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Lokale Postgres-Datenbank starten (Prisma's eingebauter Dev-Server, kein Docker nötig):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npx prisma dev --name helfertool -p 51213 -P 51214
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Die ausgegebenen `DATABASE_URL`/`SHADOW_DATABASE_URL` in `.env` eintragen (siehe
+`.env.example` für alle weiteren Variablen: `AUTH_SECRET`, `SMTP_*`, `SEED_ADMIN_EMAIL/PASSWORD`).
 
-## Learn More
+```bash
+npx prisma migrate dev
+npx prisma db seed
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+App läuft auf http://localhost:3000. Login mit den `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD`
+Werten aus `.env` (Rolle Geschäftsstelle).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+E-Mails werden nur verschickt, wenn `SMTP_HOST` gesetzt ist — für lokale Tests eignet sich
+z.B. [Mailhog](https://github.com/mailhog/MailHog) oder der `mailhog`-Service aus
+`docker-compose.yml`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment (Docker Compose)
 
-## Deploy on Vercel
+```bash
+cp .env.example .env
+# .env mit echten Werten befüllen (DATABASE_URL/POSTGRES_*, AUTH_SECRET, NEXTAUTH_URL, SMTP_*)
+docker compose up --build -d
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Der `app`-Container führt beim Start automatisch `prisma migrate deploy` aus, bevor der
+Server startet (`docker-entrypoint.sh`). Erstmaliges Seeding (Stufen/Tätigkeiten/
+Mail-Vorlagen/Admin-Login) manuell ausführen:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+docker compose exec app npx prisma db seed
+```
+
+`AUTH_SECRET` generieren mit:
+
+```bash
+openssl rand -base64 32
+```
+
+## Projektstruktur
+
+- `prisma/schema.prisma` – Datenmodell
+- `lib/` – Auth, Prisma-Client, Business-Regeln (`lib/rules`), Mailversand (`lib/mail`),
+  Server Actions (`lib/actions`)
+- `app/(authenticated)/` – Rollenbereiche: `einsaetze/`, `mein-konto/`, `stufenleiter/`,
+  `geschaeftsstelle/`
+- `proxy.ts` – Next.js 16 Routing-Guard (ehem. `middleware.ts`) für Login/Rollen-Schutz
+
+## Phase 1 vs. spätere Phasen
+
+Diese Version deckt Kern-Funktionalität ab: Datenmodell, Login/Rollen, manuelle
+Event-/Einsatzverwaltung, Anmeldung/Abmeldung, Stundenkonto, Bestätigungs-/Reminder-Mails,
+CSV-Export pro Einsatz/Event. Excel-Import, Saison-Export, Mehrjahres-Archiv-Ansicht und
+automatische Absage-Benachrichtigungen sind für eine spätere Phase vorgesehen (Datenmodell
+ist bereits dafür vorbereitet, z.B. `Member.externalContactId`, `Event.externalRef`,
+`ImportBatch`).
