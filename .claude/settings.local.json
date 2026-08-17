@@ -16,7 +16,10 @@
       "Bash(node -e \"const p=require\\('/Users/gianluca/helfertool/node_modules/next-auth/package.json'\\); console.log\\(JSON.stringify\\(p.exports['./jwt'], null, 2\\)\\)\")",
       "Bash(cat > *)",
       "Bash(npm view *)",
-      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const v=JSON.parse\\(d\\);console.log\\(v.filter\\(x=>x.startsWith\\('8.'\\)\\).slice\\(-10\\)\\);console.log\\(v.filter\\(x=>x.startsWith\\('9.'\\)\\).slice\\(-10\\)\\);}\\)\")"
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const v=JSON.parse\\(d\\);console.log\\(v.filter\\(x=>x.startsWith\\('8.'\\)\\).slice\\(-10\\)\\);console.log\\(v.filter\\(x=>x.startsWith\\('9.'\\)\\).slice\\(-10\\)\\);}\\)\")",
+      "Bash(mkdir -p \"/Users/gianluca/helfertool/app/\\(authenticated\\)/einsaetze/[shiftId]\" \"/Users/gianluca/helfertool/app/\\(authenticated\\)/einsaetze/alle\")",
+      "Bash(mkdir -p \"/Users/gianluca/helfertool/app/api/exports/shift/[shiftId]\" \"/Users/gianluca/helfertool/app/api/exports/event/[eventId]\")",
+      "Bash(mkdir -p \"/Users/gianluca/helfertool/app/\\(authenticated\\)/geschaeftsstelle/events/[eventId]\" \\\\ *)"
     ]
   }
 }

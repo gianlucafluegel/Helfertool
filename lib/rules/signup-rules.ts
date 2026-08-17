@@ -6,6 +6,16 @@ export function canCancelSignup(shiftStart: Date, now: Date = new Date()): boole
   return shiftStart.getTime() - now.getTime() >= CANCELLATION_WINDOW_MS;
 }
 
+export function shiftRequiresPayoutChoice(
+  activityRequiresPayoutChoice: boolean,
+  ageGroupRestrictions: { ageGroup: { triggersBarbezugChoice: boolean } }[],
+): boolean {
+  return (
+    activityRequiresPayoutChoice &&
+    ageGroupRestrictions.some((r) => r.ageGroup.triggersBarbezugChoice)
+  );
+}
+
 export function validatePayoutChoice(input: {
   activityRequiresPayoutChoice: boolean;
   ageGroupTriggersBarbezug: boolean;
