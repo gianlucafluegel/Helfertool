@@ -109,18 +109,9 @@ CREATE TABLE "User" (
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "lastLoginAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "memberId" TEXT,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "UserMemberLink" (
-    "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "memberId" TEXT NOT NULL,
-    "isPrimary" BOOLEAN NOT NULL DEFAULT false,
-
-    CONSTRAINT "UserMemberLink_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -263,7 +254,7 @@ CREATE UNIQUE INDEX "SeasonMembership_memberId_seasonId_key" ON "SeasonMembershi
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "UserMemberLink_userId_memberId_key" ON "UserMemberLink"("userId", "memberId");
+CREATE UNIQUE INDEX "User_memberId_key" ON "User"("memberId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "AuthToken_tokenHash_key" ON "AuthToken"("tokenHash");
@@ -305,10 +296,7 @@ ALTER TABLE "SeasonMembership" ADD CONSTRAINT "SeasonMembership_seasonId_fkey" F
 ALTER TABLE "SeasonMembership" ADD CONSTRAINT "SeasonMembership_ageGroupId_fkey" FOREIGN KEY ("ageGroupId") REFERENCES "AgeGroup"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "UserMemberLink" ADD CONSTRAINT "UserMemberLink_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "UserMemberLink" ADD CONSTRAINT "UserMemberLink_memberId_fkey" FOREIGN KEY ("memberId") REFERENCES "Member"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "User" ADD CONSTRAINT "User_memberId_fkey" FOREIGN KEY ("memberId") REFERENCES "Member"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "AuthToken" ADD CONSTRAINT "AuthToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
