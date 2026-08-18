@@ -4,10 +4,10 @@ import type { UserRole } from "@/generated/prisma/enums";
 import type { SessionMember } from "@/lib/auth";
 import { logout } from "@/lib/actions/auth";
 
+// "Einsätze" and "Mein Konto" live in the in-page MemberTabs bar for
+// MITGLIED/FUNKTIONAER instead of here, to match the prototype's layout.
 const NAV_LINKS: { href: string; label: string; roles: UserRole[] }[] = [
-  { href: "/einsaetze", label: "Einsätze", roles: ["MITGLIED", "FUNKTIONAER"] },
   { href: "/einsaetze/alle", label: "Alle Einsätze", roles: ["FUNKTIONAER"] },
-  { href: "/mein-konto", label: "Mein Konto", roles: ["MITGLIED", "FUNKTIONAER"] },
   { href: "/stufenleiter", label: "Stufenadmin", roles: ["STUFENLEITER"] },
   { href: "/geschaeftsstelle", label: "Geschäftsstelle", roles: ["GESCHAEFTSSTELLE"] },
 ];

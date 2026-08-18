@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { CancelSignupButton } from "@/components/shifts/CancelSignupButton";
+import { MemberTabs } from "@/components/layout/MemberTabs";
 
 export default async function MeinKontoPage() {
   const session = await auth();
@@ -48,6 +49,8 @@ export default async function MeinKontoPage() {
 
   return (
     <div className="flex flex-col gap-5">
+      <MemberTabs active="konto" />
+
       <Card>
         <h1 className="text-base font-semibold text-text">
           Helferstunden {activeMember.firstName} {activeMember.lastName}

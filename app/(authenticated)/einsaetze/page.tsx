@@ -4,7 +4,9 @@ import { getCurrentSeason } from "@/lib/season";
 import { getMemberAgeGroupId } from "@/lib/member";
 import { isShiftSlotVisible } from "@/lib/visibility";
 import { FilterChipLink } from "@/components/ui/FilterChipLink";
+import { LocationPinIcon } from "@/components/ui/LocationPinIcon";
 import { EventCard } from "@/components/shifts/EventCard";
+import { MemberTabs } from "@/components/layout/MemberTabs";
 
 type Filters = {
   standort?: string;
@@ -95,8 +97,14 @@ export default async function EinsaetzePage({
 
   return (
     <div className="flex flex-col gap-5">
+      <MemberTabs active="einsaetze" />
+
       <div className="flex flex-wrap gap-2">
-        <FilterChipLink active={!filters.standort} href={buildHref(filters, { standort: undefined })}>
+        <FilterChipLink
+          active={!filters.standort}
+          href={buildHref(filters, { standort: undefined })}
+          icon={<LocationPinIcon />}
+        >
           Alle
         </FilterChipLink>
         {locations.map((loc) => (
@@ -104,6 +112,7 @@ export default async function EinsaetzePage({
             key={loc.id}
             active={filters.standort === loc.id}
             href={buildHref(filters, { standort: loc.id })}
+            icon={<LocationPinIcon />}
           >
             {loc.name}
           </FilterChipLink>
@@ -111,19 +120,34 @@ export default async function EinsaetzePage({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <FilterChipLink active={!filters.stufe} href={buildHref(filters, { stufe: undefined })}>
+        <FilterChipLink
+          active={!filters.stufe}
+          activeVariant="blue"
+          href={buildHref(filters, { stufe: undefined })}
+        >
           Alle Stufen
         </FilterChipLink>
         {ageGroups.map((ag) => (
           <FilterChipLink
             key={ag.id}
             active={filters.stufe === ag.id}
+            activeVariant="blue"
             href={buildHref(filters, { stufe: ag.id })}
           >
             {ag.name}
           </FilterChipLink>
         ))}
       </div>
+
+      {activeMember && (
+        <FilterChipLink
+          active={filters.nurMeine === "1"}
+          href={buildHref(filters, { nurMeine: filters.nurMeine === "1" ? undefined : "1" })}
+          className="self-start"
+        >
+          Nur meine Einsätze ({activeMember.firstName})
+        </FilterChipLink>
+      )}
 
       <div className="flex flex-wrap gap-2">
         <FilterChipLink active={!filters.typ} href={buildHref(filters, { typ: undefined })}>
@@ -139,17 +163,6 @@ export default async function EinsaetzePage({
           Externe Events
         </FilterChipLink>
       </div>
-
-      {activeMember && (
-        <div>
-          <FilterChipLink
-            active={filters.nurMeine === "1"}
-            href={buildHref(filters, { nurMeine: filters.nurMeine === "1" ? undefined : "1" })}
-          >
-            Nur meine Einsätze ({activeMember.firstName})
-          </FilterChipLink>
-        </div>
-      )}
 
       {eventCards.length === 0 && (
         <p className="text-sm text-muted">Keine Einsätze für diese Filter gefunden.</p>
