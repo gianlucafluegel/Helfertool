@@ -115,7 +115,7 @@ model Member {
   updatedAt         DateTime @updatedAt
 
   seasonMemberships SeasonMembership[]
-  userLinks         UserMemberLink[]
+  user              User?
   signups           Signup[]
 }
 
@@ -145,21 +145,15 @@ model User {
   lastLoginAt  DateTime?
   createdAt    DateTime  @default(now())
 
-  memberLinks             UserMemberLink[]
+  // Exactly one login per Member (e.g. per child) — never shared across
+  // several Members, so helper hours always resolve to a single unambiguous
+  // account. Nullable because pure staff logins (Geschäftsstelle) need no
+  // Member/hours profile at all.
+  memberId String? @unique
+  member   Member? @relation(fields: [memberId], references: [id])
+
   stufenleiterAssignments StufenleiterAssignment[]
-  authTokens               AuthToken[]
-}
-
-model UserMemberLink {
-  id        String  @id @default(cuid())
-  userId    String
-  memberId  String
-  isPrimary Boolean @default(false)
-
-  user   User   @relation(fields: [userId], references: [id])
-  member Member @relation(fields: [memberId], references: [id])
-
-  @@unique([userId, memberId])
+  authTokens              AuthToken[]
 }
 
 model AuthToken {
