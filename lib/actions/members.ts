@@ -92,10 +92,13 @@ export async function updateMember(memberId: string, formData: FormData) {
   revalidatePath("/geschaeftsstelle/members");
 }
 
-export async function inviteMemberLogin(memberId: string, formData: FormData) {
+export async function inviteMemberLogin(
+  memberId: string,
+  formData: FormData,
+): Promise<{ error?: string }> {
   await requireGeschaeftsstelle();
 
-  const member = await prisma.member.findUnique({ where: { id: memberId } });
+  const member = await prisma.member.findUnique({ where: { id: memberId }, include: { user: true } });
   if (!member || !member.email) {
     return { error: "Mitglied hat keine E-Mail-Adresse hinterlegt." };
   }
@@ -103,22 +106,31 @@ export async function inviteMemberLogin(memberId: string, formData: FormData) {
   const role = formData.get("role") as UserRole;
   const stufenleiterAgeGroupIds = formData.getAll("stufenleiterAgeGroupIds").map(String);
 
-  const existing = await prisma.user.findUnique({ where: { email: member.email } });
-  const user =
-    existing ??
-    (await prisma.user.create({
-      data: { email: member.email, role },
-    }));
+  let user = member.user;
 
-  if (existing && existing.role !== role) {
-    await prisma.user.update({ where: { id: user.id }, data: { role } });
+  if (user) {
+    // Re-invite / role change for this member's own existing login.
+    if (user.role !== role || user.email !== member.email) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { role, email: member.email },
+      });
+    }
+  } else {
+    // Every login must map to exactly one Member — if this email is already
+    // taken by a different member's login, refuse rather than silently
+    // sharing an account across two people's helper-hour records.
+    const emailTaken = await prisma.user.findUnique({ where: { email: member.email } });
+    if (emailTaken) {
+      return {
+        error:
+          "Diese E-Mail-Adresse wird bereits für einen anderen Login verwendet. Jedes Mitglied benötigt eine eigene, eindeutige E-Mail-Adresse für den Login.",
+      };
+    }
+    user = await prisma.user.create({
+      data: { email: member.email, role, memberId },
+    });
   }
-
-  await prisma.userMemberLink.upsert({
-    where: { userId_memberId: { userId: user.id, memberId } },
-    update: { isPrimary: true },
-    create: { userId: user.id, memberId, isPrimary: true },
-  });
 
   if (role === "STUFENLEITER") {
     await prisma.stufenleiterAssignment.deleteMany({ where: { userId: user.id } });

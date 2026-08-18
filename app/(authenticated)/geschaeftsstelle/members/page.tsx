@@ -17,7 +17,7 @@ export default async function MembersPage() {
         where: { seasonId: season?.id ?? "__no-season__" },
         include: { ageGroup: true },
       },
-      userLinks: { include: { user: true } },
+      user: true,
     },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
   });
@@ -62,11 +62,7 @@ export default async function MembersPage() {
                     <td className="py-2 pr-3">
                       {membership ? Number(membership.targetHours) : "–"}
                     </td>
-                    <td className="py-2 pr-3">
-                      {member.userLinks.length > 0
-                        ? member.userLinks[0].user.role
-                        : "kein Login"}
-                    </td>
+                    <td className="py-2 pr-3">{member.user ? member.user.role : "kein Login"}</td>
                   </tr>
                 );
               })}

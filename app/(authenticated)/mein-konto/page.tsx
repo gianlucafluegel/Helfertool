@@ -2,7 +2,6 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
-import { getActiveMember } from "@/lib/active-member";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -12,7 +11,7 @@ export default async function MeinKontoPage() {
   const session = await auth();
   if (!session?.user) return null;
 
-  const activeMember = await getActiveMember(session.user.members);
+  const activeMember = session.user.member;
   if (!activeMember) {
     return <p className="text-sm text-muted">Kein Mitgliedsprofil mit deinem Login verknüpft.</p>;
   }

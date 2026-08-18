@@ -19,7 +19,7 @@ export default async function MemberDetailPage({
       where: { id: memberId },
       include: {
         seasonMemberships: { where: { seasonId: season?.id ?? "__no-season__" } },
-        userLinks: { include: { user: true } },
+        user: true,
       },
     }),
     prisma.ageGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
@@ -34,7 +34,7 @@ export default async function MemberDetailPage({
   if (!member) notFound();
 
   const membership = member.seasonMemberships[0];
-  const userLink = member.userLinks[0];
+  const memberUser = member.user;
 
   return (
     <div className="flex flex-col gap-5">
@@ -56,15 +56,15 @@ export default async function MemberDetailPage({
 
       <Card>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">Login</h2>
-        {userLink && (
+        {memberUser && (
           <p className="mb-3 text-sm text-muted">
-            Aktueller Login: {userLink.user.email} · Rolle {userLink.user.role}
+            Aktueller Login: {memberUser.email} · Rolle {memberUser.role}
           </p>
         )}
         <InviteLoginForm
           memberId={member.id}
           ageGroups={ageGroups}
-          currentRole={userLink?.user.role}
+          currentRole={memberUser?.role}
         />
       </Card>
 

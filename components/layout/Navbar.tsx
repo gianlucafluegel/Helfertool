@@ -1,6 +1,7 @@
 import Link from "next/link";
 import clsx from "clsx";
 import type { UserRole } from "@/generated/prisma/enums";
+import type { SessionMember } from "@/lib/auth";
 import { logout } from "@/lib/actions/auth";
 
 const NAV_LINKS: { href: string; label: string; roles: UserRole[] }[] = [
@@ -11,7 +12,7 @@ const NAV_LINKS: { href: string; label: string; roles: UserRole[] }[] = [
   { href: "/geschaeftsstelle", label: "Geschäftsstelle", roles: ["GESCHAEFTSSTELLE"] },
 ];
 
-export function Navbar({ role }: { role: UserRole }) {
+export function Navbar({ role, member }: { role: UserRole; member: SessionMember | null }) {
   const links = NAV_LINKS.filter((link) => link.roles.includes(role));
 
   return (
@@ -25,6 +26,11 @@ export function Navbar({ role }: { role: UserRole }) {
             <span className="block text-sm font-bold uppercase tracking-wide">
               Dragon Thun · Helfertool
             </span>
+            {member && (
+              <span className="block text-xs text-white/60">
+                {member.firstName} {member.lastName}
+              </span>
+            )}
           </span>
         </Link>
         <nav className="flex flex-wrap items-center gap-2">

@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
-import { getActiveMember } from "@/lib/active-member";
 import { getMemberAgeGroupId } from "@/lib/member";
 import { isShiftSlotVisible } from "@/lib/visibility";
 import { FilterChipLink } from "@/components/ui/FilterChipLink";
@@ -43,7 +42,7 @@ export default async function EinsaetzePage({
     return <p className="text-sm text-muted">Keine aktive Saison konfiguriert.</p>;
   }
 
-  const activeMember = await getActiveMember(session.user.members);
+  const activeMember = session.user.member;
   const memberAgeGroupId = activeMember
     ? await getMemberAgeGroupId(activeMember.id, season.id)
     : null;

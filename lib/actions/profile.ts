@@ -12,8 +12,9 @@ export async function updateProfile(
   if (!session?.user) return "Bitte melde dich an.";
 
   const memberId = String(formData.get("memberId") ?? "");
-  const isLinked = session.user.members.some((m) => m.id === memberId);
-  if (!isLinked) return "Dieses Mitglied ist nicht mit deinem Login verknüpft.";
+  if (session.user.member?.id !== memberId) {
+    return "Dieses Mitglied ist nicht mit deinem Login verknüpft.";
+  }
 
   const email = String(formData.get("email") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();

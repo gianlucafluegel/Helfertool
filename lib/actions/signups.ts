@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getActiveMember } from "@/lib/active-member";
 import { getMemberAgeGroupId } from "@/lib/member";
 import { isShiftSlotVisible, canManageShiftSlot } from "@/lib/visibility";
 import { canCancelSignup, validatePayoutChoice } from "@/lib/rules/signup-rules";
@@ -17,7 +16,7 @@ export async function createSignup(
   const session = await auth();
   if (!session?.user) return "Bitte melde dich an.";
 
-  const activeMember = await getActiveMember(session.user.members);
+  const activeMember = session.user.member;
   if (!activeMember) return "Kein Mitgliedsprofil mit deinem Login verknüpft.";
 
   const shiftSlotId = String(formData.get("shiftSlotId") ?? "");
@@ -140,7 +139,7 @@ export async function cancelSignup(signupId: string): Promise<{ error?: string }
     return { error: "Diese Anmeldung existiert nicht mehr." };
   }
 
-  const isOwner = session.user.members.some((m) => m.id === signup.memberId);
+  const isOwner = session.user.member?.id === signup.memberId;
   const isAdmin = await callerCanManageSignup(session.user.id, session.user.role, signup);
 
   if (!isOwner && !isAdmin) {

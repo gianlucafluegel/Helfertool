@@ -35,7 +35,7 @@ export async function requestPasswordReset(
 
   const user = await prisma.user.findUnique({
     where: { email },
-    include: { memberLinks: { include: { member: true }, where: { isPrimary: true } } },
+    include: { member: true },
   });
 
   // Always return the same message, regardless of whether the account exists,
@@ -49,7 +49,7 @@ export async function requestPasswordReset(
 
   const rawToken = await createAuthToken(user.id, "PASSWORD_RESET");
   const link = `${process.env.NEXTAUTH_URL}/set-password?token=${rawToken}&purpose=PASSWORD_RESET`;
-  const member = user.memberLinks[0]?.member;
+  const member = user.member;
 
   await sendMail("PASSWORD_RESET", user.email, {
     vorname: member?.firstName ?? "",

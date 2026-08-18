@@ -53,10 +53,10 @@ export async function sendReminders(input: {
   if (role === "GESCHAEFTSSTELLE" && input.includeFunktionaere) {
     const funktionaere = await prisma.user.findMany({
       where: { role: "FUNKTIONAER", isActive: true },
-      include: { memberLinks: { include: { member: true } } },
+      include: { member: true },
     });
     for (const u of funktionaere) {
-      const member = u.memberLinks.find((l) => l.isPrimary)?.member ?? u.memberLinks[0]?.member;
+      const member = u.member;
       const email = member?.email ?? u.email;
       if (email) {
         recipients.set(u.id, {

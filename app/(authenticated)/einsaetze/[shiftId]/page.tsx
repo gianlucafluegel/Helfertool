@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getActiveMember } from "@/lib/active-member";
 import { getMemberAgeGroupId } from "@/lib/member";
 import { isShiftSlotVisible } from "@/lib/visibility";
 import { shiftRequiresPayoutChoice } from "@/lib/rules/signup-rules";
@@ -31,7 +30,7 @@ export default async function ShiftSignupPage({
     notFound();
   }
 
-  const activeMember = await getActiveMember(session.user.members);
+  const activeMember = session.user.member;
   if (!activeMember) {
     return <p className="text-sm text-status-open-text">Kein Mitgliedsprofil verknüpft.</p>;
   }

@@ -24,7 +24,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await prisma.user.findUnique({
           where: { email: email.toLowerCase() },
-          include: { memberLinks: { include: { member: true } } },
+          include: { member: true },
         });
 
         if (!user || !user.isActive || !user.passwordHash) {
@@ -45,12 +45,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: user.id,
           email: user.email,
           role: user.role,
-          members: user.memberLinks.map((link) => ({
-            id: link.member.id,
-            firstName: link.member.firstName,
-            lastName: link.member.lastName,
-            isPrimary: link.isPrimary,
-          })),
+          member: user.member
+            ? {
+                id: user.member.id,
+                firstName: user.member.firstName,
+                lastName: user.member.lastName,
+              }
+            : null,
         };
       },
     }),
@@ -60,14 +61,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.uid = user.id;
         token.role = user.role;
-        token.members = user.members;
+        token.member = user.member;
       }
       return token;
     },
     session: ({ session, token }: { session: Session; token: JWT }) => {
       if (token.uid) session.user.id = token.uid;
       if (token.role) session.user.role = token.role;
-      if (token.members) session.user.members = token.members;
+      session.user.member = token.member ?? null;
       return session;
     },
   },
