@@ -139,16 +139,6 @@ export default async function EinsaetzePage({
         ))}
       </div>
 
-      {activeMember && (
-        <FilterChipLink
-          active={filters.nurMeine === "1"}
-          href={buildHref(filters, { nurMeine: filters.nurMeine === "1" ? undefined : "1" })}
-          className="self-start"
-        >
-          Nur meine Einsätze ({activeMember.firstName})
-        </FilterChipLink>
-      )}
-
       <div className="flex flex-wrap gap-2">
         <FilterChipLink active={!filters.typ} href={buildHref(filters, { typ: undefined })}>
           Alle Events
@@ -163,6 +153,16 @@ export default async function EinsaetzePage({
           Externe Events
         </FilterChipLink>
       </div>
+
+      {activeMember && (
+        <FilterChipLink
+          active={filters.nurMeine === "1"}
+          href={buildHref(filters, { nurMeine: filters.nurMeine === "1" ? undefined : "1" })}
+          className="self-start"
+        >
+          Nur meine Einsätze ({activeMember.firstName})
+        </FilterChipLink>
+      )}
 
       {eventCards.length === 0 && (
         <p className="text-sm text-muted">Keine Einsätze für diese Filter gefunden.</p>
