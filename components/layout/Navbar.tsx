@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import clsx from "clsx";
 import type { UserRole } from "@/generated/prisma/enums";
 import type { SessionMember } from "@/lib/auth";
@@ -19,9 +20,14 @@ export function Navbar({ role, member }: { role: UserRole; member: SessionMember
     <header className="bg-navy text-white">
       <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold font-bold text-navy">
-            D
-          </span>
+          <Image
+            src="/dragon-logo.png"
+            alt="HC Dragon Thun"
+            width={333}
+            height={400}
+            priority
+            className="h-10 w-auto"
+          />
           <span>
             <span className="block text-sm font-bold uppercase tracking-wide">
               Dragon Thun · Helfertool
