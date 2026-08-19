@@ -50,11 +50,23 @@ export function CreateEventForm({
           </select>
         </div>
       </div>
-      <FormField label="Gegner (optional)" name="opponent" />
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-text" htmlFor="description">
+          Beschreibung
+        </label>
+        <textarea
+          id="description"
+          name="description"
+          required
+          rows={3}
+          placeholder="z.B. Meisterschaftsspiel gegen SC Muster-Bern"
+          className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
+        />
+      </div>
       <FormField label="Datum/Zeit" name="startDateTime" type="datetime-local" required />
       {error && <p className="text-sm text-status-open-text">{error}</p>}
       <Button type="submit" disabled={pending}>
-        {pending ? "Wird erstellt…" : "Event erstellen"}
+        {pending ? "Wird erstellt…" : "Helfereinsatz erstellen"}
       </Button>
     </form>
   );

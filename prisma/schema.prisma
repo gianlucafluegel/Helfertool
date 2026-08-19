@@ -186,7 +186,7 @@ model Event {
   seasonId      String
   type          EventType
   title         String
-  opponent      String?
+  description   String
   locationId    String?
   startDateTime DateTime
   endDateTime   DateTime?

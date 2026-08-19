@@ -20,12 +20,12 @@ export async function createEvent(prevState: string | undefined, formData: FormD
   const seasonId = String(formData.get("seasonId") ?? "");
   const type = formData.get("type") as EventType;
   const title = String(formData.get("title") ?? "").trim();
-  const opponent = String(formData.get("opponent") ?? "").trim() || null;
+  const description = String(formData.get("description") ?? "").trim();
   const locationId = String(formData.get("locationId") ?? "") || null;
   const startDateTime = String(formData.get("startDateTime") ?? "");
 
-  if (!seasonId || !title || !startDateTime) {
-    return "Saison, Titel und Datum/Zeit sind Pflichtfelder.";
+  if (!seasonId || !title || !description || !startDateTime) {
+    return "Saison, Titel, Beschreibung und Datum/Zeit sind Pflichtfelder.";
   }
 
   const event = await prisma.event.create({
@@ -33,21 +33,21 @@ export async function createEvent(prevState: string | undefined, formData: FormD
       seasonId,
       type,
       title,
-      opponent,
+      description,
       locationId,
       startDateTime: new Date(startDateTime),
     },
   });
 
-  revalidatePath("/geschaeftsstelle/events");
-  redirect(`/geschaeftsstelle/events/${event.id}`);
+  revalidatePath("/geschaeftsstelle/helfereinsaetze");
+  redirect(`/geschaeftsstelle/helfereinsaetze/${event.id}`);
 }
 
 export async function updateEvent(eventId: string, formData: FormData) {
   await requireGeschaeftsstelle();
 
   const title = String(formData.get("title") ?? "").trim();
-  const opponent = String(formData.get("opponent") ?? "").trim() || null;
+  const description = String(formData.get("description") ?? "").trim();
   const locationId = String(formData.get("locationId") ?? "") || null;
   const startDateTime = String(formData.get("startDateTime") ?? "");
   const status = String(formData.get("status") ?? "SCHEDULED") as
@@ -55,26 +55,30 @@ export async function updateEvent(eventId: string, formData: FormData) {
     | "CANCELLED"
     | "POSTPONED";
 
+  if (!title || !description) {
+    return;
+  }
+
   await prisma.event.update({
     where: { id: eventId },
     data: {
       title,
-      opponent,
+      description,
       locationId,
       startDateTime: startDateTime ? new Date(startDateTime) : undefined,
       status,
     },
   });
 
-  revalidatePath(`/geschaeftsstelle/events/${eventId}`);
-  revalidatePath("/geschaeftsstelle/events");
+  revalidatePath(`/geschaeftsstelle/helfereinsaetze/${eventId}`);
+  revalidatePath("/geschaeftsstelle/helfereinsaetze");
 }
 
 export async function deleteEvent(eventId: string) {
   await requireGeschaeftsstelle();
   await prisma.event.update({ where: { id: eventId }, data: { deletedAt: new Date() } });
-  revalidatePath("/geschaeftsstelle/events");
-  redirect("/geschaeftsstelle/events");
+  revalidatePath("/geschaeftsstelle/helfereinsaetze");
+  redirect("/geschaeftsstelle/helfereinsaetze");
 }
 
 export async function addShiftSlot(eventId: string, formData: FormData) {
@@ -105,11 +109,11 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
     },
   });
 
-  revalidatePath(`/geschaeftsstelle/events/${eventId}`);
+  revalidatePath(`/geschaeftsstelle/helfereinsaetze/${eventId}`);
 }
 
 export async function deleteShiftSlot(eventId: string, shiftSlotId: string) {
   await requireGeschaeftsstelle();
   await prisma.shiftSlot.update({ where: { id: shiftSlotId }, data: { deletedAt: new Date() } });
-  revalidatePath(`/geschaeftsstelle/events/${eventId}`);
+  revalidatePath(`/geschaeftsstelle/helfereinsaetze/${eventId}`);
 }

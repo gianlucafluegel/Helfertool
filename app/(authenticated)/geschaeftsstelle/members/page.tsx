@@ -32,9 +32,17 @@ export default async function MembersPage() {
       </Card>
 
       <Card>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-          Alle Mitglieder
-        </h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            Alle Mitglieder
+          </h2>
+          <a
+            href="/api/exports/members"
+            className="text-xs font-medium text-gold-hover hover:underline"
+          >
+            Liste mit Helferstunden exportieren (Excel)
+          </a>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

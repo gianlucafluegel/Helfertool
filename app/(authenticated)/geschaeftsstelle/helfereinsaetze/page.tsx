@@ -4,7 +4,7 @@ import { getCurrentSeason } from "@/lib/season";
 import { Card } from "@/components/ui/Card";
 import { CreateEventForm } from "./CreateEventForm";
 
-export default async function EventsPage() {
+export default async function HelfereinsaetzePage() {
   const season = await getCurrentSeason();
   const locations = await prisma.location.findMany({
     where: { isActive: true },
@@ -23,7 +23,7 @@ export default async function EventsPage() {
     <div className="flex flex-col gap-5">
       <Card>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-          Event manuell erfassen
+          Helfereinsatz manuell erfassen
         </h2>
         {season ? (
           <CreateEventForm seasonId={season.id} locations={locations} />
@@ -34,13 +34,13 @@ export default async function EventsPage() {
 
       <Card>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-          Alle Events
+          Alle Helfereinsätze
         </h2>
         <div className="flex flex-col">
           {events.map((event) => (
             <Link
               key={event.id}
-              href={`/geschaeftsstelle/events/${event.id}`}
+              href={`/geschaeftsstelle/helfereinsaetze/${event.id}`}
               className="flex items-center justify-between border-b border-border py-2 text-sm last:border-b-0 hover:text-gold-hover"
             >
               <span>{event.title}</span>
@@ -50,7 +50,9 @@ export default async function EventsPage() {
               </span>
             </Link>
           ))}
-          {events.length === 0 && <p className="text-sm text-muted">Noch keine Events.</p>}
+          {events.length === 0 && (
+            <p className="text-sm text-muted">Noch keine Helfereinsätze.</p>
+          )}
         </div>
       </Card>
     </div>

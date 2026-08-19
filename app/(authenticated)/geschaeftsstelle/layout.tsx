@@ -3,11 +3,8 @@ import type { ReactNode } from "react";
 
 const TABS = [
   { href: "/geschaeftsstelle", label: "Übersicht" },
-  { href: "/geschaeftsstelle/events", label: "Events" },
+  { href: "/geschaeftsstelle/helfereinsaetze", label: "Helfereinsätze" },
   { href: "/geschaeftsstelle/members", label: "Mitglieder" },
-  { href: "/geschaeftsstelle/age-groups", label: "Stufen" },
-  { href: "/geschaeftsstelle/locations", label: "Standorte" },
-  { href: "/geschaeftsstelle/taetigkeiten", label: "Tätigkeiten" },
   { href: "/geschaeftsstelle/mail-templates", label: "Mail-Vorlagen" },
   { href: "/geschaeftsstelle/reminders", label: "Reminder" },
 ];

@@ -4,29 +4,56 @@ import { getCurrentSeason } from "@/lib/season";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 
-export default async function GeschaeftsstelleOverviewPage() {
+export default async function GeschaeftsstelleOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
   const season = await getCurrentSeason();
   if (!season) {
     return <p className="text-sm text-muted">Keine aktive Saison konfiguriert.</p>;
   }
 
-  const events = await prisma.event.findMany({
-    where: { seasonId: season.id, deletedAt: null },
-    include: {
-      location: true,
-      shiftSlots: {
-        where: { deletedAt: null },
-        include: { signups: { where: { status: "CONFIRMED" } } },
+  const [statsEvents, listEvents] = await Promise.all([
+    prisma.event.findMany({
+      where: { seasonId: season.id, deletedAt: null },
+      include: {
+        shiftSlots: {
+          where: { deletedAt: null },
+          include: { signups: { where: { status: "CONFIRMED" } } },
+        },
       },
-    },
-    orderBy: { startDateTime: "asc" },
-  });
+    }),
+    prisma.event.findMany({
+      where: {
+        seasonId: season.id,
+        deletedAt: null,
+        ...(q
+          ? {
+              OR: [
+                { title: { contains: q, mode: "insensitive" } },
+                { description: { contains: q, mode: "insensitive" } },
+              ],
+            }
+          : {}),
+      },
+      include: {
+        location: true,
+        shiftSlots: {
+          where: { deletedAt: null },
+          include: { signups: { where: { status: "CONFIRMED" } } },
+        },
+      },
+      orderBy: { startDateTime: "asc" },
+    }),
+  ]);
 
-  const gameCount = events.filter((e) => e.type === "GAME").length;
-  const externalCount = events.filter((e) => e.type === "EXTERNAL").length;
+  const gameCount = statsEvents.filter((e) => e.type === "GAME").length;
+  const externalCount = statsEvents.filter((e) => e.type === "EXTERNAL").length;
   let filled = 0;
   let open = 0;
-  for (const e of events) {
+  for (const e of statsEvents) {
     for (const s of e.shiftSlots) {
       if (s.signups.length >= s.capacity) filled += 1;
       else open += 1;
@@ -56,7 +83,36 @@ export default async function GeschaeftsstelleOverviewPage() {
 
       <Card>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-          Alle Events
+          Helfereinsätze suchen
+        </h2>
+        <form className="flex gap-2" action="/geschaeftsstelle">
+          <input
+            type="text"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Titel oder Beschreibung durchsuchen…"
+            className="w-full max-w-sm rounded-lg border border-border bg-white px-3 py-2 text-sm"
+          />
+          <button
+            type="submit"
+            className="rounded-full bg-gold px-4 py-2 text-sm font-semibold text-navy hover:bg-gold-hover"
+          >
+            Suchen
+          </button>
+          {q && (
+            <Link
+              href="/geschaeftsstelle"
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium text-text hover:border-navy/40"
+            >
+              Zurücksetzen
+            </Link>
+          )}
+        </form>
+      </Card>
+
+      <Card>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+          {q ? `Suchergebnisse für "${q}"` : "Alle Helfereinsätze"}
         </h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -69,7 +125,7 @@ export default async function GeschaeftsstelleOverviewPage() {
               </tr>
             </thead>
             <tbody>
-              {events.map((event) => {
+              {listEvents.map((event) => {
                 const eventOpen = event.shiftSlots.filter(
                   (s) => s.signups.length < s.capacity,
                 ).length;
@@ -86,7 +142,7 @@ export default async function GeschaeftsstelleOverviewPage() {
                     </td>
                     <td className="py-2 pr-3">
                       <Link
-                        href={`/geschaeftsstelle/events/${event.id}`}
+                        href={`/geschaeftsstelle/helfereinsaetze/${event.id}`}
                         className="font-medium text-gold-hover hover:underline"
                       >
                         {event.title}
@@ -105,6 +161,13 @@ export default async function GeschaeftsstelleOverviewPage() {
                   </tr>
                 );
               })}
+              {listEvents.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-4 text-center text-muted">
+                    Keine Helfereinsätze gefunden.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

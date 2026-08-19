@@ -13,7 +13,7 @@ function toLocalInputValue(date: Date) {
 export function EventEditForm({
   eventId,
   title,
-  opponent,
+  description,
   locationId,
   startDateTime,
   status,
@@ -21,7 +21,7 @@ export function EventEditForm({
 }: {
   eventId: string;
   title: string;
-  opponent: string;
+  description: string;
   locationId: string;
   startDateTime: Date;
   status: string;
@@ -70,7 +70,19 @@ export function EventEditForm({
           </select>
         </div>
       </div>
-      <FormField label="Gegner" name="opponent" defaultValue={opponent} />
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-text" htmlFor="description">
+          Beschreibung
+        </label>
+        <textarea
+          id="description"
+          name="description"
+          required
+          rows={3}
+          defaultValue={description}
+          className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
+        />
+      </div>
       <FormField
         label="Datum/Zeit"
         name="startDateTime"
@@ -85,12 +97,12 @@ export function EventEditForm({
           type="button"
           variant="danger"
           onClick={() => {
-            if (confirm("Dieses Event wirklich löschen?")) {
+            if (confirm("Diesen Helfereinsatz wirklich löschen?")) {
               startTransition(() => deleteEvent(eventId));
             }
           }}
         >
-          Event löschen
+          Helfereinsatz löschen
         </Button>
       </div>
     </form>

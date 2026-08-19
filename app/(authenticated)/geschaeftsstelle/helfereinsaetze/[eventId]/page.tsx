@@ -37,11 +37,11 @@ export default async function EventDetailPage({
   return (
     <div className="flex flex-col gap-5">
       <Card>
-        <h1 className="mb-3 text-base font-semibold text-text">Event bearbeiten</h1>
+        <h1 className="mb-3 text-base font-semibold text-text">Helfereinsatz bearbeiten</h1>
         <EventEditForm
           eventId={event.id}
           title={event.title}
-          opponent={event.opponent ?? ""}
+          description={event.description}
           locationId={event.locationId ?? ""}
           startDateTime={event.startDateTime}
           status={event.status}
@@ -64,7 +64,7 @@ export default async function EventDetailPage({
             <AdminShiftSlotRow key={slot.id} slot={slot} eventId={event.id} />
           ))}
           {event.shiftSlots.length === 0 && (
-            <p className="text-sm text-muted">Noch keine Einsätze für dieses Event.</p>
+            <p className="text-sm text-muted">Noch keine Einsätze für diesen Helfereinsatz.</p>
           )}
         </div>
         <AddShiftSlotForm eventId={event.id} activities={activities} ageGroups={ageGroups} />
