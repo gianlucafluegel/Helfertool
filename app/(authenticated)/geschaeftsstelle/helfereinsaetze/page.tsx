@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
 import { Card } from "@/components/ui/Card";
 import { CreateEventForm } from "./CreateEventForm";
+import { ImportForm } from "./ImportForm";
 
 export default async function HelfereinsaetzePage() {
   const season = await getCurrentSeason();
@@ -30,6 +31,18 @@ export default async function HelfereinsaetzePage() {
         ) : (
           <p className="text-sm text-status-open-text">Keine aktive Saison konfiguriert.</p>
         )}
+      </Card>
+
+      <Card>
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted">
+          Helfereinsätze aus Excel importieren (MySIHF)
+        </h2>
+        <p className="mb-3 text-sm text-muted">
+          Spielplan-Export von MySIHF hochladen, Vorschau prüfen (Standort/Stufe je Zeile
+          anpassbar) und importieren. Bereits importierte Spiele (gleiche MySIHF-Spiel-Nr.) werden
+          aktualisiert statt doppelt angelegt — bestehende Einsätze/Anmeldungen bleiben erhalten.
+        </p>
+        <ImportForm />
       </Card>
 
       <Card>

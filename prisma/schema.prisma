@@ -276,8 +276,9 @@ model EmailLog {
 }
 
 model ImportBatch {
-  id         String   @id @default(cuid())
-  source     String
-  importedAt DateTime @default(now())
-  notes      String?
+  id                String   @id @default(cuid())
+  source            String
+  importedAt        DateTime @default(now())
+  importedByUserId  String?
+  notes             String?
 }
