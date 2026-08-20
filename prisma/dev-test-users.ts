@@ -51,11 +51,17 @@ async function main() {
     create: { email: "timo.muster@example.test", passwordHash, role: "MITGLIED", memberId: timo.id },
   });
 
-  // Funktionär
+  // Funktionär — tied to U14 like a coach, so she sees the same Einsätze a
+  // U14 Mitglied would (plus can click into filled ones to see who's doing them).
   const funkMember = await prisma.member.upsert({
     where: { externalContactId: "TEST-FUNK" },
     update: {},
     create: { firstName: "Nora", lastName: "Beispiel", email: "funktionaer@example.test", externalContactId: "TEST-FUNK" },
+  });
+  await prisma.seasonMembership.upsert({
+    where: { memberId_seasonId: { memberId: funkMember.id, seasonId: season.id } },
+    update: { ageGroupId: u14.id },
+    create: { memberId: funkMember.id, seasonId: season.id, ageGroupId: u14.id, targetHours: 0 },
   });
   await prisma.user.upsert({
     where: { email: "funktionaer@example.test" },

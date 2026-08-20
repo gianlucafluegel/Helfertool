@@ -7,8 +7,10 @@ import { logout } from "@/lib/actions/auth";
 
 // "Einsätze" and "Mein Konto" live in the in-page MemberTabs bar for
 // MITGLIED/FUNKTIONAER instead of here, to match the prototype's layout.
+// Funktionär's page structure is otherwise identical to Mitglied's — seeing
+// who's doing an already-filled Einsatz happens by clicking into it, not
+// via a separate nav item.
 const NAV_LINKS: { href: string; label: string; roles: UserRole[] }[] = [
-  { href: "/einsaetze/alle", label: "Alle Einsätze", roles: ["FUNKTIONAER"] },
   { href: "/stufenleiter", label: "Stufenadmin", roles: ["STUFENLEITER"] },
   { href: "/geschaeftsstelle", label: "Geschäftsstelle", roles: ["GESCHAEFTSSTELLE"] },
 ];

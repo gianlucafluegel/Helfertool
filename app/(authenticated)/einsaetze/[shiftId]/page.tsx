@@ -42,11 +42,22 @@ export default async function ShiftSignupPage({
   }
 
   if (shiftSlot.signups.length >= shiftSlot.capacity) {
+    // Funktionär (and above) can click through to a filled Einsatz to see
+    // who's doing it; a Mitglied only sees the generic "besetzt" message.
+    const canViewOccupant = session.user.role !== "MITGLIED";
+
     return (
       <Card>
         <p className="text-sm text-status-open-text">
           Dieser Einsatz ist bereits vollständig besetzt.
         </p>
+        {canViewOccupant && (
+          <p className="mt-2 text-sm text-muted">
+            {shiftSlot.signups
+              .map((s) => `${s.helperFirstName} ${s.helperLastName}`)
+              .join(", ")}
+          </p>
+        )}
       </Card>
     );
   }

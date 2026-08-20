@@ -22,12 +22,15 @@ export function ShiftSlotRow({
   activeMemberId,
   allowSelfCancel,
   readOnly = false,
+  canViewOccupant = false,
 }: {
   slot: ShiftSlotRowData;
   showOccupant: boolean;
   activeMemberId: string | null;
   allowSelfCancel: boolean;
   readOnly?: boolean;
+  /** Funktionär (and above): can click into an already-filled Einsatz to see who's doing it. */
+  canViewOccupant?: boolean;
 }) {
   const filledCount = slot.signups.length;
   const isFull = filledCount >= slot.capacity;
@@ -73,6 +76,13 @@ export function ShiftSlotRow({
             className="rounded-full bg-gold px-3.5 py-1.5 text-sm font-semibold text-navy hover:bg-gold-hover"
           >
             Übernehmen
+          </Link>
+        ) : isFull && !mySignup && canViewOccupant ? (
+          <Link
+            href={`/einsaetze/${slot.id}`}
+            className="rounded-full border border-border bg-white px-3.5 py-1.5 text-sm font-medium text-text hover:border-navy/40"
+          >
+            Ansehen
           </Link>
         ) : null}
       </div>

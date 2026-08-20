@@ -10,6 +10,7 @@ export function EventCard({
   activeMemberId,
   allowSelfCancel,
   readOnly = false,
+  canViewOccupant = false,
 }: {
   title: string;
   startDateTime: Date;
@@ -19,6 +20,7 @@ export function EventCard({
   activeMemberId: string | null;
   allowSelfCancel: boolean;
   readOnly?: boolean;
+  canViewOccupant?: boolean;
 }) {
   const formattedDate = startDateTime.toLocaleString("de-CH", {
     day: "2-digit",
@@ -43,6 +45,7 @@ export function EventCard({
             activeMemberId={activeMemberId}
             allowSelfCancel={allowSelfCancel}
             readOnly={readOnly}
+            canViewOccupant={canViewOccupant}
           />
         ))}
       </div>

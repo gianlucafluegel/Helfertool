@@ -71,7 +71,10 @@ export default async function EinsaetzePage({
     orderBy: { startDateTime: "asc" },
   });
 
-  const canSeeOccupants = session.user.role === "FUNKTIONAER";
+  // Structure matches the Mitglied page exactly — Funktionär (and above) see
+  // who's doing an already-filled Einsatz by clicking into it ("Ansehen"),
+  // not via names shown inline in the list.
+  const canViewOccupant = session.user.role !== "MITGLIED";
 
   const eventCards = events
     .map((event) => {
@@ -175,9 +178,10 @@ export default async function EinsaetzePage({
           startDateTime={event.startDateTime}
           locationName={event.location?.name ?? null}
           shiftSlots={slots}
-          showOccupant={canSeeOccupants}
+          showOccupant={false}
           activeMemberId={activeMember?.id ?? null}
           allowSelfCancel
+          canViewOccupant={canViewOccupant}
         />
       ))}
     </div>

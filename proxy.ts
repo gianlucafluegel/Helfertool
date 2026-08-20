@@ -31,10 +31,6 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/unauthorized", req.nextUrl));
   }
 
-  if (pathname.startsWith("/einsaetze/alle") && role === "MITGLIED") {
-    return NextResponse.redirect(new URL("/unauthorized", req.nextUrl));
-  }
-
   return NextResponse.next();
 });
 
