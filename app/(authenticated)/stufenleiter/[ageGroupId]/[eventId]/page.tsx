@@ -1,24 +1,33 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { AdminShiftSlotRow } from "@/components/shifts/AdminShiftSlotRow";
 import { EventEditForm } from "@/components/shifts/EventEditForm";
-import { AddShiftSlotForm } from "./AddShiftSlotForm";
 
-export default async function EventDetailPage({
+export default async function StufenleiterEventDetailPage({
   params,
 }: {
-  params: Promise<{ eventId: string }>;
+  params: Promise<{ ageGroupId: string; eventId: string }>;
 }) {
-  const { eventId } = await params;
+  const { ageGroupId, eventId } = await params;
+  const session = await auth();
+  if (!session?.user) return null;
 
-  const [event, locations, activities, ageGroups] = await Promise.all([
+  const assignment = await prisma.stufenleiterAssignment.findUnique({
+    where: { userId_ageGroupId: { userId: session.user.id, ageGroupId } },
+    include: { ageGroup: true },
+  });
+  if (!assignment) notFound();
+
+  const [event, locations] = await Promise.all([
     prisma.event.findUnique({
       where: { id: eventId },
       include: {
         location: true,
         shiftSlots: {
-          where: { deletedAt: null },
+          where: { deletedAt: null, ageGroupRestrictions: { some: { ageGroupId } } },
           include: {
             activity: true,
             ageGroupRestrictions: { include: { ageGroup: true } },
@@ -28,14 +37,19 @@ export default async function EventDetailPage({
       },
     }),
     prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-    prisma.activity.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-    prisma.ageGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
   ]);
 
-  if (!event || event.deletedAt) notFound();
+  if (!event || event.deletedAt || event.shiftSlots.length === 0) notFound();
 
   return (
     <div className="flex flex-col gap-5">
+      <Link
+        href={`/stufenleiter/${ageGroupId}`}
+        className="text-sm font-medium text-muted hover:text-navy"
+      >
+        ← Zurück zu Stufe {assignment.ageGroup.name}
+      </Link>
+
       <Card>
         <h1 className="mb-3 text-base font-semibold text-text">Helfereinsatz bearbeiten</h1>
         <EventEditForm
@@ -46,6 +60,7 @@ export default async function EventDetailPage({
           startDateTime={event.startDateTime}
           status={event.status}
           locations={locations}
+          canDelete={false}
         />
       </Card>
 
@@ -59,15 +74,9 @@ export default async function EventDetailPage({
             Liste herunterladen
           </a>
         </div>
-        <div className="mb-4">
-          {event.shiftSlots.map((slot) => (
-            <AdminShiftSlotRow key={slot.id} slot={slot} eventId={event.id} />
-          ))}
-          {event.shiftSlots.length === 0 && (
-            <p className="text-sm text-muted">Noch keine Einsätze für diesen Helfereinsatz.</p>
-          )}
-        </div>
-        <AddShiftSlotForm eventId={event.id} activities={activities} ageGroups={ageGroups} />
+        {event.shiftSlots.map((slot) => (
+          <AdminShiftSlotRow key={slot.id} slot={slot} />
+        ))}
       </Card>
     </div>
   );

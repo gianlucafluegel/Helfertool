@@ -18,6 +18,7 @@ export function EventEditForm({
   startDateTime,
   status,
   locations,
+  canDelete = true,
 }: {
   eventId: string;
   title: string;
@@ -26,6 +27,7 @@ export function EventEditForm({
   startDateTime: Date;
   status: string;
   locations: { id: string; name: string }[];
+  canDelete?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -93,17 +95,19 @@ export function EventEditForm({
         <Button type="submit" disabled={pending}>
           {pending ? "Wird gespeichert…" : "Speichern"}
         </Button>
-        <Button
-          type="button"
-          variant="danger"
-          onClick={() => {
-            if (confirm("Diesen Helfereinsatz wirklich löschen?")) {
-              startTransition(() => deleteEvent(eventId));
-            }
-          }}
-        >
-          Helfereinsatz löschen
-        </Button>
+        {canDelete && (
+          <Button
+            type="button"
+            variant="danger"
+            onClick={() => {
+              if (confirm("Diesen Helfereinsatz wirklich löschen?")) {
+                startTransition(() => deleteEvent(eventId));
+              }
+            }}
+          >
+            Helfereinsatz löschen
+          </Button>
+        )}
       </div>
     </form>
   );

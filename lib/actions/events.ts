@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { canManageShiftSlot } from "@/lib/visibility";
 import type { EventType } from "@/generated/prisma/enums";
 
 async function requireGeschaeftsstelle() {
@@ -12,6 +13,43 @@ async function requireGeschaeftsstelle() {
     throw new Error("Keine Berechtigung.");
   }
   return session;
+}
+
+/**
+ * Geschäftsstelle can edit any event. Stufenleiter can correct an event's
+ * info (title/description/date/location/status) only when it has at least
+ * one ShiftSlot restricted to one of their assigned Stufen — they still
+ * can't create, delete, or add/remove ShiftSlots (see the other actions
+ * below, which stay Geschäftsstelle-only).
+ */
+async function assertCanEditEvent(eventId: string) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Keine Berechtigung.");
+  if (session.user.role === "GESCHAEFTSSTELLE") return session;
+
+  if (session.user.role === "STUFENLEITER") {
+    const [assignments, shiftSlots] = await Promise.all([
+      prisma.stufenleiterAssignment.findMany({
+        where: { userId: session.user.id },
+        select: { ageGroupId: true },
+      }),
+      prisma.shiftSlot.findMany({
+        where: { eventId, deletedAt: null },
+        include: { ageGroupRestrictions: true },
+      }),
+    ]);
+    const allowed = new Set(assignments.map((a) => a.ageGroupId));
+    const canEdit = shiftSlots.some((slot) =>
+      canManageShiftSlot(
+        "STUFENLEITER",
+        slot.ageGroupRestrictions.map((r) => r.ageGroupId),
+        allowed,
+      ),
+    );
+    if (canEdit) return session;
+  }
+
+  throw new Error("Keine Berechtigung.");
 }
 
 export async function createEvent(prevState: string | undefined, formData: FormData) {
@@ -44,7 +82,7 @@ export async function createEvent(prevState: string | undefined, formData: FormD
 }
 
 export async function updateEvent(eventId: string, formData: FormData) {
-  await requireGeschaeftsstelle();
+  await assertCanEditEvent(eventId);
 
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -72,6 +110,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
 
   revalidatePath(`/geschaeftsstelle/helfereinsaetze/${eventId}`);
   revalidatePath("/geschaeftsstelle/helfereinsaetze");
+  revalidatePath("/stufenleiter", "layout");
 }
 
 export async function deleteEvent(eventId: string) {
