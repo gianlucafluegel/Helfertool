@@ -27,19 +27,26 @@ export async function archiveSeason(prevState: string | undefined, formData: For
   await requireGeschaeftsstelle();
 
   const newLabel = String(formData.get("newSeasonLabel") ?? "").trim();
-  const newStart = String(formData.get("newSeasonStart") ?? "");
-  const newEnd = String(formData.get("newSeasonEnd") ?? "");
   const confirmLabel = String(formData.get("confirmLabel") ?? "").trim();
 
   const season = await getCurrentSeason();
   if (!season) return "Keine aktive Saison konfiguriert.";
 
-  if (!newLabel || !newStart || !newEnd) {
-    return "Bezeichnung sowie Start- und Enddatum der neuen Saison sind Pflichtfelder.";
+  if (!newLabel) {
+    return "Bezeichnung der neuen Saison ist ein Pflichtfeld.";
   }
   if (confirmLabel !== season.label) {
     return `Zur Bestätigung bitte exakt "${season.label}" eingeben.`;
   }
+
+  // The new season picks up right where the old one's end date left off, for
+  // the same duration — no date inputs needed for what's always the same
+  // one-year cycle.
+  const newStart = new Date(season.endDate);
+  newStart.setDate(newStart.getDate() + 1);
+  const newEnd = new Date(newStart);
+  newEnd.setFullYear(newEnd.getFullYear() + 1);
+  newEnd.setDate(newEnd.getDate() - 1);
 
   const [members, events] = await Promise.all([
     prisma.member.findMany({
@@ -141,7 +148,7 @@ export async function archiveSeason(prevState: string | undefined, formData: For
       data: { isArchived: true, archivedAt: now },
     });
     await tx.season.create({
-      data: { label: newLabel, startDate: new Date(newStart), endDate: new Date(newEnd) },
+      data: { label: newLabel, startDate: newStart, endDate: newEnd },
     });
   });
 

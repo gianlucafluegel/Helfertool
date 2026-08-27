@@ -13,8 +13,9 @@ export function ArchiveSeasonForm({ currentSeasonLabel }: { currentSeasonLabel: 
       <p className="text-sm text-status-open-text">
         Archiviert Saison <strong>{currentSeasonLabel}</strong> — alle Mitglieder, Helfereinsätze
         und Anmeldungen werden aus der aktiven Datenbank entfernt (weiterhin einsehbar unter
-        „Archivierte Saisons“) und eine neue, leere Saison wird angelegt. Diese Aktion kann nicht
-        rückgängig gemacht werden.
+        „Archivierte Saisons“) und eine neue, leere Saison wird angelegt (Start/Ende automatisch
+        ein Jahr ab dem Ende der aktuellen Saison). Diese Aktion kann nicht rückgängig gemacht
+        werden.
       </p>
 
       <FormField
@@ -23,10 +24,6 @@ export function ArchiveSeasonForm({ currentSeasonLabel }: { currentSeasonLabel: 
         required
         placeholder="z.B. 2027/2028"
       />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <FormField label="Start neue Saison" name="newSeasonStart" type="date" required />
-        <FormField label="Ende neue Saison" name="newSeasonEnd" type="date" required />
-      </div>
 
       <FormField
         label={`Zur Bestätigung "${currentSeasonLabel}" eingeben`}
