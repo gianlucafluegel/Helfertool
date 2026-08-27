@@ -42,12 +42,7 @@ export default async function MembersPage() {
           korrigiert) — dieselben Angaben wie beim Erstellen eines Helfereinsatzes.
         </p>
         <ManualHoursForm
-          members={members.map((m) => ({
-            id: m.id,
-            firstName: m.firstName,
-            lastName: m.lastName,
-            externalContactId: m.externalContactId,
-          }))}
+          members={members.map((m) => ({ id: m.id, firstName: m.firstName, lastName: m.lastName }))}
           locations={locations}
           activities={activities}
         />
