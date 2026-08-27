@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getCurrentSeason } from "@/lib/season";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { MemberEditForm } from "./MemberEditForm";
@@ -12,16 +11,9 @@ export default async function MemberDetailPage({
   params: Promise<{ memberId: string }>;
 }) {
   const { memberId } = await params;
-  const season = await getCurrentSeason();
 
   const [member, ageGroups, signups] = await Promise.all([
-    prisma.member.findUnique({
-      where: { id: memberId },
-      include: {
-        seasonMemberships: { where: { seasonId: season?.id ?? "__no-season__" } },
-        user: true,
-      },
-    }),
+    prisma.member.findUnique({ where: { id: memberId }, include: { user: true } }),
     prisma.ageGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.signup.findMany({
       where: { memberId, status: "CONFIRMED" },
@@ -33,7 +25,6 @@ export default async function MemberDetailPage({
 
   if (!member) notFound();
 
-  const membership = member.seasonMemberships[0];
   const memberUser = member.user;
 
   return (
@@ -48,9 +39,8 @@ export default async function MemberDetailPage({
           lastName={member.lastName}
           email={member.email ?? ""}
           phone={member.phone ?? ""}
-          ageGroupId={membership?.ageGroupId ?? ""}
-          targetHours={membership ? Number(membership.targetHours) : 0}
-          ageGroups={ageGroups}
+          age={member.age}
+          targetHours={Number(member.targetHours)}
         />
       </Card>
 

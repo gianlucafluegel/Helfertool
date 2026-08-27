@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getMemberAgeGroupId } from "@/lib/member";
 import { isShiftSlotVisible, canManageShiftSlot } from "@/lib/visibility";
 import { canCancelSignup, validatePayoutChoice } from "@/lib/rules/signup-rules";
 import { sendMail } from "@/lib/mail/send";
@@ -45,15 +44,7 @@ export async function createSignup(
     return "Dieser Einsatz existiert nicht mehr.";
   }
 
-  const memberAgeGroupId = await getMemberAgeGroupId(activeMember.id, shiftSlot.event.seasonId);
-
-  if (
-    !isShiftSlotVisible(
-      { area: shiftSlot.area, ageGroupRestrictions: shiftSlot.ageGroupRestrictions },
-      session.user.role,
-      memberAgeGroupId,
-    )
-  ) {
+  if (!isShiftSlotVisible({ area: shiftSlot.area }, session.user.role)) {
     return "Dieser Einsatz ist für dich nicht freigegeben.";
   }
 

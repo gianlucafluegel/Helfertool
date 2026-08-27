@@ -67,8 +67,23 @@ model Season {
   archivedAt DateTime?
   createdAt  DateTime  @default(now())
 
-  memberships SeasonMembership[]
-  events      Event[]
+  events  Event[]
+  archive SeasonArchive?
+}
+
+// A frozen snapshot of an archived Season's entire content (Mitglieder,
+// Helfereinsätze inkl. ShiftSlots/Signups), taken right before its live rows
+// are wiped to make room for the new season's fresh import. `data` is
+// self-contained (denormalized names, not live FK ids) so it stays readable
+// even after the catalog data it referenced changes years later.
+model SeasonArchive {
+  id          String   @id @default(cuid())
+  seasonId    String   @unique
+  seasonLabel String
+  archivedAt  DateTime @default(now())
+  data        Json
+
+  season Season @relation(fields: [seasonId], references: [id])
 }
 
 model AgeGroup {
@@ -78,7 +93,6 @@ model AgeGroup {
   isActive               Boolean @default(true)
   triggersBarbezugChoice Boolean @default(false)
 
-  memberships             SeasonMembership[]
   shiftSlotRestrictions   ShiftSlotAgeGroup[]
   stufenleiterAssignments StufenleiterAssignment[]
 }
@@ -102,6 +116,12 @@ model Activity {
   shiftSlots ShiftSlot[]
 }
 
+// Members belong to whichever season is currently live — there's no
+// season-scoping field on Member itself. When a season is archived, every
+// Member row is snapshotted into SeasonArchive and then deleted, so the next
+// season's Excel import starts from a clean table. "Stufe" is deliberately
+// NOT a Member attribute (it only restricts which Stufe(n) a Helfereinsatz
+// is for) — age is tracked instead, straight from the club's roster export.
 model Member {
   id                String   @id @default(cuid())
   firstName         String
@@ -110,30 +130,15 @@ model Member {
   phone             String?
   iban              String?
   externalContactId String?  @unique
+  age               Int?
+  targetHours       Decimal  @default(0) @db.Decimal(5, 2)
+  importBatchId     String?
   notes             String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  seasonMemberships SeasonMembership[]
-  user              User?
-  signups           Signup[]
-}
-
-model SeasonMembership {
-  id            String   @id @default(cuid())
-  memberId      String
-  seasonId      String
-  ageGroupId    String
-  targetHours   Decimal  @default(0) @db.Decimal(5, 2)
-  isActive      Boolean  @default(true)
-  importBatchId String?
-  createdAt     DateTime @default(now())
-
-  member   Member   @relation(fields: [memberId], references: [id])
-  season   Season   @relation(fields: [seasonId], references: [id])
-  ageGroup AgeGroup @relation(fields: [ageGroupId], references: [id])
-
-  @@unique([memberId, seasonId])
+  user    User?
+  signups Signup[]
 }
 
 model User {
@@ -282,9 +287,9 @@ model EmailLog {
 }
 
 model ImportBatch {
-  id                String   @id @default(cuid())
-  source            String
-  importedAt        DateTime @default(now())
-  importedByUserId  String?
-  notes             String?
+  id               String   @id @default(cuid())
+  source           String
+  importedAt       DateTime @default(now())
+  importedByUserId String?
+  notes            String?
 }

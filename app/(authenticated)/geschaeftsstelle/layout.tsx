@@ -7,6 +7,7 @@ const TABS = [
   { href: "/geschaeftsstelle/members", label: "Mitglieder" },
   { href: "/geschaeftsstelle/mail-templates", label: "Mail-Vorlagen" },
   { href: "/geschaeftsstelle/reminders", label: "Reminder" },
+  { href: "/geschaeftsstelle/datenbank", label: "Datenbank" },
 ];
 
 export default function GeschaeftsstelleLayout({ children }: { children: ReactNode }) {

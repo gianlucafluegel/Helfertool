@@ -5,7 +5,7 @@ import { createMember } from "@/lib/actions/members";
 import { FormField } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 
-export function CreateMemberForm({ ageGroups }: { ageGroups: { id: string; name: string }[] }) {
+export function CreateMemberForm() {
   const [error, formAction, pending] = useActionState(createMember, undefined);
 
   return (
@@ -17,27 +17,7 @@ export function CreateMemberForm({ ageGroups }: { ageGroups: { id: string; name:
       </div>
       <FormField label="E-Mail" name="email" type="email" required />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text" htmlFor="ageGroupId">
-            Stufe
-          </label>
-          <select
-            id="ageGroupId"
-            name="ageGroupId"
-            required
-            defaultValue=""
-            className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
-          >
-            <option value="" disabled>
-              Bitte wählen…
-            </option>
-            {ageGroups.map((ag) => (
-              <option key={ag.id} value={ag.id}>
-                {ag.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <FormField label="Alter" name="age" type="number" min={0} required />
         <FormField
           label="Soll-Stunden"
           name="targetHours"

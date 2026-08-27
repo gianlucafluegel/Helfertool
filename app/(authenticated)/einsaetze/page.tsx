@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
-import { getMemberAgeGroupId } from "@/lib/member";
 import { isShiftSlotVisible } from "@/lib/visibility";
 import { FilterChipLink } from "@/components/ui/FilterChipLink";
 import { LocationPinIcon } from "@/components/ui/LocationPinIcon";
@@ -45,9 +44,6 @@ export default async function EinsaetzePage({
   }
 
   const activeMember = session.user.member;
-  const memberAgeGroupId = activeMember
-    ? await getMemberAgeGroupId(activeMember.id, season.id)
-    : null;
 
   const events = await prisma.event.findMany({
     where: {
@@ -79,9 +75,7 @@ export default async function EinsaetzePage({
 
   const eventCards = events
     .map((event) => {
-      let slots = event.shiftSlots.filter((slot) =>
-        isShiftSlotVisible(slot, session.user.role, memberAgeGroupId),
-      );
+      let slots = event.shiftSlots.filter((slot) => isShiftSlotVisible(slot, session.user.role));
 
       if (filters.stufe) {
         slots = slots.filter((slot) =>

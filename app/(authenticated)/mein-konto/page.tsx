@@ -22,10 +22,8 @@ export default async function MeinKontoPage() {
     return <p className="text-sm text-muted">Keine aktive Saison konfiguriert.</p>;
   }
 
-  const [membership, signups] = await Promise.all([
-    prisma.seasonMembership.findUnique({
-      where: { memberId_seasonId: { memberId: activeMember.id, seasonId: season.id } },
-    }),
+  const [member, signups] = await Promise.all([
+    prisma.member.findUnique({ where: { id: activeMember.id } }),
     prisma.signup.findMany({
       where: { memberId: activeMember.id, status: "CONFIRMED" },
       include: {
@@ -41,7 +39,7 @@ export default async function MeinKontoPage() {
   const upcoming = signups.filter((s) => s.shiftSlot.event.startDateTime >= now);
   const past = signups.filter((s) => s.shiftSlot.event.startDateTime < now);
 
-  const targetHours = membership ? Number(membership.targetHours) : 0;
+  const targetHours = member ? Number(member.targetHours) : 0;
   const completedHours = past
     .filter((s) => s.payoutType === "HELFERKONTINGENT")
     .reduce((sum, s) => sum + Number(s.shiftSlot.creditHours), 0);

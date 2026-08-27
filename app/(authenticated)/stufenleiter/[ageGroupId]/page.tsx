@@ -54,13 +54,12 @@ export default async function StufenleiterStufePage({
       </div>
 
       <Card>
-        <p className="mb-2 text-sm font-medium text-text">
-          Reminder an Stufe {assignment.ageGroup.name} senden
+        <p className="mb-1 text-sm font-medium text-text">Reminder senden</p>
+        <p className="mb-2 text-sm text-muted">
+          Mitglieder haben keine eigene Stufe mehr — die Erinnerung geht an alle Mitglieder mit
+          hinterlegter E-Mail-Adresse, nicht nur an Stufe {assignment.ageGroup.name}.
         </p>
-        <ReminderForm
-          availableAgeGroups={[{ id: ageGroupId, name: assignment.ageGroup.name }]}
-          lockedAgeGroupIds={[ageGroupId]}
-        />
+        <ReminderForm />
       </Card>
 
       {events.length === 0 && (

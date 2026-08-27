@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getMemberAgeGroupId } from "@/lib/member";
 import { isShiftSlotVisible } from "@/lib/visibility";
 import { shiftRequiresPayoutChoice } from "@/lib/rules/signup-rules";
 import { Card } from "@/components/ui/Card";
@@ -35,9 +34,7 @@ export default async function ShiftSignupPage({
     return <p className="text-sm text-status-open-text">Kein Mitgliedsprofil verknüpft.</p>;
   }
 
-  const memberAgeGroupId = await getMemberAgeGroupId(activeMember.id, shiftSlot.event.seasonId);
-
-  if (!isShiftSlotVisible(shiftSlot, session.user.role, memberAgeGroupId)) {
+  if (!isShiftSlotVisible(shiftSlot, session.user.role)) {
     notFound();
   }
 

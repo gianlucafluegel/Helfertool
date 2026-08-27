@@ -7,9 +7,7 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const season = await prisma.season.findFirstOrThrow({ where: { isArchived: false } });
   const u14 = await prisma.ageGroup.findFirstOrThrow({ where: { name: "U14" } });
-  const u9 = await prisma.ageGroup.findFirstOrThrow({ where: { name: "U9" } });
   const passwordHash = await bcrypt.hash("TestPass123!", 12);
 
   // Each child gets its own login — one login per Member, never shared.
@@ -21,9 +19,8 @@ async function main() {
       lastName: "Muster",
       email: "lara.muster@example.test",
       externalContactId: "TEST-LARA",
-      seasonMemberships: {
-        create: { seasonId: season.id, ageGroupId: u14.id, targetHours: 20 },
-      },
+      age: 14,
+      targetHours: 20,
     },
   });
   await prisma.user.upsert({
@@ -40,9 +37,8 @@ async function main() {
       lastName: "Muster",
       email: "timo.muster@example.test",
       externalContactId: "TEST-TIMO",
-      seasonMemberships: {
-        create: { seasonId: season.id, ageGroupId: u9.id, targetHours: 15 },
-      },
+      age: 9,
+      targetHours: 15,
     },
   });
   await prisma.user.upsert({
@@ -51,17 +47,11 @@ async function main() {
     create: { email: "timo.muster@example.test", passwordHash, role: "MITGLIED", memberId: timo.id },
   });
 
-  // Funktionär — tied to U14 like a coach, so she sees the same Einsätze a
-  // U14 Mitglied would (plus can click into filled ones to see who's doing them).
+  // Funktionär — a staff role, not part of the imported roster.
   const funkMember = await prisma.member.upsert({
     where: { externalContactId: "TEST-FUNK" },
     update: {},
     create: { firstName: "Nora", lastName: "Beispiel", email: "funktionaer@example.test", externalContactId: "TEST-FUNK" },
-  });
-  await prisma.seasonMembership.upsert({
-    where: { memberId_seasonId: { memberId: funkMember.id, seasonId: season.id } },
-    update: { ageGroupId: u14.id },
-    create: { memberId: funkMember.id, seasonId: season.id, ageGroupId: u14.id, targetHours: 0 },
   });
   await prisma.user.upsert({
     where: { email: "funktionaer@example.test" },
@@ -97,8 +87,8 @@ async function main() {
   });
 
   console.log("Test users ready (password: TestPass123!):");
-  console.log("- Mitglied Lara (U14, eigener Login): lara.muster@example.test");
-  console.log("- Mitglied Timo (U9, eigener Login): timo.muster@example.test");
+  console.log("- Mitglied Lara (eigener Login): lara.muster@example.test");
+  console.log("- Mitglied Timo (eigener Login): timo.muster@example.test");
   console.log("- Funktionär: funktionaer@example.test");
   console.log("- Stufenleiter (U14): stufenleiter@example.test");
 }

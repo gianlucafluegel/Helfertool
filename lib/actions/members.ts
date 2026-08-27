@@ -24,7 +24,8 @@ export async function createMember(prevState: string | undefined, formData: Form
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
-  const ageGroupId = String(formData.get("ageGroupId") ?? "");
+  const ageRaw = formData.get("age");
+  const age = Number(ageRaw);
   const targetHoursRaw = formData.get("targetHours");
   const targetHours = Number(targetHoursRaw);
 
@@ -33,17 +34,14 @@ export async function createMember(prevState: string | undefined, formData: Form
     !firstName ||
     !lastName ||
     !email ||
-    !ageGroupId ||
+    ageRaw === null ||
+    ageRaw === "" ||
+    !Number.isFinite(age) ||
     targetHoursRaw === null ||
     targetHoursRaw === "" ||
     !Number.isFinite(targetHours)
   ) {
-    return "Kontakt-ID, Vorname, Name, E-Mail, Stufe und Soll-Stunden sind Pflichtfelder.";
-  }
-
-  const season = await getCurrentSeason();
-  if (!season) {
-    return "Keine aktive Saison konfiguriert.";
+    return "Kontakt-ID, Vorname, Name, E-Mail, Alter und Soll-Stunden sind Pflichtfelder.";
   }
 
   const contactIdTaken = await prisma.member.findUnique({ where: { externalContactId } });
@@ -52,15 +50,7 @@ export async function createMember(prevState: string | undefined, formData: Form
   }
 
   const member = await prisma.member.create({
-    data: {
-      firstName,
-      lastName,
-      email,
-      externalContactId,
-      seasonMemberships: {
-        create: { seasonId: season.id, ageGroupId, targetHours },
-      },
-    },
+    data: { firstName, lastName, email, externalContactId, age, targetHours },
   });
 
   revalidatePath("/geschaeftsstelle/members");
@@ -74,27 +64,21 @@ export async function updateMember(memberId: string, formData: FormData) {
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim() || null;
   const phone = String(formData.get("phone") ?? "").trim() || null;
-  const ageGroupId = String(formData.get("ageGroupId") ?? "") || null;
+  const ageRaw = String(formData.get("age") ?? "").trim();
+  const age = ageRaw ? Number(ageRaw) : null;
   const targetHours = Number(formData.get("targetHours") ?? 0);
 
   await prisma.member.update({
     where: { id: memberId },
-    data: { firstName, lastName, email, phone },
+    data: {
+      firstName,
+      lastName,
+      email,
+      phone,
+      age: age !== null && Number.isFinite(age) ? age : null,
+      targetHours: Number.isFinite(targetHours) ? targetHours : 0,
+    },
   });
-
-  const season = await getCurrentSeason();
-  if (season && ageGroupId) {
-    await prisma.seasonMembership.upsert({
-      where: { memberId_seasonId: { memberId, seasonId: season.id } },
-      update: { ageGroupId, targetHours: Number.isFinite(targetHours) ? targetHours : 0 },
-      create: {
-        memberId,
-        seasonId: season.id,
-        ageGroupId,
-        targetHours: Number.isFinite(targetHours) ? targetHours : 0,
-      },
-    });
-  }
 
   revalidatePath(`/geschaeftsstelle/members/${memberId}`);
   revalidatePath("/geschaeftsstelle/members");
@@ -145,11 +129,6 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
   if (!member) return "Mitglied nicht gefunden.";
   if (!season) return "Keine aktive Saison konfiguriert.";
 
-  const membership = await prisma.seasonMembership.findUnique({
-    where: { memberId_seasonId: { memberId, seasonId: season.id } },
-    include: { ageGroup: true },
-  });
-
   await prisma.event.create({
     data: {
       seasonId: season.id,
@@ -169,7 +148,7 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
           signups: {
             create: {
               memberId,
-              ageGroupSnapshot: membership?.ageGroup.name ?? "Alle Stufen",
+              ageGroupSnapshot: "Alle Stufen",
               helperFirstName: member.firstName,
               helperLastName: member.lastName,
               helperEmail: member.email ?? "",

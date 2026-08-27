@@ -17,7 +17,6 @@ export async function GET() {
 
   const members = await prisma.member.findMany({
     include: {
-      seasonMemberships: { where: { seasonId: season.id }, include: { ageGroup: true } },
       signups: {
         where: { status: "CONFIRMED" },
         include: { shiftSlot: { include: { event: true } } },
@@ -34,7 +33,7 @@ export async function GET() {
     { header: "Kontakt-ID", key: "contactId", width: 16 },
     { header: "Vorname", key: "firstName", width: 16 },
     { header: "Nachname", key: "lastName", width: 16 },
-    { header: "Stufe", key: "ageGroup", width: 10 },
+    { header: "Alter", key: "age", width: 10 },
     { header: "E-Mail", key: "email", width: 28 },
     { header: "Soll-Stunden", key: "targetHours", width: 14 },
     { header: "Geleistete Stunden", key: "completedHours", width: 18 },
@@ -43,8 +42,7 @@ export async function GET() {
   sheet.getRow(1).font = { bold: true };
 
   for (const member of members) {
-    const membership = member.seasonMemberships[0];
-    const targetHours = membership ? Number(membership.targetHours) : 0;
+    const targetHours = Number(member.targetHours);
     const completedHours = member.signups
       .filter((s) => s.payoutType === "HELFERKONTINGENT" && s.shiftSlot.event.startDateTime < now)
       .reduce((sum, s) => sum + Number(s.shiftSlot.creditHours), 0);
@@ -53,7 +51,7 @@ export async function GET() {
       contactId: member.externalContactId ?? "",
       firstName: member.firstName,
       lastName: member.lastName,
-      ageGroup: membership?.ageGroup.name ?? "",
+      age: member.age ?? "",
       email: member.email ?? "",
       targetHours,
       completedHours,
