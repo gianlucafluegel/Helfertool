@@ -17,7 +17,7 @@ export default async function GeschaeftsstelleOverviewPage({
 
   const [statsEvents, listEvents] = await Promise.all([
     prisma.event.findMany({
-      where: { seasonId: season.id, deletedAt: null },
+      where: { seasonId: season.id, deletedAt: null, isManualEntry: false },
       include: {
         shiftSlots: {
           where: { deletedAt: null },
@@ -29,6 +29,7 @@ export default async function GeschaeftsstelleOverviewPage({
       where: {
         seasonId: season.id,
         deletedAt: null,
+        isManualEntry: false,
         ...(q
           ? {
               OR: [

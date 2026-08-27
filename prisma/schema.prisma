@@ -193,6 +193,12 @@ model Event {
   status        EventStatus @default(SCHEDULED)
   externalRef   String?
   importBatchId String?
+  // True for a manual Helferstunden-correction created directly on a
+  // Member's page (Geschäftsstelle → Mitglieder). Its ShiftSlot/Signup count
+  // toward hours exactly like any other, but it's deliberately excluded from
+  // every Einsätze browsing/overview list — it's a bookkeeping entry, not a
+  // real shift anyone can sign up for.
+  isManualEntry Boolean     @default(false)
   deletedAt     DateTime?
   createdAt     DateTime    @default(now())
 

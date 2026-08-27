@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
 import { createAuthToken } from "@/lib/auth-tokens";
 import { sendMail } from "@/lib/mail/send";
-import type { UserRole } from "@/generated/prisma/enums";
+import type { EventType, ShiftArea, UserRole } from "@/generated/prisma/enums";
 
 async function requireGeschaeftsstelle() {
   const session = await auth();
@@ -20,38 +20,46 @@ async function requireGeschaeftsstelle() {
 export async function createMember(prevState: string | undefined, formData: FormData) {
   await requireGeschaeftsstelle();
 
+  const externalContactId = String(formData.get("externalContactId") ?? "").trim();
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim() || null;
-  const phone = String(formData.get("phone") ?? "").trim() || null;
-  const ageGroupId = String(formData.get("ageGroupId") ?? "") || null;
-  const targetHours = Number(formData.get("targetHours") ?? 0);
-  const externalContactId = String(formData.get("externalContactId") ?? "").trim() || null;
+  const email = String(formData.get("email") ?? "").trim();
+  const ageGroupId = String(formData.get("ageGroupId") ?? "");
+  const targetHoursRaw = formData.get("targetHours");
+  const targetHours = Number(targetHoursRaw);
 
-  if (!firstName || !lastName) {
-    return "Vorname und Name sind Pflichtfelder.";
+  if (
+    !externalContactId ||
+    !firstName ||
+    !lastName ||
+    !email ||
+    !ageGroupId ||
+    targetHoursRaw === null ||
+    targetHoursRaw === "" ||
+    !Number.isFinite(targetHours)
+  ) {
+    return "Kontakt-ID, Vorname, Name, E-Mail, Stufe und Soll-Stunden sind Pflichtfelder.";
   }
 
   const season = await getCurrentSeason();
+  if (!season) {
+    return "Keine aktive Saison konfiguriert.";
+  }
+
+  const contactIdTaken = await prisma.member.findUnique({ where: { externalContactId } });
+  if (contactIdTaken) {
+    return "Diese Kontakt-ID wird bereits verwendet.";
+  }
 
   const member = await prisma.member.create({
     data: {
       firstName,
       lastName,
       email,
-      phone,
       externalContactId,
-      ...(season && ageGroupId
-        ? {
-            seasonMemberships: {
-              create: {
-                seasonId: season.id,
-                ageGroupId,
-                targetHours: Number.isFinite(targetHours) ? targetHours : 0,
-              },
-            },
-          }
-        : {}),
+      seasonMemberships: {
+        create: { seasonId: season.id, ageGroupId, targetHours },
+      },
     },
   });
 
@@ -90,6 +98,90 @@ export async function updateMember(memberId: string, formData: FormData) {
 
   revalidatePath(`/geschaeftsstelle/members/${memberId}`);
   revalidatePath("/geschaeftsstelle/members");
+}
+
+/**
+ * Credits a member with hours for an Einsatz that was never tracked in the
+ * tool (e.g. done before go-live, or corrected after the fact). Asks for the
+ * same info as creating a real Helfereinsatz (Titel/Typ/Standort/
+ * Beschreibung/Datum + Tätigkeit/Bereich/Stunden), because that's exactly
+ * what it creates under the hood — a one-slot Event+ShiftSlot with a
+ * CONFIRMED Signup for this member — just flagged isManualEntry so it never
+ * shows up in the normal Einsätze browsing/overview lists.
+ */
+export async function addManualHours(memberId: string, formData: FormData) {
+  await requireGeschaeftsstelle();
+
+  const title = String(formData.get("title") ?? "").trim();
+  const type = formData.get("type") as EventType;
+  const locationId = String(formData.get("locationId") ?? "") || null;
+  const description = String(formData.get("description") ?? "").trim();
+  const startDateTime = String(formData.get("startDateTime") ?? "");
+  const activityId = String(formData.get("activityId") ?? "");
+  const area = formData.get("area") as ShiftArea;
+  const creditHoursRaw = formData.get("creditHours");
+  const creditHours = Number(creditHoursRaw);
+  const notes = String(formData.get("notes") ?? "").trim() || null;
+
+  if (
+    !title ||
+    !description ||
+    !startDateTime ||
+    !activityId ||
+    !area ||
+    creditHoursRaw === null ||
+    creditHoursRaw === "" ||
+    !Number.isFinite(creditHours)
+  ) {
+    return "Titel, Beschreibung, Datum/Zeit, Tätigkeit, Bereich und Stunden sind Pflichtfelder.";
+  }
+
+  const [member, season] = await Promise.all([
+    prisma.member.findUnique({ where: { id: memberId } }),
+    getCurrentSeason(),
+  ]);
+  if (!member) return "Mitglied nicht gefunden.";
+  if (!season) return "Keine aktive Saison konfiguriert.";
+
+  const membership = await prisma.seasonMembership.findUnique({
+    where: { memberId_seasonId: { memberId, seasonId: season.id } },
+    include: { ageGroup: true },
+  });
+
+  await prisma.event.create({
+    data: {
+      seasonId: season.id,
+      type,
+      title,
+      description,
+      locationId,
+      startDateTime: new Date(startDateTime),
+      isManualEntry: true,
+      shiftSlots: {
+        create: {
+          activityId,
+          area,
+          capacity: 1,
+          creditHours,
+          notes,
+          signups: {
+            create: {
+              memberId,
+              ageGroupSnapshot: membership?.ageGroup.name ?? "Alle Stufen",
+              helperFirstName: member.firstName,
+              helperLastName: member.lastName,
+              helperEmail: member.email ?? "",
+              payoutType: "HELFERKONTINGENT",
+            },
+          },
+        },
+      },
+    },
+  });
+
+  revalidatePath(`/geschaeftsstelle/members/${memberId}`);
+  revalidatePath("/mein-konto");
+  return undefined;
 }
 
 export async function inviteMemberLogin(

@@ -14,7 +14,7 @@ export default async function HelfereinsaetzePage() {
 
   const events = season
     ? await prisma.event.findMany({
-        where: { seasonId: season.id, deletedAt: null },
+        where: { seasonId: season.id, deletedAt: null, isManualEntry: false },
         include: { location: true },
         orderBy: { startDateTime: "asc" },
       })

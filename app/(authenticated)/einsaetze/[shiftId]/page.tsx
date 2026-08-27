@@ -26,7 +26,7 @@ export default async function ShiftSignupPage({
     },
   });
 
-  if (!shiftSlot || shiftSlot.deletedAt || shiftSlot.event.deletedAt) {
+  if (!shiftSlot || shiftSlot.deletedAt || shiftSlot.event.deletedAt || shiftSlot.event.isManualEntry) {
     notFound();
   }
 

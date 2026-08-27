@@ -60,7 +60,7 @@ export default async function StufenleiterOverviewPage({
 
   const [statsEventsRaw, listEventsRaw] = await Promise.all([
     prisma.event.findMany({
-      where: { seasonId: season.id, deletedAt: null },
+      where: { seasonId: season.id, deletedAt: null, isManualEntry: false },
       include: {
         shiftSlots: {
           where: { deletedAt: null },
@@ -75,6 +75,7 @@ export default async function StufenleiterOverviewPage({
       where: {
         seasonId: season.id,
         deletedAt: null,
+        isManualEntry: false,
         ...(q
           ? {
               OR: [

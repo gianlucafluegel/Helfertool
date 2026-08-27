@@ -53,6 +53,7 @@ export default async function EinsaetzePage({
     where: {
       seasonId: season.id,
       deletedAt: null,
+      isManualEntry: false,
       status: { not: "CANCELLED" },
       ...(filters.standort ? { locationId: filters.standort } : {}),
       ...(filters.typ === "GAME" || filters.typ === "EXTERNAL" ? { type: filters.typ } : {}),

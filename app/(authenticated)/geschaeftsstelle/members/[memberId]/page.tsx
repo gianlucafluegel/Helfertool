@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { MemberEditForm } from "./MemberEditForm";
 import { InviteLoginForm } from "./InviteLoginForm";
+import { ManualHoursForm } from "./ManualHoursForm";
 
 export default async function MemberDetailPage({
   params,
@@ -14,7 +15,7 @@ export default async function MemberDetailPage({
   const { memberId } = await params;
   const season = await getCurrentSeason();
 
-  const [member, ageGroups, signups] = await Promise.all([
+  const [member, ageGroups, locations, activities, signups] = await Promise.all([
     prisma.member.findUnique({
       where: { id: memberId },
       include: {
@@ -23,6 +24,8 @@ export default async function MemberDetailPage({
       },
     }),
     prisma.ageGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+    prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+    prisma.activity.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.signup.findMany({
       where: { memberId, status: "CONFIRMED" },
       include: { shiftSlot: { include: { activity: true, event: true } } },
@@ -70,6 +73,17 @@ export default async function MemberDetailPage({
 
       <Card>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+          Helferstunden manuell hinzufügen
+        </h2>
+        <p className="mb-3 text-sm text-muted">
+          Für einen Einsatz, der nicht über das Tool lief (z.B. vor Systemstart oder nachträglich
+          korrigiert) — dieselben Angaben wie beim Erstellen eines Helfereinsatzes.
+        </p>
+        <ManualHoursForm memberId={member.id} locations={locations} activities={activities} />
+      </Card>
+
+      <Card>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
           Einsätze (letzte 20)
         </h2>
         <div className="flex flex-col">
@@ -83,6 +97,7 @@ export default async function MemberDetailPage({
               </span>
               <span className="flex items-center gap-2 text-muted">
                 {s.shiftSlot.event.startDateTime.toLocaleDateString("de-CH")}
+                {s.shiftSlot.event.isManualEntry && <Badge variant="neutral">manuell</Badge>}
                 <Badge variant={s.payoutType === "HELFERKONTINGENT" ? "filled" : "neutral"}>
                   {s.payoutType}
                 </Badge>
