@@ -2,11 +2,13 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 
 type ArchivedSignup = {
   id: string;
   helperFirstName: string;
   helperLastName: string;
+  payoutType: string;
   status: string;
 };
 
@@ -114,14 +116,45 @@ export default async function SeasonArchiveDetailPage({
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
           Helfereinsätze
         </h2>
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-4">
           {realEvents.map((e) => (
-            <div key={e.id} className="border-b border-border py-2 text-sm last:border-b-0">
+            <div key={e.id} className="border-b border-border pb-4 last:border-b-0">
               <p className="font-medium text-text">{e.title}</p>
-              <p className="text-xs text-muted">
+              <p className="mb-2 text-xs text-muted">
                 {new Date(e.startDateTime).toLocaleDateString("de-CH")}
-                {e.locationName ? ` · ${e.locationName}` : ""} · {e.shiftSlots.length} Einsätze
+                {e.locationName ? ` · ${e.locationName}` : ""}
               </p>
+              <div className="flex flex-col gap-1.5 pl-3">
+                {e.shiftSlots.map((s) => (
+                  <div
+                    key={s.id}
+                    className="flex flex-wrap items-center justify-between gap-2 text-sm"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Badge variant={s.area === "FUNKTIONAER" ? "funktionaer" : "helfer"}>
+                        {s.area === "FUNKTIONAER" ? "Funktionär" : "Helfer"}
+                      </Badge>
+                      <span className="text-text">{s.activityName}</span>
+                      {s.ageGroupRestrictions.length > 0 && (
+                        <span className="text-xs text-muted">
+                          Nur {s.ageGroupRestrictions.join(", ")}
+                        </span>
+                      )}
+                      <span className="text-xs text-muted">{s.creditHours} Std.</span>
+                    </span>
+                    <span className="text-muted">
+                      {s.signups.length > 0
+                        ? s.signups
+                            .map((sg) => `${sg.helperFirstName} ${sg.helperLastName}`)
+                            .join(", ")
+                        : `offen (0/${s.capacity})`}
+                    </span>
+                  </div>
+                ))}
+                {e.shiftSlots.length === 0 && (
+                  <p className="text-sm text-muted">Keine Einsätze für dieses Event.</p>
+                )}
+              </div>
             </div>
           ))}
           {realEvents.length === 0 && (
