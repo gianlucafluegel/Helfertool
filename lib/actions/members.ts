@@ -109,9 +109,10 @@ export async function updateMember(memberId: string, formData: FormData) {
  * CONFIRMED Signup for this member — just flagged isManualEntry so it never
  * shows up in the normal Einsätze browsing/overview lists.
  */
-export async function addManualHours(memberId: string, formData: FormData) {
+export async function addManualHours(prevState: string | undefined, formData: FormData) {
   await requireGeschaeftsstelle();
 
+  const memberId = String(formData.get("memberId") ?? "");
   const title = String(formData.get("title") ?? "").trim();
   const type = formData.get("type") as EventType;
   const locationId = String(formData.get("locationId") ?? "") || null;
@@ -124,6 +125,7 @@ export async function addManualHours(memberId: string, formData: FormData) {
   const notes = String(formData.get("notes") ?? "").trim() || null;
 
   if (
+    !memberId ||
     !title ||
     !description ||
     !startDateTime ||
@@ -133,7 +135,7 @@ export async function addManualHours(memberId: string, formData: FormData) {
     creditHoursRaw === "" ||
     !Number.isFinite(creditHours)
   ) {
-    return "Titel, Beschreibung, Datum/Zeit, Tätigkeit, Bereich und Stunden sind Pflichtfelder.";
+    return "Mitglied, Titel, Beschreibung, Datum/Zeit, Tätigkeit, Bereich und Stunden sind Pflichtfelder.";
   }
 
   const [member, season] = await Promise.all([
@@ -179,6 +181,7 @@ export async function addManualHours(memberId: string, formData: FormData) {
     },
   });
 
+  revalidatePath("/geschaeftsstelle/members");
   revalidatePath(`/geschaeftsstelle/members/${memberId}`);
   revalidatePath("/mein-konto");
   return undefined;

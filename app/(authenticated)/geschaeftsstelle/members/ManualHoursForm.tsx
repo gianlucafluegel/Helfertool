@@ -6,21 +6,40 @@ import { FormField } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 
 export function ManualHoursForm({
-  memberId,
+  members,
   locations,
   activities,
 }: {
-  memberId: string;
+  members: { id: string; firstName: string; lastName: string; externalContactId: string | null }[];
   locations: { id: string; name: string }[];
   activities: { id: string; name: string }[];
 }) {
-  const [error, formAction, pending] = useActionState(
-    async (_prev: string | undefined, formData: FormData) => addManualHours(memberId, formData),
-    undefined,
-  );
+  const [error, formAction, pending] = useActionState(addManualHours, undefined);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-text" htmlFor="memberId">
+          Mitglied
+        </label>
+        <select
+          id="memberId"
+          name="memberId"
+          required
+          defaultValue=""
+          className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
+        >
+          <option value="" disabled>
+            Bitte wählen…
+          </option>
+          {members.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.firstName} {m.lastName}
+              {m.externalContactId ? ` (${m.externalContactId})` : ""}
+            </option>
+          ))}
+        </select>
+      </div>
       <FormField label="Titel" name="title" required placeholder="z.B. Vereinsfest 2025" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">

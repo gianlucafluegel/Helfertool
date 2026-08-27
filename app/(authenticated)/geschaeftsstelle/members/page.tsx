@@ -3,13 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
 import { Card } from "@/components/ui/Card";
 import { CreateMemberForm } from "./CreateMemberForm";
+import { ManualHoursForm } from "./ManualHoursForm";
 
 export default async function MembersPage() {
   const season = await getCurrentSeason();
-  const ageGroups = await prisma.ageGroup.findMany({
-    where: { isActive: true },
-    orderBy: { sortOrder: "asc" },
-  });
+  const [ageGroups, locations, activities] = await Promise.all([
+    prisma.ageGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+    prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+    prisma.activity.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+  ]);
 
   const members = await prisma.member.findMany({
     include: {
@@ -29,6 +31,26 @@ export default async function MembersPage() {
           Neues Mitglied erfassen
         </h2>
         <CreateMemberForm ageGroups={ageGroups} />
+      </Card>
+
+      <Card>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+          Helferstunden manuell hinzufügen
+        </h2>
+        <p className="mb-3 text-sm text-muted">
+          Für einen Einsatz, der nicht über das Tool lief (z.B. vor Systemstart oder nachträglich
+          korrigiert) — dieselben Angaben wie beim Erstellen eines Helfereinsatzes.
+        </p>
+        <ManualHoursForm
+          members={members.map((m) => ({
+            id: m.id,
+            firstName: m.firstName,
+            lastName: m.lastName,
+            externalContactId: m.externalContactId,
+          }))}
+          locations={locations}
+          activities={activities}
+        />
       </Card>
 
       <Card>
