@@ -40,6 +40,8 @@ export default async function FunktionaerePage() {
           members={members.map((m) => ({ id: m.id, firstName: m.firstName, lastName: m.lastName }))}
           locations={locations}
           activities={activities}
+          memberLabel="Funktionär"
+          defaultArea="FUNKTIONAER"
         />
       </Card>
 

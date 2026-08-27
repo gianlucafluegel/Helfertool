@@ -10,10 +10,15 @@ export function ManualHoursForm({
   members,
   locations,
   activities,
+  memberLabel = "Mitglied",
+  defaultArea = "HELFER",
 }: {
   members: { id: string; firstName: string; lastName: string }[];
   locations: { id: string; name: string }[];
   activities: { id: string; name: string }[];
+  /** Overrides the "Mitglied" wording, e.g. "Funktionär" on that section. */
+  memberLabel?: string;
+  defaultArea?: "HELFER" | "FUNKTIONAER";
 }) {
   const [error, formAction, pending] = useActionState(addManualHours, undefined);
 
@@ -33,13 +38,13 @@ export function ManualHoursForm({
     <form action={formAction} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-text" htmlFor="memberId-search">
-          Mitglied
+          {memberLabel}
         </label>
         <SearchableSelect
           key={resetSignal}
           name="memberId"
           required
-          placeholder="Mitglied suchen…"
+          placeholder={`${memberLabel} suchen…`}
           options={members.map((m) => ({ id: m.id, label: `${m.firstName} ${m.lastName}` }))}
         />
       </div>
@@ -115,6 +120,7 @@ export function ManualHoursForm({
           <select
             id="area"
             name="area"
+            defaultValue={defaultArea}
             className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
           >
             <option value="HELFER">Helfer</option>

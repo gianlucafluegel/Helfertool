@@ -33,6 +33,7 @@ export default async function StufenadminsPage() {
           action={createStufenadmin}
           submitLabel="Stufenadmin erfassen & einladen"
           ageGroups={ageGroups}
+          showContactAndHours={false}
         />
       </Card>
 
@@ -48,6 +49,7 @@ export default async function StufenadminsPage() {
           members={members.map((m) => ({ id: m.id, firstName: m.firstName, lastName: m.lastName }))}
           locations={locations}
           activities={activities}
+          memberLabel="Stufenadmin"
         />
       </Card>
 

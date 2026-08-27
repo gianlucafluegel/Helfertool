@@ -28,33 +28,46 @@ async function createStaffMember(
 ): Promise<string | undefined> {
   await requireGeschaeftsstelle();
 
-  const externalContactId = String(formData.get("externalContactId") ?? "").trim();
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
-  const ageRaw = formData.get("age");
-  const age = Number(ageRaw);
-  const targetHoursRaw = formData.get("targetHours");
-  const targetHours = Number(targetHoursRaw);
   const stufenleiterAgeGroupIds = formData.getAll("stufenleiterAgeGroupIds").map(String);
 
-  if (
-    !externalContactId ||
-    !firstName ||
-    !lastName ||
-    !email ||
-    ageRaw === null ||
-    ageRaw === "" ||
-    !Number.isFinite(age) ||
-    targetHoursRaw === null ||
-    targetHoursRaw === "" ||
-    !Number.isFinite(targetHours)
-  ) {
-    return "Kontakt-ID, Vorname, Name, E-Mail, Alter und Soll-Stunden sind Pflichtfelder.";
+  if (!firstName || !lastName || !email) {
+    return "Vorname, Name und E-Mail sind Pflichtfelder.";
+  }
+
+  // Funktionäre are tracked like a Mitglied (Kontakt-ID/Alter/Soll-Stunden for
+  // hours bookkeeping); Stufenadmins are a pure staff role and only need
+  // Name/E-Mail/Stufe(n) — no roster fields to fill in.
+  let externalContactId: string | null = null;
+  let age: number | null = null;
+  let targetHours = 0;
+
+  if (role === "FUNKTIONAER") {
+    externalContactId = String(formData.get("externalContactId") ?? "").trim();
+    const ageRaw = formData.get("age");
+    const ageNum = Number(ageRaw);
+    const targetHoursRaw = formData.get("targetHours");
+    const targetHoursNum = Number(targetHoursRaw);
+
+    if (
+      !externalContactId ||
+      ageRaw === null ||
+      ageRaw === "" ||
+      !Number.isFinite(ageNum) ||
+      targetHoursRaw === null ||
+      targetHoursRaw === "" ||
+      !Number.isFinite(targetHoursNum)
+    ) {
+      return "Kontakt-ID, Vorname, Name, E-Mail, Alter und Soll-Stunden sind Pflichtfelder.";
+    }
+    age = ageNum;
+    targetHours = targetHoursNum;
   }
 
   const [contactIdTaken, emailTaken] = await Promise.all([
-    prisma.member.findUnique({ where: { externalContactId } }),
+    externalContactId ? prisma.member.findUnique({ where: { externalContactId } }) : null,
     prisma.user.findUnique({ where: { email } }),
   ]);
   if (contactIdTaken) return "Diese Kontakt-ID wird bereits verwendet.";
