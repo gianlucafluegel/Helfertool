@@ -1,10 +1,18 @@
 import ExcelJS from "exceljs";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
+import type { UserRole } from "@/generated/prisma/enums";
 
-export async function GET() {
+const ROLE_LABELS: Record<UserRole, string> = {
+  MITGLIED: "Mitglieder",
+  FUNKTIONAER: "Funktionäre",
+  STUFENLEITER: "Stufenadmins",
+  GESCHAEFTSSTELLE: "Geschäftsstelle",
+};
+
+export async function GET(request: NextRequest) {
   const session = await auth();
   if (session?.user.role !== "GESCHAEFTSSTELLE") {
     return NextResponse.json({ error: "Keine Berechtigung." }, { status: 403 });
@@ -15,7 +23,13 @@ export async function GET() {
     return NextResponse.json({ error: "Keine aktive Saison konfiguriert." }, { status: 400 });
   }
 
+  // Optional ?role=FUNKTIONAER|STUFENLEITER scopes the export to just that
+  // section's members (Funktionäre/Stufenadmins pages) instead of everyone.
+  const roleParam = request.nextUrl.searchParams.get("role");
+  const role = roleParam && roleParam in ROLE_LABELS ? (roleParam as UserRole) : null;
+
   const members = await prisma.member.findMany({
+    where: role ? { user: { role } } : undefined,
     include: {
       signups: {
         where: { status: "CONFIRMED" },
@@ -26,9 +40,10 @@ export async function GET() {
   });
 
   const now = new Date();
+  const sheetLabel = role ? ROLE_LABELS[role] : "Mitglieder";
 
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("Mitglieder");
+  const sheet = workbook.addWorksheet(sheetLabel);
   sheet.columns = [
     { header: "Kontakt-ID", key: "contactId", width: 16 },
     { header: "Vorname", key: "firstName", width: 16 },
@@ -60,7 +75,7 @@ export async function GET() {
   }
 
   const buffer = await workbook.xlsx.writeBuffer();
-  const filename = `Mitglieder-Helferstunden-${season.label.replace("/", "-")}.xlsx`;
+  const filename = `${sheetLabel}-Helferstunden-${season.label.replace("/", "-")}.xlsx`;
 
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
