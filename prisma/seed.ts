@@ -23,7 +23,7 @@ async function main() {
     { name: "U14", sortOrder: 3, triggersBarbezugChoice: false },
     { name: "U16", sortOrder: 4, triggersBarbezugChoice: false },
     { name: "U18", sortOrder: 5, triggersBarbezugChoice: false },
-    { name: "U21-A", sortOrder: 6, triggersBarbezugChoice: false },
+    { name: "U21", sortOrder: 6, triggersBarbezugChoice: false },
   ];
   for (const def of ageGroupDefs) {
     await prisma.ageGroup.upsert({
