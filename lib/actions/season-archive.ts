@@ -15,13 +15,14 @@ async function requireGeschaeftsstelle() {
 }
 
 /**
- * Snapshots the entire current season (Mitglieder, Helfereinsätze inkl.
- * ShiftSlots/Signups) into a self-contained JSON archive, then wipes the
- * live tables and opens a new season — the "fresh start" the club wants at
- * the beginning of each season, while keeping old seasons browsable.
- *
- * Deliberately irreversible: no code path in this app ever writes back from
- * an archive into the live tables.
+ * Snapshots the current season's Helfereinsätze (Events/ShiftSlots/Signups)
+ * plus each Member's stats at that moment into a self-contained JSON
+ * archive, then wipes only that season-specific activity and opens a new
+ * season. Members and their logins are deliberately NOT touched — a person
+ * stays a member (and can still log in) across seasons; their Stufe/E-Mail
+ * gets refreshed by the yearly roster re-import instead, and Soll-Stunden
+ * resets to 0 pending that import. Only the archived Events/ShiftSlots/
+ * Signups are irreversible; no code path ever writes an archive back.
  */
 export async function archiveSeason(prevState: string | undefined, formData: FormData) {
   await requireGeschaeftsstelle();
@@ -133,18 +134,16 @@ export async function archiveSeason(prevState: string | undefined, formData: For
       data: { seasonId: season.id, seasonLabel: season.label, data },
     });
 
-    // Wipe in FK-safe order. Members/ImportBatch have no seasonId (there's
-    // only ever one live season), so they're cleared unconditionally;
-    // Events are scoped to this season for extra safety.
+    // Only the season-specific activity gets wiped (FK-safe order); Members,
+    // their logins, and StufenleiterAssignments carry over untouched.
     await tx.signup.deleteMany({});
     await tx.shiftSlotAgeGroup.deleteMany({});
     await tx.shiftSlot.deleteMany({});
     await tx.event.deleteMany({ where: { seasonId: season.id } });
-    await tx.stufenleiterAssignment.deleteMany({});
-    await tx.authToken.deleteMany({ where: { user: { memberId: { not: null } } } });
-    await tx.user.deleteMany({ where: { memberId: { not: null } } });
-    await tx.member.deleteMany({});
-    await tx.importBatch.deleteMany({});
+
+    // Soll-Stunden is season-specific — reset it for everyone, the next
+    // roster import will set the new season's real value.
+    await tx.member.updateMany({ data: { targetHours: 0 } });
 
     await tx.season.update({
       where: { id: season.id },

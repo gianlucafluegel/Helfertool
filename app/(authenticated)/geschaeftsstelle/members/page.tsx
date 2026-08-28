@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import { CreateMemberForm } from "./CreateMemberForm";
 import { ManualHoursForm } from "./ManualHoursForm";
 
@@ -13,8 +14,9 @@ export default async function MembersPage() {
 
   const members = await prisma.member.findMany({
     include: { user: true, ageGroup: true },
-    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    orderBy: [{ isActive: "desc" }, { lastName: "asc" }, { firstName: "asc" }],
   });
+  const activeMembers = members.filter((m) => m.isActive);
 
   return (
     <div className="flex flex-col gap-5">
@@ -34,7 +36,11 @@ export default async function MembersPage() {
           korrigiert) — dieselben Angaben wie beim Erstellen eines Helfereinsatzes.
         </p>
         <ManualHoursForm
-          members={members.map((m) => ({ id: m.id, firstName: m.firstName, lastName: m.lastName }))}
+          members={activeMembers.map((m) => ({
+            id: m.id,
+            firstName: m.firstName,
+            lastName: m.lastName,
+          }))}
           locations={locations}
           activities={activities}
         />
@@ -64,7 +70,10 @@ export default async function MembersPage() {
             </thead>
             <tbody>
               {members.map((member) => (
-                <tr key={member.id} className="border-b border-border last:border-b-0">
+                <tr
+                  key={member.id}
+                  className={`border-b border-border last:border-b-0 ${member.isActive ? "" : "opacity-50"}`}
+                >
                   <td className="py-2 pr-3">
                     <Link
                       href={`/geschaeftsstelle/members/${member.id}`}
@@ -72,6 +81,11 @@ export default async function MembersPage() {
                     >
                       {member.firstName} {member.lastName}
                     </Link>
+                    {!member.isActive && (
+                      <Badge variant="neutral" className="ml-2">
+                        inaktiv
+                      </Badge>
+                    )}
                   </td>
                   <td className="py-2 pr-3">{member.ageGroup?.name ?? "–"}</td>
                   <td className="py-2 pr-3">{Number(member.targetHours)}</td>

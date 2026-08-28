@@ -38,7 +38,7 @@ export async function sendReminders(input: {
 
   if (ageGroupIds.length > 0) {
     const members = await prisma.member.findMany({
-      where: { ageGroupId: { in: ageGroupIds }, email: { not: null } },
+      where: { ageGroupId: { in: ageGroupIds }, email: { not: null }, isActive: true },
     });
     for (const m of members) {
       if (m.email) {

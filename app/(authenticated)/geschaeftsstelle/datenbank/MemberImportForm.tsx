@@ -143,11 +143,21 @@ function MemberImportPreviewTable({
           setError(null);
           setResult(null);
           startTransition(async () => {
-            const res = await commitMemberImport(rowState.filter((r) => r.selected));
+            const res = await commitMemberImport(
+              rowState.filter((r) => r.selected),
+              rows.map((r) => r.contactId),
+            );
             if (res.error) {
               setError(res.error);
             } else {
-              setResult(`${res.created ?? 0} erstellt, ${res.updated ?? 0} aktualisiert.`);
+              const parts = [`${res.created ?? 0} erstellt`, `${res.updated ?? 0} aktualisiert`];
+              if (res.deactivated) parts.push(`${res.deactivated} deaktiviert (fehlen in der Datei)`);
+              setResult(parts.join(", ") + ".");
+              if (res.emailConflicts?.length) {
+                setError(
+                  `Login-E-Mail konnte nicht übernommen werden (bereits von einem anderen Login verwendet): ${res.emailConflicts.join(", ")}`,
+                );
+              }
               router.refresh();
             }
           });

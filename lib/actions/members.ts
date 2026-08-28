@@ -178,12 +178,19 @@ export async function inviteMemberLogin(
 
   let user = member.user;
 
+  // Re-inviting is also how Geschäftsstelle manually brings back a member
+  // the roster import auto-deactivated (e.g. before their next import row
+  // arrives) — without waiting for that import.
+  if (!member.isActive) {
+    await prisma.member.update({ where: { id: memberId }, data: { isActive: true } });
+  }
+
   if (user) {
     // Re-invite / role change for this member's own existing login.
-    if (user.role !== role || user.email !== member.email) {
+    if (user.role !== role || user.email !== member.email || !user.isActive) {
       user = await prisma.user.update({
         where: { id: user.id },
-        data: { role, email: member.email },
+        data: { role, email: member.email, isActive: true },
       });
     }
   } else {

@@ -30,8 +30,9 @@ export default async function MemberDetailPage({
   return (
     <div className="flex flex-col gap-5">
       <Card>
-        <h1 className="mb-3 text-base font-semibold text-text">
+        <h1 className="mb-3 flex items-center gap-2 text-base font-semibold text-text">
           {member.firstName} {member.lastName}
+          {!member.isActive && <Badge variant="neutral">inaktiv — fehlt im letzten Import</Badge>}
         </h1>
         <MemberEditForm
           memberId={member.id}
@@ -50,6 +51,12 @@ export default async function MemberDetailPage({
         {memberUser && (
           <p className="mb-3 text-sm text-muted">
             Aktueller Login: {memberUser.email} · Rolle {memberUser.role}
+            {!memberUser.isActive && (
+              <>
+                {" "}
+                · <span className="text-status-open-text">deaktiviert</span>
+              </>
+            )}
           </p>
         )}
         <InviteLoginForm

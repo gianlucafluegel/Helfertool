@@ -82,7 +82,19 @@ export async function parseMemberImportFile(
 
 export async function commitMemberImport(
   rows: (MemberImportPreviewRow & { ageGroupId: string | null })[],
-): Promise<{ error?: string; created?: number; updated?: number }> {
+  /**
+   * Every Kontakt-ID present in the uploaded file, regardless of which rows
+   * were checked for import — used to detect members who dropped out of the
+   * roster (not just rows the admin happened to uncheck this time).
+   */
+  allContactIdsInFile: string[],
+): Promise<{
+  error?: string;
+  created?: number;
+  updated?: number;
+  deactivated?: number;
+  emailConflicts?: string[];
+}> {
   const session = await requireGeschaeftsstelle();
 
   if (rows.length === 0) {
@@ -95,10 +107,12 @@ export async function commitMemberImport(
 
   let created = 0;
   let updated = 0;
+  const emailConflicts: string[] = [];
 
   for (const row of rows) {
     const existing = await prisma.member.findUnique({
       where: { externalContactId: row.contactId },
+      include: { user: true },
     });
 
     const data = {
@@ -108,18 +122,65 @@ export async function commitMemberImport(
       ageGroupId: row.ageGroupId,
       targetHours: row.targetHours,
       importBatchId: batch.id,
+      isActive: true,
     };
 
     if (existing) {
       await prisma.member.update({ where: { id: existing.id }, data });
       updated += 1;
+
+      if (existing.user) {
+        if (row.email && existing.user.email !== row.email) {
+          // Keep the login in sync with the roster's E-Mail — unless that
+          // address is already someone else's login, which we refuse to
+          // silently overwrite.
+          const emailTaken = await prisma.user.findUnique({ where: { email: row.email } });
+          if (emailTaken && emailTaken.id !== existing.user.id) {
+            emailConflicts.push(`${row.firstName} ${row.lastName} (${row.email})`);
+          } else {
+            await prisma.user.update({
+              where: { id: existing.user.id },
+              data: { email: row.email, isActive: true },
+            });
+          }
+        } else if (!existing.user.isActive) {
+          // Member re-appeared in the roster — reactivate a login that was
+          // previously deactivated for being missing from an earlier import.
+          await prisma.user.update({ where: { id: existing.user.id }, data: { isActive: true } });
+        }
+      }
     } else {
       await prisma.member.create({ data: { ...data, externalContactId: row.contactId } });
       created += 1;
     }
   }
 
+  // Members that used to exist but aren't in this roster file anymore:
+  // deactivate them (and their login, if any) rather than deleting — their
+  // historical hours/signups stay intact, and they come back automatically
+  // if a future import includes their Kontakt-ID again.
+  const missing = await prisma.member.findMany({
+    where: {
+      isActive: true,
+      externalContactId: { not: null, notIn: allContactIdsInFile },
+    },
+    include: { user: true },
+  });
+  for (const m of missing) {
+    await prisma.member.update({ where: { id: m.id }, data: { isActive: false } });
+    if (m.user) {
+      await prisma.user.update({ where: { id: m.user.id }, data: { isActive: false } });
+    }
+  }
+
   revalidatePath("/geschaeftsstelle/members");
+  revalidatePath("/geschaeftsstelle/funktionaere");
+  revalidatePath("/geschaeftsstelle/stufenadmins");
   revalidatePath("/geschaeftsstelle/datenbank");
-  return { created, updated };
+  return {
+    created,
+    updated,
+    deactivated: missing.length,
+    emailConflicts: emailConflicts.length > 0 ? emailConflicts : undefined,
+  };
 }

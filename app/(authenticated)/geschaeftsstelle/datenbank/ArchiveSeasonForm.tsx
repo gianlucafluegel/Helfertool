@@ -11,11 +11,12 @@ export function ArchiveSeasonForm({ currentSeasonLabel }: { currentSeasonLabel: 
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <p className="text-sm text-status-open-text">
-        Archiviert Saison <strong>{currentSeasonLabel}</strong> — alle Mitglieder, Helfereinsätze
-        und Anmeldungen werden aus der aktiven Datenbank entfernt (weiterhin einsehbar unter
-        „Archivierte Saisons“) und eine neue, leere Saison wird angelegt (Start/Ende automatisch
-        ein Jahr ab dem Ende der aktuellen Saison). Diese Aktion kann nicht rückgängig gemacht
-        werden.
+        Archiviert Saison <strong>{currentSeasonLabel}</strong> — alle Helfereinsätze und
+        Anmeldungen werden aus der aktiven Datenbank entfernt (weiterhin einsehbar unter
+        „Archivierte Saisons“) und eine neue Saison wird angelegt (Start/Ende automatisch ein Jahr
+        ab dem Ende der aktuellen Saison). Mitglieder, Logins und Stufen bleiben erhalten — nur die
+        Soll-Stunden werden auf 0 zurückgesetzt (der nächste Mitglieder-Import setzt sie neu).
+        Diese Aktion kann nicht rückgängig gemacht werden.
       </p>
 
       <FormField

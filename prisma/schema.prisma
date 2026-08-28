@@ -117,12 +117,16 @@ model Activity {
   shiftSlots ShiftSlot[]
 }
 
-// Members belong to whichever season is currently live — there's no
-// season-scoping field on Member itself. When a season is archived, every
-// Member row is snapshotted into SeasonArchive and then deleted, so the next
-// season's Excel import starts from a clean table. ageGroupId is the
-// member's own Team/Stufe (from the roster import) — separate from a
-// Helfereinsatz's own Stufe-Einschränkung, but the same AgeGroup catalog.
+// Members persist across seasons — archiving a season snapshots that
+// season's Events/ShiftSlots/Signups (and a copy of each Member's stats at
+// that moment) but never deletes Members or their logins; only the
+// season-specific activity gets wiped. The yearly roster re-import updates
+// existing Members in place (matched by externalContactId) and marks
+// whoever's missing from the new file isActive: false (their login is
+// deactivated too, but nothing is deleted — historical hours stay intact).
+// ageGroupId is the member's own Team/Stufe (from the roster import) —
+// separate from a Helfereinsatz's own Stufe-Einschränkung, but the same
+// AgeGroup catalog.
 model Member {
   id                String   @id @default(cuid())
   firstName         String
@@ -135,6 +139,7 @@ model Member {
   targetHours       Decimal  @default(0) @db.Decimal(5, 2)
   importBatchId     String?
   notes             String?
+  isActive          Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
