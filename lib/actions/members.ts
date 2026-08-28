@@ -25,8 +25,6 @@ export async function createMember(prevState: string | undefined, formData: Form
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const ageGroupId = String(formData.get("ageGroupId") ?? "").trim();
-  const ageRaw = formData.get("age");
-  const age = Number(ageRaw);
   const targetHoursRaw = formData.get("targetHours");
   const targetHours = Number(targetHoursRaw);
 
@@ -36,14 +34,11 @@ export async function createMember(prevState: string | undefined, formData: Form
     !lastName ||
     !email ||
     !ageGroupId ||
-    ageRaw === null ||
-    ageRaw === "" ||
-    !Number.isFinite(age) ||
     targetHoursRaw === null ||
     targetHoursRaw === "" ||
     !Number.isFinite(targetHours)
   ) {
-    return "Kontakt-ID, Vorname, Name, E-Mail, Stufe, Alter und Soll-Stunden sind Pflichtfelder.";
+    return "Kontakt-ID, Vorname, Name, E-Mail, Stufe und Soll-Stunden sind Pflichtfelder.";
   }
 
   const contactIdTaken = await prisma.member.findUnique({ where: { externalContactId } });
@@ -52,7 +47,7 @@ export async function createMember(prevState: string | undefined, formData: Form
   }
 
   const member = await prisma.member.create({
-    data: { firstName, lastName, email, externalContactId, age, ageGroupId, targetHours },
+    data: { firstName, lastName, email, externalContactId, ageGroupId, targetHours },
   });
 
   revalidatePath("/geschaeftsstelle/members");
@@ -67,8 +62,6 @@ export async function updateMember(memberId: string, formData: FormData) {
   const email = String(formData.get("email") ?? "").trim() || null;
   const phone = String(formData.get("phone") ?? "").trim() || null;
   const ageGroupId = String(formData.get("ageGroupId") ?? "").trim() || null;
-  const ageRaw = String(formData.get("age") ?? "").trim();
-  const age = ageRaw ? Number(ageRaw) : null;
   const targetHours = Number(formData.get("targetHours") ?? 0);
 
   await prisma.member.update({
@@ -79,7 +72,6 @@ export async function updateMember(memberId: string, formData: FormData) {
       email,
       phone,
       ageGroupId,
-      age: age !== null && Number.isFinite(age) ? age : null,
       targetHours: Number.isFinite(targetHours) ? targetHours : 0,
     },
   });

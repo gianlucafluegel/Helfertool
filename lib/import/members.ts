@@ -7,7 +7,6 @@ export type ParsedMemberRow = {
   firstName: string;
   lastName: string;
   targetHours: number;
-  age: number | null;
   /** Base "U<n>" number extracted from the roster's Team/Stufe column, if present. */
   ageGroupNumber: number | null;
 };
@@ -67,7 +66,6 @@ export async function parseMemberWorkbook(
     h.toLowerCase().startsWith("sollstunden"),
   );
   const sollstundenCol = sollstundenHeader ? headerIndex.get(sollstundenHeader) : undefined;
-  const alterCol = headerIndex.get("Alter");
   const teamHeader = [...headerIndex.keys()].find((h) => h.toLowerCase().startsWith("team"));
   const teamCol = teamHeader ? headerIndex.get(teamHeader) : undefined;
   const contactCol = headerIndex.get("Kontakt-ID")!;
@@ -90,7 +88,6 @@ export async function parseMemberWorkbook(
       firstName,
       lastName,
       targetHours: (sollstundenCol ? cellNumber(row.getCell(sollstundenCol).value) : null) ?? 0,
-      age: alterCol ? cellNumber(row.getCell(alterCol).value) : null,
       ageGroupNumber: teamCol ? extractAgeNumber(cellString(row.getCell(teamCol).value).trim()) : null,
     });
   });

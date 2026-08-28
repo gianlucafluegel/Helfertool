@@ -39,7 +39,6 @@ export default async function MemberDetailPage({
           lastName={member.lastName}
           email={member.email ?? ""}
           phone={member.phone ?? ""}
-          age={member.age}
           ageGroupId={member.ageGroupId}
           targetHours={Number(member.targetHours)}
           ageGroups={ageGroups}

@@ -77,7 +77,6 @@ function MemberImportPreviewTable({
               <th className="py-2 pr-2">Name</th>
               <th className="py-2 pr-2">E-Mail</th>
               <th className="py-2 pr-2">Stufe</th>
-              <th className="py-2 pr-2">Alter</th>
               <th className="py-2 pr-2">Soll-Std.</th>
               <th className="py-2 pr-2">Status</th>
             </tr>
@@ -123,7 +122,6 @@ function MemberImportPreviewTable({
                     ))}
                   </select>
                 </td>
-                <td className="py-2 pr-2">{row.age ?? "–"}</td>
                 <td className="py-2 pr-2">{row.targetHours}</td>
                 <td className="py-2 pr-2">
                   {row.willUpdate ? <Badge variant="neutral">Update</Badge> : <Badge variant="filled">neu</Badge>}

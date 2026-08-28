@@ -38,16 +38,15 @@ export function CreateMemberForm({ ageGroups }: { ageGroups: { id: string; name:
             ))}
           </select>
         </div>
-        <FormField label="Alter" name="age" type="number" min={0} required />
+        <FormField
+          label="Soll-Stunden"
+          name="targetHours"
+          type="number"
+          step="0.5"
+          min={0}
+          required
+        />
       </div>
-      <FormField
-        label="Soll-Stunden"
-        name="targetHours"
-        type="number"
-        step="0.5"
-        min={0}
-        required
-      />
       {error && <p className="text-sm text-status-open-text">{error}</p>}
       <Button type="submit" disabled={pending} className="self-start">
         {pending ? "Wird erstellt…" : "Mitglied erfassen"}

@@ -28,17 +28,14 @@ export function CreateStaffForm({
       </div>
       <FormField label="E-Mail" name="email" type="email" required />
       {showContactAndHours && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="Alter" name="age" type="number" min={0} required />
-          <FormField
-            label="Soll-Stunden"
-            name="targetHours"
-            type="number"
-            step="0.5"
-            min={0}
-            required
-          />
-        </div>
+        <FormField
+          label="Soll-Stunden"
+          name="targetHours"
+          type="number"
+          step="0.5"
+          min={0}
+          required
+        />
       )}
       {ageGroups && (
         <div>

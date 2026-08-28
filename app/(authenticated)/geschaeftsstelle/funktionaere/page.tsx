@@ -62,7 +62,6 @@ export default async function FunktionaerePage() {
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase text-muted">
                 <th className="py-2 pr-3">Name</th>
-                <th className="py-2 pr-3">Alter</th>
                 <th className="py-2 pr-3">Soll-Std.</th>
                 <th className="py-2 pr-3">E-Mail</th>
               </tr>
@@ -78,14 +77,13 @@ export default async function FunktionaerePage() {
                       {member.firstName} {member.lastName}
                     </Link>
                   </td>
-                  <td className="py-2 pr-3">{member.age ?? "–"}</td>
                   <td className="py-2 pr-3">{Number(member.targetHours)}</td>
                   <td className="py-2 pr-3">{member.email ?? "–"}</td>
                 </tr>
               ))}
               {members.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-4 text-center text-muted">
+                  <td colSpan={3} className="py-4 text-center text-muted">
                     Noch keine Funktionäre erfasst.
                   </td>
                 </tr>

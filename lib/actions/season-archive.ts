@@ -50,7 +50,10 @@ export async function archiveSeason(prevState: string | undefined, formData: For
 
   const [members, events] = await Promise.all([
     prisma.member.findMany({
-      include: { signups: { include: { shiftSlot: { include: { event: true } } } } },
+      include: {
+        ageGroup: true,
+        signups: { include: { shiftSlot: { include: { event: true } } } },
+      },
     }),
     prisma.event.findMany({
       where: { seasonId: season.id },
@@ -81,7 +84,7 @@ export async function archiveSeason(prevState: string | undefined, formData: For
       lastName: m.lastName,
       email: m.email,
       phone: m.phone,
-      age: m.age,
+      ageGroupName: m.ageGroup?.name ?? null,
       targetHours: Number(m.targetHours),
       completedHours: m.signups
         .filter(

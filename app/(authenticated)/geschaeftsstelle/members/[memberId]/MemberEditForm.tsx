@@ -11,7 +11,6 @@ export function MemberEditForm({
   lastName,
   email,
   phone,
-  age,
   ageGroupId,
   targetHours,
   ageGroups,
@@ -21,7 +20,6 @@ export function MemberEditForm({
   lastName: string;
   email: string;
   phone: string;
-  age: number | null;
   ageGroupId: string | null;
   targetHours: number;
   ageGroups: { id: string; name: string }[];
@@ -60,16 +58,15 @@ export function MemberEditForm({
             ))}
           </select>
         </div>
-        <FormField label="Alter" name="age" type="number" min={0} defaultValue={age ?? ""} />
+        <FormField
+          label="Soll-Stunden"
+          name="targetHours"
+          type="number"
+          step="0.5"
+          min={0}
+          defaultValue={targetHours}
+        />
       </div>
-      <FormField
-        label="Soll-Stunden"
-        name="targetHours"
-        type="number"
-        step="0.5"
-        min={0}
-        defaultValue={targetHours}
-      />
       <Button type="submit" disabled={pending} className="self-start">
         {pending ? "Wird gespeichert…" : "Speichern"}
       </Button>

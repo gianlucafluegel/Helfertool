@@ -36,7 +36,7 @@ type ArchivedMember = {
   externalContactId: string | null;
   firstName: string;
   lastName: string;
-  age: number | null;
+  ageGroupName: string | null;
   targetHours: number;
   completedHours: number;
 };
@@ -83,7 +83,7 @@ export default async function SeasonArchiveDetailPage({
               <tr className="border-b border-border text-left text-xs uppercase text-muted">
                 <th className="py-2 pr-3">Kontakt-ID</th>
                 <th className="py-2 pr-3">Name</th>
-                <th className="py-2 pr-3">Alter</th>
+                <th className="py-2 pr-3">Stufe</th>
                 <th className="py-2 pr-3">Soll-Std.</th>
                 <th className="py-2 pr-3">Geleistet</th>
               </tr>
@@ -95,7 +95,7 @@ export default async function SeasonArchiveDetailPage({
                   <td className="py-2 pr-3">
                     {m.firstName} {m.lastName}
                   </td>
-                  <td className="py-2 pr-3">{m.age ?? "–"}</td>
+                  <td className="py-2 pr-3">{m.ageGroupName ?? "–"}</td>
                   <td className="py-2 pr-3">{m.targetHours}</td>
                   <td className="py-2 pr-3">{m.completedHours}</td>
                 </tr>

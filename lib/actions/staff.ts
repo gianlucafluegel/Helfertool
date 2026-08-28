@@ -37,32 +37,25 @@ async function createStaffMember(
     return "Vorname, Name und E-Mail sind Pflichtfelder.";
   }
 
-  // Funktionäre are tracked like a Mitglied (Kontakt-ID/Alter/Soll-Stunden for
+  // Funktionäre are tracked like a Mitglied (Kontakt-ID/Soll-Stunden for
   // hours bookkeeping); Stufenadmins are a pure staff role and only need
   // Name/E-Mail/Stufe(n) — no roster fields to fill in.
   let externalContactId: string | null = null;
-  let age: number | null = null;
   let targetHours = 0;
 
   if (role === "FUNKTIONAER") {
     externalContactId = String(formData.get("externalContactId") ?? "").trim();
-    const ageRaw = formData.get("age");
-    const ageNum = Number(ageRaw);
     const targetHoursRaw = formData.get("targetHours");
     const targetHoursNum = Number(targetHoursRaw);
 
     if (
       !externalContactId ||
-      ageRaw === null ||
-      ageRaw === "" ||
-      !Number.isFinite(ageNum) ||
       targetHoursRaw === null ||
       targetHoursRaw === "" ||
       !Number.isFinite(targetHoursNum)
     ) {
-      return "Kontakt-ID, Vorname, Name, E-Mail, Alter und Soll-Stunden sind Pflichtfelder.";
+      return "Kontakt-ID, Vorname, Name, E-Mail und Soll-Stunden sind Pflichtfelder.";
     }
-    age = ageNum;
     targetHours = targetHoursNum;
   }
 
@@ -76,7 +69,7 @@ async function createStaffMember(
   }
 
   const member = await prisma.member.create({
-    data: { firstName, lastName, email, externalContactId, age, targetHours },
+    data: { firstName, lastName, email, externalContactId, targetHours },
   });
   const user = await prisma.user.create({ data: { email, role, memberId: member.id } });
 

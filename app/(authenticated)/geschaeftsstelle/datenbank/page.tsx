@@ -28,7 +28,7 @@ export default async function DatenbankPage({
           Mitglieder importieren
         </h2>
         <p className="mb-3 text-sm text-muted">
-          Roster-Export hochladen (Kontakt-ID, Vorname, Nachname, E-Mail, Sollstunden, Alter).
+          Roster-Export hochladen (Kontakt-ID, Vorname, Nachname, E-Mail, Sollstunden, Team/Stufe).
           Bestehende Mitglieder (gleiche Kontakt-ID) werden aktualisiert, neue angelegt.
         </p>
         <MemberImportForm />

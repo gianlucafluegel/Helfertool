@@ -131,7 +131,6 @@ model Member {
   phone             String?
   iban              String?
   externalContactId String?  @unique
-  age               Int?
   ageGroupId        String?
   targetHours       Decimal  @default(0) @db.Decimal(5, 2)
   importBatchId     String?

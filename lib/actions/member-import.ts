@@ -20,7 +20,6 @@ export type MemberImportPreviewRow = {
   firstName: string;
   lastName: string;
   targetHours: number;
-  age: number | null;
   ageGroupGuessId: string | null;
   willUpdate: boolean;
 };
@@ -71,7 +70,6 @@ export async function parseMemberImportFile(
       firstName: r.firstName,
       lastName: r.lastName,
       targetHours: r.targetHours,
-      age: r.age,
       ageGroupGuessId:
         r.ageGroupNumber !== null
           ? (ageGroups.find((ag) => extractAgeNumber(ag.name) === r.ageGroupNumber)?.id ?? null)
@@ -107,7 +105,6 @@ export async function commitMemberImport(
       firstName: row.firstName,
       lastName: row.lastName,
       email: row.email || null,
-      age: row.age,
       ageGroupId: row.ageGroupId,
       targetHours: row.targetHours,
       importBatchId: batch.id,
