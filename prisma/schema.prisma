@@ -95,6 +95,7 @@ model AgeGroup {
 
   shiftSlotRestrictions   ShiftSlotAgeGroup[]
   stufenleiterAssignments StufenleiterAssignment[]
+  members                 Member[]
 }
 
 model Location {
@@ -119,9 +120,9 @@ model Activity {
 // Members belong to whichever season is currently live — there's no
 // season-scoping field on Member itself. When a season is archived, every
 // Member row is snapshotted into SeasonArchive and then deleted, so the next
-// season's Excel import starts from a clean table. "Stufe" is deliberately
-// NOT a Member attribute (it only restricts which Stufe(n) a Helfereinsatz
-// is for) — age is tracked instead, straight from the club's roster export.
+// season's Excel import starts from a clean table. ageGroupId is the
+// member's own Team/Stufe (from the roster import) — separate from a
+// Helfereinsatz's own Stufe-Einschränkung, but the same AgeGroup catalog.
 model Member {
   id                String   @id @default(cuid())
   firstName         String
@@ -131,14 +132,16 @@ model Member {
   iban              String?
   externalContactId String?  @unique
   age               Int?
+  ageGroupId        String?
   targetHours       Decimal  @default(0) @db.Decimal(5, 2)
   importBatchId     String?
   notes             String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  user    User?
-  signups Signup[]
+  ageGroup AgeGroup? @relation(fields: [ageGroupId], references: [id])
+  user     User?
+  signups  Signup[]
 }
 
 model User {

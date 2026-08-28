@@ -37,18 +37,32 @@ export function MemberImportForm() {
       )}
 
       {state.status === "preview" && (
-        <MemberImportPreviewTable key={state.rows.map((r) => r.contactId).join(",")} rows={state.rows} />
+        <MemberImportPreviewTable
+          key={state.rows.map((r) => r.contactId).join(",")}
+          rows={state.rows}
+          ageGroups={state.ageGroups}
+        />
       )}
     </div>
   );
 }
 
-function MemberImportPreviewTable({ rows }: { rows: MemberImportPreviewRow[] }) {
+const NO_STUFE = "__none__";
+
+function MemberImportPreviewTable({
+  rows,
+  ageGroups,
+}: {
+  rows: MemberImportPreviewRow[];
+  ageGroups: { id: string; name: string }[];
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [rowState, setRowState] = useState(() => rows.map((row) => ({ ...row, selected: true })));
+  const [rowState, setRowState] = useState(() =>
+    rows.map((row) => ({ ...row, selected: true, ageGroupId: row.ageGroupGuessId })),
+  );
 
   const selectedCount = rowState.filter((r) => r.selected).length;
 
@@ -62,6 +76,7 @@ function MemberImportPreviewTable({ rows }: { rows: MemberImportPreviewRow[] }) 
               <th className="py-2 pr-2">Kontakt-ID</th>
               <th className="py-2 pr-2">Name</th>
               <th className="py-2 pr-2">E-Mail</th>
+              <th className="py-2 pr-2">Stufe</th>
               <th className="py-2 pr-2">Alter</th>
               <th className="py-2 pr-2">Soll-Std.</th>
               <th className="py-2 pr-2">Status</th>
@@ -86,6 +101,28 @@ function MemberImportPreviewTable({ rows }: { rows: MemberImportPreviewRow[] }) 
                   {row.firstName} {row.lastName}
                 </td>
                 <td className="py-2 pr-2">{row.email || "–"}</td>
+                <td className="py-2 pr-2">
+                  <select
+                    value={row.ageGroupId ?? NO_STUFE}
+                    onChange={(e) =>
+                      setRowState((prev) =>
+                        prev.map((r, j) =>
+                          j === i
+                            ? { ...r, ageGroupId: e.target.value === NO_STUFE ? null : e.target.value }
+                            : r,
+                        ),
+                      )
+                    }
+                    className="rounded border border-border bg-white px-2 py-1 text-xs"
+                  >
+                    <option value={NO_STUFE}>–</option>
+                    {ageGroups.map((ag) => (
+                      <option key={ag.id} value={ag.id}>
+                        {ag.name}
+                      </option>
+                    ))}
+                  </select>
+                </td>
                 <td className="py-2 pr-2">{row.age ?? "–"}</td>
                 <td className="py-2 pr-2">{row.targetHours}</td>
                 <td className="py-2 pr-2">

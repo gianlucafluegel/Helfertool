@@ -8,6 +8,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const u14 = await prisma.ageGroup.findFirstOrThrow({ where: { name: "U14" } });
+  const u9 = await prisma.ageGroup.findFirstOrThrow({ where: { name: "U9" } });
   const passwordHash = await bcrypt.hash("TestPass123!", 12);
 
   // Each child gets its own login — one login per Member, never shared.
@@ -20,6 +21,7 @@ async function main() {
       email: "lara.muster@example.test",
       externalContactId: "TEST-LARA",
       age: 14,
+      ageGroupId: u14.id,
       targetHours: 20,
     },
   });
@@ -38,6 +40,7 @@ async function main() {
       email: "timo.muster@example.test",
       externalContactId: "TEST-TIMO",
       age: 9,
+      ageGroupId: u9.id,
       targetHours: 15,
     },
   });

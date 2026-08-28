@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseMemberWorkbook } from "@/lib/import/members";
+import { extractAgeNumber } from "@/lib/import/mysihf";
 
 async function requireGeschaeftsstelle() {
   const session = await auth();
@@ -20,13 +21,18 @@ export type MemberImportPreviewRow = {
   lastName: string;
   targetHours: number;
   age: number | null;
+  ageGroupGuessId: string | null;
   willUpdate: boolean;
 };
 
 export type MemberImportPreviewState =
   | { status: "idle" }
   | { status: "error"; message: string }
-  | { status: "preview"; rows: MemberImportPreviewRow[] };
+  | {
+      status: "preview";
+      rows: MemberImportPreviewRow[];
+      ageGroups: { id: string; name: string }[];
+    };
 
 export async function parseMemberImportFile(
   prevState: MemberImportPreviewState,
@@ -48,20 +54,36 @@ export async function parseMemberImportFile(
     return { status: "error", message: "Keine Mitgliederzeilen in der Datei gefunden." };
   }
 
-  const existing = await prisma.member.findMany({
-    where: { externalContactId: { in: rows.map((r) => r.contactId) } },
-    select: { externalContactId: true },
-  });
+  const [existing, ageGroups] = await Promise.all([
+    prisma.member.findMany({
+      where: { externalContactId: { in: rows.map((r) => r.contactId) } },
+      select: { externalContactId: true },
+    }),
+    prisma.ageGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+  ]);
   const existingIds = new Set(existing.map((e) => e.externalContactId));
 
   return {
     status: "preview",
-    rows: rows.map((r) => ({ ...r, willUpdate: existingIds.has(r.contactId) })),
+    rows: rows.map((r) => ({
+      contactId: r.contactId,
+      email: r.email,
+      firstName: r.firstName,
+      lastName: r.lastName,
+      targetHours: r.targetHours,
+      age: r.age,
+      ageGroupGuessId:
+        r.ageGroupNumber !== null
+          ? (ageGroups.find((ag) => extractAgeNumber(ag.name) === r.ageGroupNumber)?.id ?? null)
+          : null,
+      willUpdate: existingIds.has(r.contactId),
+    })),
+    ageGroups: ageGroups.map((ag) => ({ id: ag.id, name: ag.name })),
   };
 }
 
 export async function commitMemberImport(
-  rows: MemberImportPreviewRow[],
+  rows: (MemberImportPreviewRow & { ageGroupId: string | null })[],
 ): Promise<{ error?: string; created?: number; updated?: number }> {
   const session = await requireGeschaeftsstelle();
 
@@ -86,6 +108,7 @@ export async function commitMemberImport(
       lastName: row.lastName,
       email: row.email || null,
       age: row.age,
+      ageGroupId: row.ageGroupId,
       targetHours: row.targetHours,
       importBatchId: batch.id,
     };

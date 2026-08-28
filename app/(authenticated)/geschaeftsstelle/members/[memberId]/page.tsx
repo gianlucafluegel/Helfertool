@@ -40,7 +40,9 @@ export default async function MemberDetailPage({
           email={member.email ?? ""}
           phone={member.phone ?? ""}
           age={member.age}
+          ageGroupId={member.ageGroupId}
           targetHours={Number(member.targetHours)}
+          ageGroups={ageGroups}
         />
       </Card>
 

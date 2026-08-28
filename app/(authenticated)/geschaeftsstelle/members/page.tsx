@@ -5,13 +5,14 @@ import { CreateMemberForm } from "./CreateMemberForm";
 import { ManualHoursForm } from "./ManualHoursForm";
 
 export default async function MembersPage() {
-  const [locations, activities] = await Promise.all([
+  const [locations, activities, ageGroups] = await Promise.all([
     prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.activity.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+    prisma.ageGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
   ]);
 
   const members = await prisma.member.findMany({
-    include: { user: true },
+    include: { user: true, ageGroup: true },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
   });
 
@@ -21,7 +22,7 @@ export default async function MembersPage() {
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
           Neues Mitglied erfassen
         </h2>
-        <CreateMemberForm />
+        <CreateMemberForm ageGroups={ageGroups} />
       </Card>
 
       <Card>
@@ -56,6 +57,7 @@ export default async function MembersPage() {
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase text-muted">
                 <th className="py-2 pr-3">Name</th>
+                <th className="py-2 pr-3">Stufe</th>
                 <th className="py-2 pr-3">Alter</th>
                 <th className="py-2 pr-3">Soll-Std.</th>
                 <th className="py-2 pr-3">Login</th>
@@ -72,6 +74,7 @@ export default async function MembersPage() {
                       {member.firstName} {member.lastName}
                     </Link>
                   </td>
+                  <td className="py-2 pr-3">{member.ageGroup?.name ?? "–"}</td>
                   <td className="py-2 pr-3">{member.age ?? "–"}</td>
                   <td className="py-2 pr-3">{Number(member.targetHours)}</td>
                   <td className="py-2 pr-3">{member.user ? member.user.role : "kein Login"}</td>
@@ -79,7 +82,7 @@ export default async function MembersPage() {
               ))}
               {members.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-4 text-center text-muted">
+                  <td colSpan={5} className="py-4 text-center text-muted">
                     Noch keine Mitglieder — importiere sie unter{" "}
                     <Link href="/geschaeftsstelle/datenbank" className="text-gold-hover hover:underline">
                       Datenbank

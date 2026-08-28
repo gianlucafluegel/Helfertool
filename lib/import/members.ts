@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import { extractAgeNumber } from "./mysihf";
 
 export type ParsedMemberRow = {
   contactId: string;
@@ -7,6 +8,8 @@ export type ParsedMemberRow = {
   lastName: string;
   targetHours: number;
   age: number | null;
+  /** Base "U<n>" number extracted from the roster's Team/Stufe column, if present. */
+  ageGroupNumber: number | null;
 };
 
 const REQUIRED_HEADERS = ["Kontakt-ID", "Vorname", "Nachname"] as const;
@@ -27,8 +30,12 @@ function cellNumber(value: ExcelJS.CellValue): number | null {
 /**
  * Parses the club's member/roster export ("...aktualisierungsexport
  * privatpersonen...xlsx"). The Sollstunden column's header carries the
- * current season label (e.g. "Sollstunden (Saison 26/27)") — matched by
- * prefix so next season's differently-labelled export still parses.
+ * current season label (e.g. "Sollstunden (Saison 26/27)"), and the
+ * Team/Stufe column carries a dynamic field-count suffix (e.g.
+ * "Teams [6/13]") — both matched by prefix so export variations still parse.
+ * The Team/Stufe value itself is normalised down to a bare "U<n>" number
+ * (same rule as the Helfereinsätze-Import), in case it ever carries a
+ * league-tier suffix like "U14-Top".
  */
 export async function parseMemberWorkbook(
   buffer: ArrayBuffer,
@@ -61,6 +68,8 @@ export async function parseMemberWorkbook(
   );
   const sollstundenCol = sollstundenHeader ? headerIndex.get(sollstundenHeader) : undefined;
   const alterCol = headerIndex.get("Alter");
+  const teamHeader = [...headerIndex.keys()].find((h) => h.toLowerCase().startsWith("team"));
+  const teamCol = teamHeader ? headerIndex.get(teamHeader) : undefined;
   const contactCol = headerIndex.get("Kontakt-ID")!;
   const firstNameCol = headerIndex.get("Vorname")!;
   const lastNameCol = headerIndex.get("Nachname")!;
@@ -82,6 +91,7 @@ export async function parseMemberWorkbook(
       lastName,
       targetHours: (sollstundenCol ? cellNumber(row.getCell(sollstundenCol).value) : null) ?? 0,
       age: alterCol ? cellNumber(row.getCell(alterCol).value) : null,
+      ageGroupNumber: teamCol ? extractAgeNumber(cellString(row.getCell(teamCol).value).trim()) : null,
     });
   });
 

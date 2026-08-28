@@ -24,6 +24,7 @@ export async function createMember(prevState: string | undefined, formData: Form
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
+  const ageGroupId = String(formData.get("ageGroupId") ?? "").trim();
   const ageRaw = formData.get("age");
   const age = Number(ageRaw);
   const targetHoursRaw = formData.get("targetHours");
@@ -34,6 +35,7 @@ export async function createMember(prevState: string | undefined, formData: Form
     !firstName ||
     !lastName ||
     !email ||
+    !ageGroupId ||
     ageRaw === null ||
     ageRaw === "" ||
     !Number.isFinite(age) ||
@@ -41,7 +43,7 @@ export async function createMember(prevState: string | undefined, formData: Form
     targetHoursRaw === "" ||
     !Number.isFinite(targetHours)
   ) {
-    return "Kontakt-ID, Vorname, Name, E-Mail, Alter und Soll-Stunden sind Pflichtfelder.";
+    return "Kontakt-ID, Vorname, Name, E-Mail, Stufe, Alter und Soll-Stunden sind Pflichtfelder.";
   }
 
   const contactIdTaken = await prisma.member.findUnique({ where: { externalContactId } });
@@ -50,7 +52,7 @@ export async function createMember(prevState: string | undefined, formData: Form
   }
 
   const member = await prisma.member.create({
-    data: { firstName, lastName, email, externalContactId, age, targetHours },
+    data: { firstName, lastName, email, externalContactId, age, ageGroupId, targetHours },
   });
 
   revalidatePath("/geschaeftsstelle/members");
@@ -64,6 +66,7 @@ export async function updateMember(memberId: string, formData: FormData) {
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim() || null;
   const phone = String(formData.get("phone") ?? "").trim() || null;
+  const ageGroupId = String(formData.get("ageGroupId") ?? "").trim() || null;
   const ageRaw = String(formData.get("age") ?? "").trim();
   const age = ageRaw ? Number(ageRaw) : null;
   const targetHours = Number(formData.get("targetHours") ?? 0);
@@ -75,6 +78,7 @@ export async function updateMember(memberId: string, formData: FormData) {
       lastName,
       email,
       phone,
+      ageGroupId,
       age: age !== null && Number.isFinite(age) ? age : null,
       targetHours: Number.isFinite(targetHours) ? targetHours : 0,
     },

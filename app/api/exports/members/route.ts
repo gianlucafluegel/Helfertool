@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
   const members = await prisma.member.findMany({
     where: role ? { user: { role } } : undefined,
     include: {
+      ageGroup: true,
       signups: {
         where: { status: "CONFIRMED" },
         include: { shiftSlot: { include: { event: true } } },
@@ -48,6 +49,7 @@ export async function GET(request: NextRequest) {
     { header: "Kontakt-ID", key: "contactId", width: 16 },
     { header: "Vorname", key: "firstName", width: 16 },
     { header: "Nachname", key: "lastName", width: 16 },
+    { header: "Stufe", key: "ageGroup", width: 10 },
     { header: "Alter", key: "age", width: 10 },
     { header: "E-Mail", key: "email", width: 28 },
     { header: "Soll-Stunden", key: "targetHours", width: 14 },
@@ -66,6 +68,7 @@ export async function GET(request: NextRequest) {
       contactId: member.externalContactId ?? "",
       firstName: member.firstName,
       lastName: member.lastName,
+      ageGroup: member.ageGroup?.name ?? "",
       age: member.age ?? "",
       email: member.email ?? "",
       targetHours,
