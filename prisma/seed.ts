@@ -18,12 +18,17 @@ async function main() {
   });
 
   const ageGroupDefs = [
-    { name: "U9", sortOrder: 1, triggersBarbezugChoice: true },
-    { name: "U12", sortOrder: 2, triggersBarbezugChoice: true },
-    { name: "U14", sortOrder: 3, triggersBarbezugChoice: false },
-    { name: "U16", sortOrder: 4, triggersBarbezugChoice: false },
-    { name: "U18", sortOrder: 5, triggersBarbezugChoice: false },
-    { name: "U21", sortOrder: 6, triggersBarbezugChoice: false },
+    { name: "U9", sortOrder: 1, triggersBarbezugChoice: true, category: "NACHWUCHS" as const },
+    { name: "U12", sortOrder: 2, triggersBarbezugChoice: true, category: "NACHWUCHS" as const },
+    { name: "U14", sortOrder: 3, triggersBarbezugChoice: false, category: "NACHWUCHS" as const },
+    { name: "U16", sortOrder: 4, triggersBarbezugChoice: false, category: "NACHWUCHS" as const },
+    { name: "U18", sortOrder: 5, triggersBarbezugChoice: false, category: "NACHWUCHS" as const },
+    { name: "U21", sortOrder: 6, triggersBarbezugChoice: false, category: "NACHWUCHS" as const },
+    { name: "3. Liga", sortOrder: 7, triggersBarbezugChoice: false, category: "AKTIV" as const },
+    { name: "4. Liga", sortOrder: 8, triggersBarbezugChoice: false, category: "AKTIV" as const },
+    { name: "SWHL B", sortOrder: 9, triggersBarbezugChoice: false, category: "AKTIV" as const },
+    { name: "SWHL C", sortOrder: 10, triggersBarbezugChoice: false, category: "AKTIV" as const },
+    { name: "MyHockey League", sortOrder: 11, triggersBarbezugChoice: false, category: "AKTIV" as const },
   ];
   for (const def of ageGroupDefs) {
     await prisma.ageGroup.upsert({
@@ -31,6 +36,7 @@ async function main() {
       update: {
         sortOrder: def.sortOrder,
         triggersBarbezugChoice: def.triggersBarbezugChoice,
+        category: def.category,
       },
       create: def,
     });

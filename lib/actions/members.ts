@@ -41,13 +41,25 @@ export async function createMember(prevState: string | undefined, formData: Form
     return "Kontakt-ID, Vorname, Name, E-Mail, Stufe und Soll-Stunden sind Pflichtfelder.";
   }
 
-  const contactIdTaken = await prisma.member.findUnique({ where: { externalContactId } });
+  // Nachwuchs and Aktivmannschaften are separate source systems with
+  // independent Kontakt-ID numbering, so the same Kontakt-ID can legitimately
+  // belong to two different people — uniqueness is (Kontakt-ID, Kategorie),
+  // derived here from the chosen Stufe, never from client input directly.
+  const ageGroup = await prisma.ageGroup.findUnique({
+    where: { id: ageGroupId },
+    select: { category: true },
+  });
+  const category = ageGroup?.category ?? null;
+
+  const contactIdTaken = await prisma.member.findFirst({
+    where: { externalContactId, category },
+  });
   if (contactIdTaken) {
-    return "Diese Kontakt-ID wird bereits verwendet.";
+    return "Diese Kontakt-ID wird in dieser Kategorie bereits verwendet.";
   }
 
   const member = await prisma.member.create({
-    data: { firstName, lastName, email, externalContactId, ageGroupId, targetHours },
+    data: { firstName, lastName, email, externalContactId, ageGroupId, category, targetHours },
   });
 
   revalidatePath("/geschaeftsstelle/members");
@@ -64,6 +76,13 @@ export async function updateMember(memberId: string, formData: FormData) {
   const ageGroupId = String(formData.get("ageGroupId") ?? "").trim() || null;
   const targetHours = Number(formData.get("targetHours") ?? 0);
 
+  // Keep the denormalized category in sync with the (possibly just-changed)
+  // Stufe, so the (Kontakt-ID, Kategorie) uniqueness key never goes stale.
+  const ageGroup = ageGroupId
+    ? await prisma.ageGroup.findUnique({ where: { id: ageGroupId }, select: { category: true } })
+    : null;
+  const category = ageGroup?.category ?? null;
+
   await prisma.member.update({
     where: { id: memberId },
     data: {
@@ -72,6 +91,7 @@ export async function updateMember(memberId: string, formData: FormData) {
       email,
       phone,
       ageGroupId,
+      category,
       targetHours: Number.isFinite(targetHours) ? targetHours : 0,
     },
   });

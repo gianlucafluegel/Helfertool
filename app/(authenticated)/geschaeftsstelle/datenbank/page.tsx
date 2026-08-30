@@ -42,12 +42,20 @@ export default async function DatenbankPage({
         </h2>
         {season ? (
           <div className="flex flex-col gap-4">
-            <a
-              href="/api/exports/members-csv"
-              className="self-start text-sm font-medium text-gold-hover hover:underline"
-            >
-              Helferstunden exportieren (CSV, Kontakt-ID;Stunden) →
-            </a>
+            <div className="flex flex-col gap-1">
+              <a
+                href="/api/exports/members-csv?category=NACHWUCHS"
+                className="self-start text-sm font-medium text-gold-hover hover:underline"
+              >
+                Helferstunden Nachwuchs exportieren (CSV, Kontakt-ID;Stunden) →
+              </a>
+              <a
+                href="/api/exports/members-csv?category=AKTIV"
+                className="self-start text-sm font-medium text-gold-hover hover:underline"
+              >
+                Helferstunden Aktive exportieren (CSV, Kontakt-ID;Stunden) →
+              </a>
+            </div>
             <ArchiveSeasonForm currentSeasonLabel={season.label} />
           </div>
         ) : (

@@ -59,8 +59,14 @@ async function createStaffMember(
     targetHours = targetHoursNum;
   }
 
+  // Funktionäre/Stufenadmins never get an ageGroupId on their own Member row,
+  // so their category is always null — the (Kontakt-ID, Kategorie) key means
+  // this only needs to check for a collision among other category:null
+  // Members (other staff, or legacy no-Stufe roster rows).
   const [contactIdTaken, emailTaken] = await Promise.all([
-    externalContactId ? prisma.member.findUnique({ where: { externalContactId } }) : null,
+    externalContactId
+      ? prisma.member.findFirst({ where: { externalContactId, category: null } })
+      : null,
     prisma.user.findUnique({ where: { email } }),
   ]);
   if (contactIdTaken) return "Diese Kontakt-ID wird bereits verwendet.";

@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseMemberWorkbook } from "@/lib/import/members";
 import { extractAgeNumber } from "@/lib/import/mysihf";
+import type { MemberCategory } from "@/generated/prisma/enums";
 
 async function requireGeschaeftsstelle() {
   const session = await auth();
@@ -30,7 +31,7 @@ export type MemberImportPreviewState =
   | {
       status: "preview";
       rows: MemberImportPreviewRow[];
-      ageGroups: { id: string; name: string }[];
+      ageGroups: { id: string; name: string; category: MemberCategory }[];
     };
 
 export async function parseMemberImportFile(
@@ -56,27 +57,36 @@ export async function parseMemberImportFile(
   const [existing, ageGroups] = await Promise.all([
     prisma.member.findMany({
       where: { externalContactId: { in: rows.map((r) => r.contactId) } },
-      select: { externalContactId: true },
+      select: { externalContactId: true, category: true },
     }),
     prisma.ageGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
   ]);
-  const existingIds = new Set(existing.map((e) => e.externalContactId));
+  // Nachwuchs and Aktivmannschaften are separate source systems with
+  // independent Kontakt-ID numbering, so the same Kontakt-ID can legitimately
+  // belong to two different people. "willUpdate" must therefore check for an
+  // existing Member with the same (Kontakt-ID, Kategorie) pair, not just the
+  // same Kontakt-ID.
+  const existingKeys = new Set(existing.map((e) => `${e.externalContactId}::${e.category ?? ""}`));
 
   return {
     status: "preview",
-    rows: rows.map((r) => ({
-      contactId: r.contactId,
-      email: r.email,
-      firstName: r.firstName,
-      lastName: r.lastName,
-      targetHours: r.targetHours,
-      ageGroupGuessId:
+    rows: rows.map((r) => {
+      const ageGroupGuessId =
         r.ageGroupNumber !== null
           ? (ageGroups.find((ag) => extractAgeNumber(ag.name) === r.ageGroupNumber)?.id ?? null)
-          : null,
-      willUpdate: existingIds.has(r.contactId),
-    })),
-    ageGroups: ageGroups.map((ag) => ({ id: ag.id, name: ag.name })),
+          : null;
+      const category = ageGroups.find((ag) => ag.id === ageGroupGuessId)?.category ?? null;
+      return {
+        contactId: r.contactId,
+        email: r.email,
+        firstName: r.firstName,
+        lastName: r.lastName,
+        targetHours: r.targetHours,
+        ageGroupGuessId,
+        willUpdate: existingKeys.has(`${r.contactId}::${category ?? ""}`),
+      };
+    }),
+    ageGroups: ageGroups.map((ag) => ({ id: ag.id, name: ag.name, category: ag.category })),
   };
 }
 
@@ -105,13 +115,26 @@ export async function commitMemberImport(
     data: { source: "Mitglieder-Import (Privatpersonen)", importedByUserId: session.user.id },
   });
 
+  // Category is derived server-side from each row's (possibly admin-edited)
+  // ageGroupId — never trusted from client input — since it decides which
+  // existing Member this row is allowed to match/collide with.
+  const ageGroupIds = [...new Set(rows.map((r) => r.ageGroupId).filter((id): id is string => !!id))];
+  const ageGroups = ageGroupIds.length
+    ? await prisma.ageGroup.findMany({ where: { id: { in: ageGroupIds } }, select: { id: true, category: true } })
+    : [];
+  const categoryByAgeGroupId = new Map(ageGroups.map((ag) => [ag.id, ag.category]));
+
   let created = 0;
   let updated = 0;
   const emailConflicts: string[] = [];
+  const categoriesInFile = new Set<MemberCategory>();
 
   for (const row of rows) {
-    const existing = await prisma.member.findUnique({
-      where: { externalContactId: row.contactId },
+    const category = row.ageGroupId ? (categoryByAgeGroupId.get(row.ageGroupId) ?? null) : null;
+    if (category) categoriesInFile.add(category);
+
+    const existing = await prisma.member.findFirst({
+      where: { externalContactId: row.contactId, category },
       include: { user: true },
     });
 
@@ -120,6 +143,7 @@ export async function commitMemberImport(
       lastName: row.lastName,
       email: row.email || null,
       ageGroupId: row.ageGroupId,
+      category,
       targetHours: row.targetHours,
       importBatchId: batch.id,
       isActive: true,
@@ -159,17 +183,27 @@ export async function commitMemberImport(
   // deactivate them (and their login, if any) rather than deleting — their
   // historical hours/signups stay intact, and they come back automatically
   // if a future import includes their Kontakt-ID again.
-  const missing = await prisma.member.findMany({
-    where: {
-      isActive: true,
-      externalContactId: { not: null, notIn: allContactIdsInFile },
-    },
-    include: { user: true },
-  });
-  for (const m of missing) {
-    await prisma.member.update({ where: { id: m.id }, data: { isActive: false } });
-    if (m.user) {
-      await prisma.user.update({ where: { id: m.user.id }, data: { isActive: false } });
+  //
+  // Scoped to the Kategorie(n) actually present in this import batch: a
+  // Nachwuchs-only file must never deactivate Aktiv members (and vice versa)
+  // just because they're absent from a file that was never about them. If no
+  // row resolved to a known category (e.g. no Stufe assigned to any row),
+  // skip the sweep entirely rather than guess.
+  let missing: { id: string; user: { id: string } | null }[] = [];
+  if (categoriesInFile.size > 0) {
+    missing = await prisma.member.findMany({
+      where: {
+        isActive: true,
+        category: { in: [...categoriesInFile] },
+        externalContactId: { not: null, notIn: allContactIdsInFile },
+      },
+      include: { user: true },
+    });
+    for (const m of missing) {
+      await prisma.member.update({ where: { id: m.id }, data: { isActive: false } });
+      if (m.user) {
+        await prisma.user.update({ where: { id: m.user.id }, data: { isActive: false } });
+      }
     }
   }
 

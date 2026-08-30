@@ -81,6 +81,7 @@ export async function archiveSeason(prevState: string | undefined, formData: For
     members: members.map((m) => ({
       id: m.id,
       externalContactId: m.externalContactId,
+      category: m.category,
       firstName: m.firstName,
       lastName: m.lastName,
       email: m.email,

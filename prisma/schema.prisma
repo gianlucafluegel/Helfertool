@@ -58,6 +58,19 @@ enum AuthTokenPurpose {
   PASSWORD_RESET
 }
 
+// Nachwuchs (U9-U21) and Aktivmannschaften (3. Liga, 4. Liga, SWHL B, SWHL C,
+// ...) come from two separate source systems/exports, each with their own
+// Kontakt-ID numbering — the same number can legitimately refer to two
+// different people. This is what disambiguates them: Member's uniqueness
+// key is (Kontakt-ID, Kategorie), not Kontakt-ID alone. Deliberately coarser
+// than the exact Stufe/Team, so a yearly Stufe change (U14 -> U16, or
+// 3. Liga -> 4. Liga) still matches the same Member on re-import — only a
+// cross-category collision is what gets told apart.
+enum MemberCategory {
+  NACHWUCHS
+  AKTIV
+}
+
 model Season {
   id         String    @id @default(cuid())
   label      String    @unique
@@ -87,11 +100,16 @@ model SeasonArchive {
 }
 
 model AgeGroup {
-  id                     String  @id @default(cuid())
-  name                   String  @unique
-  sortOrder              Int     @default(0)
-  isActive               Boolean @default(true)
-  triggersBarbezugChoice Boolean @default(false)
+  id                     String          @id @default(cuid())
+  name                   String          @unique
+  sortOrder              Int             @default(0)
+  isActive               Boolean         @default(true)
+  triggersBarbezugChoice Boolean         @default(false)
+  // Nachwuchs (U9-U21) vs. Aktivmannschaften (3. Liga, 4. Liga, SWHL B, ...) —
+  // see MemberCategory. Defaults to NACHWUCHS so the existing catalog rows
+  // don't need a manual backfill; Aktiv rows get tagged explicitly whenever
+  // they're added to the catalog.
+  category               MemberCategory  @default(NACHWUCHS)
 
   shiftSlotRestrictions   ShiftSlotAgeGroup[]
   stufenleiterAssignments StufenleiterAssignment[]
@@ -128,24 +146,35 @@ model Activity {
 // separate from a Helfereinsatz's own Stufe-Einschränkung, but the same
 // AgeGroup catalog.
 model Member {
-  id                String   @id @default(cuid())
+  id                String          @id @default(cuid())
   firstName         String
   lastName          String
   email             String?
   phone             String?
   iban              String?
-  externalContactId String?  @unique
+  externalContactId String?
+  // Denormalized copy of the matched AgeGroup's category at import time.
+  // Needed as a physical column so it can take part in the compound unique
+  // constraint below (Prisma can't span a relation in @@unique). Nachwuchs
+  // and Aktivmannschaften are two separate source systems with independent
+  // Kontakt-ID numbering, so the same number can legitimately belong to two
+  // different people — (externalContactId, category) is what tells them
+  // apart, while still matching the same Member across a plain Stufe change
+  // within one category (e.g. U14 -> U16) on the next yearly re-import.
+  category          MemberCategory?
   ageGroupId        String?
-  targetHours       Decimal  @default(0) @db.Decimal(5, 2)
+  targetHours       Decimal         @default(0) @db.Decimal(5, 2)
   importBatchId     String?
   notes             String?
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   ageGroup AgeGroup? @relation(fields: [ageGroupId], references: [id])
   user     User?
   signups  Signup[]
+
+  @@unique([externalContactId, category])
 }
 
 model User {
