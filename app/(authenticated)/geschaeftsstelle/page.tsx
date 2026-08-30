@@ -74,11 +74,11 @@ export default async function GeschaeftsstelleOverviewPage({
         </Card>
         <Card>
           <p className="text-2xl font-bold text-status-filled-text">{filled}</p>
-          <p className="text-xs text-muted">Rollen besetzt</p>
+          <p className="text-xs text-muted">Einsätze besetzt</p>
         </Card>
         <Card>
           <p className="text-2xl font-bold text-status-open-text">{open}</p>
-          <p className="text-xs text-muted">Rollen offen</p>
+          <p className="text-xs text-muted">Einsätze offen</p>
         </Card>
       </div>
 
