@@ -37,27 +37,39 @@ export default async function DatenbankPage({
       </Card>
 
       <Card>
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted">
+          Helferstunden-Export
+        </h2>
+        <p className="mb-3 text-sm text-muted">
+          Jederzeit möglich, unabhängig von der Archivierung — z.B. für einen Zwischenstand. Zwei
+          getrennte Dateien, da Nachwuchs und Aktivmannschaften unabhängige Kontakt-ID-Systeme sind.
+        </p>
+        {season ? (
+          <div className="flex flex-col gap-1">
+            <a
+              href="/api/exports/members-csv?category=NACHWUCHS"
+              className="self-start text-sm font-medium text-gold-hover hover:underline"
+            >
+              Helferstunden Nachwuchs exportieren (CSV, Kontakt-ID;Stunden) →
+            </a>
+            <a
+              href="/api/exports/members-csv?category=AKTIV"
+              className="self-start text-sm font-medium text-gold-hover hover:underline"
+            >
+              Helferstunden Aktive exportieren (CSV, Kontakt-ID;Stunden) →
+            </a>
+          </div>
+        ) : (
+          <p className="text-sm text-status-open-text">Keine aktive Saison konfiguriert.</p>
+        )}
+      </Card>
+
+      <Card>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-          Saison-Export & Archivierung
+          Saison archivieren
         </h2>
         {season ? (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-              <a
-                href="/api/exports/members-csv?category=NACHWUCHS"
-                className="self-start text-sm font-medium text-gold-hover hover:underline"
-              >
-                Helferstunden Nachwuchs exportieren (CSV, Kontakt-ID;Stunden) →
-              </a>
-              <a
-                href="/api/exports/members-csv?category=AKTIV"
-                className="self-start text-sm font-medium text-gold-hover hover:underline"
-              >
-                Helferstunden Aktive exportieren (CSV, Kontakt-ID;Stunden) →
-              </a>
-            </div>
-            <ArchiveSeasonForm currentSeasonLabel={season.label} />
-          </div>
+          <ArchiveSeasonForm currentSeasonLabel={season.label} />
         ) : (
           <p className="text-sm text-status-open-text">Keine aktive Saison konfiguriert.</p>
         )}
