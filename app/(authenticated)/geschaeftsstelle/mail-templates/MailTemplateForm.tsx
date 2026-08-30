@@ -12,6 +12,18 @@ const LABELS: Record<MailTemplateKey, string> = {
   PASSWORD_RESET: "Passwort zurücksetzen",
 };
 
+// Muss exakt widerspiegeln, was der jeweilige sendMail(...)-Aufruf im Code
+// tatsächlich übergibt (lib/actions/signups.ts, reminders.ts, staff.ts,
+// members.ts, auth.ts) — ein hier gelisteter, aber nicht übergebener
+// Platzhalter würde in der versendeten Mail unverändert als "{{...}}"
+// stehen bleiben, statt ersetzt zu werden.
+const PLACEHOLDERS: Record<MailTemplateKey, string[]> = {
+  SIGNUP_CONFIRMATION: ["vorname", "nachname", "event", "datum", "taetigkeit", "standort"],
+  REMINDER_UNFILLED: ["vorname", "nachname", "event", "datum", "standort"],
+  ACCOUNT_SETUP: ["vorname", "nachname", "link"],
+  PASSWORD_RESET: ["vorname", "nachname", "link"],
+};
+
 export function MailTemplateForm({
   templateKey,
   subject,
@@ -43,8 +55,7 @@ export function MailTemplateForm({
           className="rounded-lg border border-border px-3 py-2 text-sm font-mono"
         />
         <p className="text-xs text-muted">
-          Platzhalter: {"{{vorname}}"} {"{{nachname}}"} {"{{event}}"} {"{{datum}}"}{" "}
-          {"{{taetigkeit}}"} {"{{standort}}"} {"{{link}}"}
+          Platzhalter: {PLACEHOLDERS[templateKey].map((p) => `{{${p}}}`).join(" ")}
         </p>
         <Button type="submit" disabled={pending} className="self-start">
           {pending ? "Wird gespeichert…" : "Speichern"}
