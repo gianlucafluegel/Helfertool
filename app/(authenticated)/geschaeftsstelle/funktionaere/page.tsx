@@ -6,8 +6,14 @@ import { CreateStaffForm } from "../CreateStaffForm";
 import { ManualHoursForm } from "../members/ManualHoursForm";
 import { createFunktionaer } from "@/lib/actions/staff";
 
-export default async function FunktionaerePage() {
-  const [locations, activities, members] = await Promise.all([
+export default async function FunktionaerePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+
+  const [locations, activities, allMembers] = await Promise.all([
     prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.activity.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.member.findMany({
@@ -15,7 +21,13 @@ export default async function FunktionaerePage() {
       orderBy: [{ isActive: "desc" }, { lastName: "asc" }, { firstName: "asc" }],
     }),
   ]);
-  const activeMembers = members.filter((m) => m.isActive);
+  const activeMembers = allMembers.filter((m) => m.isActive);
+
+  const members = q
+    ? allMembers.filter((m) =>
+        `${m.firstName} ${m.lastName}`.toLowerCase().includes(q.toLowerCase()),
+      )
+    : allMembers;
 
   return (
     <div className="flex flex-col gap-5">
@@ -52,17 +64,32 @@ export default async function FunktionaerePage() {
       </Card>
 
       <Card>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
-            Alle Funktionäre
-          </h2>
-          <a
-            href="/api/exports/members?role=FUNKTIONAER"
-            className="text-xs font-medium text-gold-hover hover:underline"
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+          Alle Funktionäre
+        </h2>
+        <form className="mb-3 flex gap-2" action="/geschaeftsstelle/funktionaere">
+          <input
+            type="text"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Funktionär suchen…"
+            className="w-full max-w-sm rounded-lg border border-border bg-white px-3 py-2 text-sm"
+          />
+          <button
+            type="submit"
+            className="rounded-full bg-gold px-4 py-2 text-sm font-semibold text-navy hover:bg-gold-hover"
           >
-            Liste mit Helferstunden exportieren (Excel)
-          </a>
-        </div>
+            Suchen
+          </button>
+          {q && (
+            <Link
+              href="/geschaeftsstelle/funktionaere"
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium text-text hover:border-navy/40"
+            >
+              Zurücksetzen
+            </Link>
+          )}
+        </form>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -98,7 +125,7 @@ export default async function FunktionaerePage() {
               {members.length === 0 && (
                 <tr>
                   <td colSpan={3} className="py-4 text-center text-muted">
-                    Noch keine Funktionäre erfasst.
+                    {q ? "Keine Funktionäre gefunden." : "Noch keine Funktionäre erfasst."}
                   </td>
                 </tr>
               )}

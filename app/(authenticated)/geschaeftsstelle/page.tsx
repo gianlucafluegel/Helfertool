@@ -1,19 +1,40 @@
 import Link from "next/link";
+import clsx from "clsx";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 
+type Zeitraum = "zukunft" | "vergangen" | "alle";
+
+function buildHref(q: string | undefined, zeitraum: Zeitraum) {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (zeitraum !== "zukunft") params.set("zeitraum", zeitraum);
+  const qs = params.toString();
+  return qs ? `/geschaeftsstelle?${qs}` : "/geschaeftsstelle";
+}
+
 export default async function GeschaeftsstelleOverviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; zeitraum?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, zeitraum: zeitraumRaw } = await searchParams;
+  const zeitraum: Zeitraum =
+    zeitraumRaw === "vergangen" || zeitraumRaw === "alle" ? zeitraumRaw : "zukunft";
   const season = await getCurrentSeason();
   if (!season) {
     return <p className="text-sm text-muted">Keine aktive Saison konfiguriert.</p>;
   }
+
+  const now = new Date();
+  const dateFilter =
+    zeitraum === "vergangen"
+      ? { startDateTime: { lt: now } }
+      : zeitraum === "alle"
+        ? {}
+        : { startDateTime: { gte: now } };
 
   const [statsEvents, listEvents] = await Promise.all([
     prisma.event.findMany({
@@ -30,6 +51,7 @@ export default async function GeschaeftsstelleOverviewPage({
         seasonId: season.id,
         deletedAt: null,
         isManualEntry: false,
+        ...dateFilter,
         ...(q
           ? {
               OR: [
@@ -86,7 +108,8 @@ export default async function GeschaeftsstelleOverviewPage({
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
           Helfereinsätze suchen
         </h2>
-        <form className="flex gap-2" action="/geschaeftsstelle">
+        <form className="mb-4 flex gap-2" action="/geschaeftsstelle">
+          <input type="hidden" name="zeitraum" value={zeitraum} />
           <input
             type="text"
             name="q"
@@ -100,7 +123,7 @@ export default async function GeschaeftsstelleOverviewPage({
           >
             Suchen
           </button>
-          {q && (
+          {(q || zeitraum !== "zukunft") && (
             <Link
               href="/geschaeftsstelle"
               className="rounded-full border border-border px-4 py-2 text-sm font-medium text-text hover:border-navy/40"
@@ -109,6 +132,28 @@ export default async function GeschaeftsstelleOverviewPage({
             </Link>
           )}
         </form>
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              ["zukunft", "Zukünftig"],
+              ["vergangen", "Vergangen"],
+              ["alle", "Alle"],
+            ] as const
+          ).map(([value, label]) => (
+            <Link
+              key={value}
+              href={buildHref(q, value)}
+              className={clsx(
+                "rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors",
+                zeitraum === value
+                  ? "border-navy bg-navy text-white"
+                  : "border-border bg-white text-text hover:border-navy/40",
+              )}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
       </Card>
 
       <Card>

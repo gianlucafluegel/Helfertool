@@ -5,18 +5,30 @@ import { Badge } from "@/components/ui/Badge";
 import { CreateMemberForm } from "./CreateMemberForm";
 import { ManualHoursForm } from "./ManualHoursForm";
 
-export default async function MembersPage() {
+export default async function MembersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+
   const [locations, activities, ageGroups] = await Promise.all([
     prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.activity.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.ageGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
   ]);
 
-  const members = await prisma.member.findMany({
+  const allMembers = await prisma.member.findMany({
     include: { user: true, ageGroup: true },
     orderBy: [{ isActive: "desc" }, { lastName: "asc" }, { firstName: "asc" }],
   });
-  const activeMembers = members.filter((m) => m.isActive);
+  const activeMembers = allMembers.filter((m) => m.isActive);
+
+  const members = q
+    ? allMembers.filter((m) =>
+        `${m.firstName} ${m.lastName}`.toLowerCase().includes(q.toLowerCase()),
+      )
+    : allMembers;
 
   return (
     <div className="flex flex-col gap-5">
@@ -47,17 +59,32 @@ export default async function MembersPage() {
       </Card>
 
       <Card>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
-            Alle Mitglieder
-          </h2>
-          <a
-            href="/api/exports/members"
-            className="text-xs font-medium text-gold-hover hover:underline"
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+          Alle Mitglieder
+        </h2>
+        <form className="mb-3 flex gap-2" action="/geschaeftsstelle/members">
+          <input
+            type="text"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Mitglied suchen…"
+            className="w-full max-w-sm rounded-lg border border-border bg-white px-3 py-2 text-sm"
+          />
+          <button
+            type="submit"
+            className="rounded-full bg-gold px-4 py-2 text-sm font-semibold text-navy hover:bg-gold-hover"
           >
-            Liste mit Helferstunden exportieren (Excel)
-          </a>
-        </div>
+            Suchen
+          </button>
+          {q && (
+            <Link
+              href="/geschaeftsstelle/members"
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium text-text hover:border-navy/40"
+            >
+              Zurücksetzen
+            </Link>
+          )}
+        </form>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -95,11 +122,20 @@ export default async function MembersPage() {
               {members.length === 0 && (
                 <tr>
                   <td colSpan={4} className="py-4 text-center text-muted">
-                    Noch keine Mitglieder — importiere sie unter{" "}
-                    <Link href="/geschaeftsstelle/datenbank" className="text-gold-hover hover:underline">
-                      Datenbank
-                    </Link>{" "}
-                    oder erfasse sie oben manuell.
+                    {q ? (
+                      "Keine Mitglieder gefunden."
+                    ) : (
+                      <>
+                        Noch keine Mitglieder — importiere sie unter{" "}
+                        <Link
+                          href="/geschaeftsstelle/datenbank"
+                          className="text-gold-hover hover:underline"
+                        >
+                          Datenbank
+                        </Link>{" "}
+                        oder erfasse sie oben manuell.
+                      </>
+                    )}
                   </td>
                 </tr>
               )}

@@ -3,13 +3,16 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { CreateStaffForm } from "../CreateStaffForm";
-import { ManualHoursForm } from "../members/ManualHoursForm";
 import { createStufenadmin } from "@/lib/actions/staff";
 
-export default async function StufenadminsPage() {
-  const [locations, activities, ageGroups, members] = await Promise.all([
-    prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-    prisma.activity.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+export default async function StufenadminsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+
+  const [ageGroups, allMembers] = await Promise.all([
     prisma.ageGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.member.findMany({
       where: { user: { role: "STUFENLEITER" } },
@@ -19,7 +22,12 @@ export default async function StufenadminsPage() {
       orderBy: [{ isActive: "desc" }, { lastName: "asc" }, { firstName: "asc" }],
     }),
   ]);
-  const activeMembers = members.filter((m) => m.isActive);
+
+  const members = q
+    ? allMembers.filter((m) =>
+        `${m.firstName} ${m.lastName}`.toLowerCase().includes(q.toLowerCase()),
+      )
+    : allMembers;
 
   return (
     <div className="flex flex-col gap-5">
@@ -41,36 +49,31 @@ export default async function StufenadminsPage() {
 
       <Card>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-          Helferstunden manuell hinzufügen
+          Alle Stufenadmins
         </h2>
-        <p className="mb-3 text-sm text-muted">
-          Für einen Einsatz, der nicht über das Tool lief — dieselben Angaben wie beim Erstellen
-          eines Helfereinsatzes.
-        </p>
-        <ManualHoursForm
-          members={activeMembers.map((m) => ({
-            id: m.id,
-            firstName: m.firstName,
-            lastName: m.lastName,
-          }))}
-          locations={locations}
-          activities={activities}
-          memberLabel="Stufenadmin"
-        />
-      </Card>
-
-      <Card>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
-            Alle Stufenadmins
-          </h2>
-          <a
-            href="/api/exports/members?role=STUFENLEITER"
-            className="text-xs font-medium text-gold-hover hover:underline"
+        <form className="mb-3 flex gap-2" action="/geschaeftsstelle/stufenadmins">
+          <input
+            type="text"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Stufenadmin suchen…"
+            className="w-full max-w-sm rounded-lg border border-border bg-white px-3 py-2 text-sm"
+          />
+          <button
+            type="submit"
+            className="rounded-full bg-gold px-4 py-2 text-sm font-semibold text-navy hover:bg-gold-hover"
           >
-            Liste mit Helferstunden exportieren (Excel)
-          </a>
-        </div>
+            Suchen
+          </button>
+          {q && (
+            <Link
+              href="/geschaeftsstelle/stufenadmins"
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium text-text hover:border-navy/40"
+            >
+              Zurücksetzen
+            </Link>
+          )}
+        </form>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -111,7 +114,7 @@ export default async function StufenadminsPage() {
               {members.length === 0 && (
                 <tr>
                   <td colSpan={4} className="py-4 text-center text-muted">
-                    Noch keine Stufenadmins erfasst.
+                    {q ? "Keine Stufenadmins gefunden." : "Noch keine Stufenadmins erfasst."}
                   </td>
                 </tr>
               )}
