@@ -28,7 +28,6 @@ async function main() {
     { name: "4. Liga", sortOrder: 8, triggersBarbezugChoice: false, category: "AKTIV" as const },
     { name: "SWHL B", sortOrder: 9, triggersBarbezugChoice: false, category: "AKTIV" as const },
     { name: "SWHL C", sortOrder: 10, triggersBarbezugChoice: false, category: "AKTIV" as const },
-    { name: "MyHockey League", sortOrder: 11, triggersBarbezugChoice: false, category: "AKTIV" as const },
   ];
   for (const def of ageGroupDefs) {
     await prisma.ageGroup.upsert({
