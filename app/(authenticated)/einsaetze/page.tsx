@@ -51,6 +51,11 @@ export default async function EinsaetzePage({
       deletedAt: null,
       isManualEntry: false,
       status: { not: "CANCELLED" },
+      // Man kann sich für einen bereits stattgefundenen Einsatz ohnehin nicht
+      // mehr anmelden — vergangene Einsätze werden hier deshalb ausgeblendet,
+      // nicht nur "Mein Konto" zeigt sie weiterhin (dort per memberId, nicht
+      // per Datum gefiltert).
+      startDateTime: { gte: new Date() },
       ...(filters.standort ? { locationId: filters.standort } : {}),
       ...(filters.typ === "GAME" || filters.typ === "EXTERNAL" ? { type: filters.typ } : {}),
     },
