@@ -14,7 +14,7 @@ export default async function GeschaeftsstelleRemindersPage() {
         Reminder an definierbare Gruppen senden
       </h2>
       <p className="mb-3 text-sm text-muted">
-        Wähle die Stufen und/oder Funktionäre aus, an die erinnert werden soll.
+        Wähle die Teams und/oder Funktionäre aus, an die erinnert werden soll.
       </p>
       <ReminderForm
         availableAgeGroups={ageGroups.map((ag) => ({ id: ag.id, name: ag.name }))}

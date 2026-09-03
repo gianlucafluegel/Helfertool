@@ -29,7 +29,7 @@ export default async function HelfereinsaetzePage() {
           Helfereinsätze aus Excel importieren (MySIHF)
         </h2>
         <p className="mb-3 text-sm text-muted">
-          Spielplan-Export von MySIHF hochladen, Vorschau prüfen (Standort/Stufe je Zeile
+          Spielplan-Export von MySIHF hochladen, Vorschau prüfen (Standort/Team je Zeile
           anpassbar) und importieren. Bereits importierte Spiele (gleiche MySIHF-Spiel-Nr.) werden
           aktualisiert statt doppelt angelegt — bestehende Einsätze/Anmeldungen bleiben erhalten.
         </p>

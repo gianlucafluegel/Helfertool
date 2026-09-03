@@ -84,7 +84,7 @@ function ImportPreviewTable({
               <th className="py-2 pr-2">Datum</th>
               <th className="py-2 pr-2">Titel</th>
               <th className="py-2 pr-2">Standort</th>
-              <th className="py-2 pr-2">Stufe</th>
+              <th className="py-2 pr-2">Team</th>
               <th className="py-2 pr-2">Status</th>
             </tr>
           </thead>
@@ -152,7 +152,7 @@ function ImportPreviewTable({
                     }
                     className="rounded border border-border bg-white px-2 py-1 text-xs"
                   >
-                    <option value={ALL_AGE_GROUPS}>Alle Stufen</option>
+                    <option value={ALL_AGE_GROUPS}>Alle Teams</option>
                     {ageGroups.map((ag) => (
                       <option key={ag.id} value={ag.id}>
                         {ag.name}

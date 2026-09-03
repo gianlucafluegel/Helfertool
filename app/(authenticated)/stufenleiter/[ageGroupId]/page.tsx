@@ -49,13 +49,13 @@ export default async function StufenleiterStufePage({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-lg font-semibold text-navy">Stufe {assignment.ageGroup.name}</h1>
+        <h1 className="text-lg font-semibold text-navy">Team {assignment.ageGroup.name}</h1>
         <p className="text-sm text-muted">Saison {season.label}</p>
       </div>
 
       <Card>
         <p className="mb-2 text-sm font-medium text-text">
-          Reminder an Stufe {assignment.ageGroup.name} senden
+          Reminder an Team {assignment.ageGroup.name} senden
         </p>
         <ReminderForm
           availableAgeGroups={[{ id: ageGroupId, name: assignment.ageGroup.name }]}
@@ -64,7 +64,7 @@ export default async function StufenleiterStufePage({
       </Card>
 
       {events.length === 0 && (
-        <p className="text-sm text-muted">Keine Helfereinsätze für diese Stufe gefunden.</p>
+        <p className="text-sm text-muted">Keine Helfereinsätze für dieses Team gefunden.</p>
       )}
 
       {events.map((event) => (

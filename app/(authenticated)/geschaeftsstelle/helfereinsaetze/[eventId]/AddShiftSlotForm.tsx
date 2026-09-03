@@ -65,7 +65,7 @@ export function AddShiftSlotForm({
         />
       </div>
       <div>
-        <p className="mb-1 text-sm font-medium text-text">Nur für Stufen (leer = alle)</p>
+        <p className="mb-1 text-sm font-medium text-text">Nur für Teams (leer = alle)</p>
         <div className="flex flex-wrap gap-3">
           {ageGroups.map((ag) => (
             <label key={ag.id} className="flex items-center gap-1.5 text-sm">

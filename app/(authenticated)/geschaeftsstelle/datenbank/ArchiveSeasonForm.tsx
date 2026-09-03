@@ -14,7 +14,7 @@ export function ArchiveSeasonForm({ currentSeasonLabel }: { currentSeasonLabel: 
         Archiviert Saison <strong>{currentSeasonLabel}</strong> — alle Helfereinsätze und
         Anmeldungen werden aus der aktiven Datenbank entfernt (weiterhin einsehbar unter
         „Archivierte Saisons“) und eine neue Saison wird angelegt (Start/Ende automatisch ein Jahr
-        ab dem Ende der aktuellen Saison). Mitglieder, Logins und Stufen bleiben erhalten — nur die
+        ab dem Ende der aktuellen Saison). Mitglieder, Logins und Teams bleiben erhalten — nur die
         Soll-Stunden werden auf 0 zurückgesetzt (der nächste Mitglieder-Import setzt sie neu).
         Diese Aktion kann nicht rückgängig gemacht werden.
       </p>

@@ -47,7 +47,7 @@ export default async function StufenleiterEventDetailPage({
         href={`/stufenleiter/${ageGroupId}`}
         className="text-sm font-medium text-muted hover:text-navy"
       >
-        ← Zurück zu Stufe {assignment.ageGroup.name}
+        ← Zurück zu Team {assignment.ageGroup.name}
       </Link>
 
       <Card>

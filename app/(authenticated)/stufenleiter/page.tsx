@@ -24,7 +24,7 @@ export default async function StufenleiterOverviewPage({
     return (
       <Card>
         <p className="text-sm text-muted">
-          Dir ist noch keine Altersstufe zugewiesen. Bitte kontaktiere die Geschäftsstelle.
+          Dir ist noch kein Team zugewiesen. Bitte kontaktiere die Geschäftsstelle.
         </p>
       </Card>
     );

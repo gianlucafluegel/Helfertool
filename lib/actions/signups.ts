@@ -60,7 +60,7 @@ export async function createSignup(
   });
   if (!payoutCheck.ok) return payoutCheck.error;
 
-  const ageGroupSnapshot = shiftSlot.ageGroupRestrictions[0]?.ageGroup.name ?? "Alle Stufen";
+  const ageGroupSnapshot = shiftSlot.ageGroupRestrictions[0]?.ageGroup.name ?? "Alle Teams";
 
   try {
     await prisma.$transaction(async (tx) => {

@@ -38,7 +38,7 @@ export async function createMember(prevState: string | undefined, formData: Form
     targetHoursRaw === "" ||
     !Number.isFinite(targetHours)
   ) {
-    return "Kontakt-ID, Vorname, Name, E-Mail, Stufe und Soll-Stunden sind Pflichtfelder.";
+    return "Kontakt-ID, Vorname, Name, E-Mail, Team und Soll-Stunden sind Pflichtfelder.";
   }
 
   // Nachwuchs and Aktivmannschaften are separate source systems with
@@ -164,7 +164,7 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
           signups: {
             create: {
               memberId,
-              ageGroupSnapshot: "Alle Stufen",
+              ageGroupSnapshot: "Alle Teams",
               helperFirstName: member.firstName,
               helperLastName: member.lastName,
               helperEmail: member.email ?? "",

@@ -128,7 +128,7 @@ export default async function EinsaetzePage({
           activeVariant="blue"
           href={buildHref(filters, { stufe: undefined })}
         >
-          Alle Stufen
+          Alle Teams
         </FilterChipLink>
         {ageGroups.map((ag) => (
           <FilterChipLink

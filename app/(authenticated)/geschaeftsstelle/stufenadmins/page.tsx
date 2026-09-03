@@ -81,7 +81,7 @@ export default async function StufenadminsPage({
                 <th className="py-2 pr-3">Name</th>
                 <th className="py-2 pr-3">Soll-Std.</th>
                 <th className="py-2 pr-3">E-Mail</th>
-                <th className="py-2 pr-3">Stufe(n)</th>
+                <th className="py-2 pr-3">Team(s)</th>
               </tr>
             </thead>
             <tbody>

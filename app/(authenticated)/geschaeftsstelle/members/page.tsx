@@ -90,7 +90,7 @@ export default async function MembersPage({
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase text-muted">
                 <th className="py-2 pr-3">Name</th>
-                <th className="py-2 pr-3">Stufe</th>
+                <th className="py-2 pr-3">Team</th>
                 <th className="py-2 pr-3">Soll-Std.</th>
                 <th className="py-2 pr-3">Login</th>
               </tr>

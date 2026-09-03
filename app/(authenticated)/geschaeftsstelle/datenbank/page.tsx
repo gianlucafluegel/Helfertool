@@ -28,7 +28,7 @@ export default async function DatenbankPage({
           Mitglieder importieren
         </h2>
         <p className="mb-3 text-sm text-muted">
-          Roster-Export hochladen (Kontakt-ID, Vorname, Nachname, E-Mail, Sollstunden, Team/Stufe).
+          Roster-Export hochladen (Kontakt-ID, Vorname, Nachname, E-Mail, Sollstunden, Team).
           Bestehende Mitglieder (gleiche Kontakt-ID) werden aktualisiert, neue angelegt — Logins
           bleiben dabei erhalten. Mitglieder, die in der Datei fehlen, werden automatisch
           deaktiviert (inkl. Login), nicht gelöscht.
