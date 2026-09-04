@@ -271,6 +271,17 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
   }
   const area = activity.defaultArea ?? "HELFER";
 
+  // Eine neue Rolle übernimmt automatisch dieselbe Team-Einschränkung wie
+  // die bereits bestehenden Rollen dieses Einsatzes (z.B. "Nur U14" aus dem
+  // MySIHF-Import) — es gibt dafür keine eigene Eingabe mehr, eine Rolle
+  // soll nicht versehentlich für andere Teams offen sein als der Rest des
+  // Einsatzes.
+  const existingRestrictions = await prisma.shiftSlotAgeGroup.findMany({
+    where: { shiftSlot: { eventId, deletedAt: null } },
+    select: { ageGroupId: true },
+    distinct: ["ageGroupId"],
+  });
+
   await prisma.shiftSlot.create({
     data: {
       eventId,
@@ -279,6 +290,9 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
       capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 1,
       creditHours: Number.isFinite(creditHours) ? creditHours : 0,
       notes,
+      ageGroupRestrictions: {
+        create: existingRestrictions.map((r) => ({ ageGroupId: r.ageGroupId })),
+      },
     },
   });
 
