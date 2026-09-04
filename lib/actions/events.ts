@@ -257,7 +257,6 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
   const capacity = Number(formData.get("capacity") ?? 1);
   const creditHours = Number(formData.get("creditHours") ?? 0);
   const notes = String(formData.get("notes") ?? "").trim() || null;
-  const ageGroupIds = formData.getAll("ageGroupIds").map(String);
 
   if (!activityId) {
     return "Tätigkeit ist ein Pflichtfeld.";
@@ -280,9 +279,6 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
       capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 1,
       creditHours: Number.isFinite(creditHours) ? creditHours : 0,
       notes,
-      ageGroupRestrictions: {
-        create: ageGroupIds.map((ageGroupId) => ({ ageGroupId })),
-      },
     },
   });
 

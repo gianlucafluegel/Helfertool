@@ -8,11 +8,9 @@ import { Button } from "@/components/ui/Button";
 export function AddShiftSlotForm({
   eventId,
   activities,
-  ageGroups,
 }: {
   eventId: string;
   activities: { id: string; name: string }[];
-  ageGroups: { id: string; name: string }[];
 }) {
   const [error, formAction, pending] = useActionState(
     async (_prev: string | undefined, formData: FormData) => addShiftSlot(eventId, formData),
@@ -48,17 +46,6 @@ export function AddShiftSlotForm({
           min={0}
           defaultValue={2.5}
         />
-      </div>
-      <div>
-        <p className="mb-1 text-sm font-medium text-text">Nur für Teams (leer = alle)</p>
-        <div className="flex flex-wrap gap-3">
-          {ageGroups.map((ag) => (
-            <label key={ag.id} className="flex items-center gap-1.5 text-sm">
-              <input type="checkbox" name="ageGroupIds" value={ag.id} />
-              {ag.name}
-            </label>
-          ))}
-        </div>
       </div>
       <FormField label="Notiz (optional)" name="notes" />
       {error && <p className="text-sm text-status-open-text">{error}</p>}
