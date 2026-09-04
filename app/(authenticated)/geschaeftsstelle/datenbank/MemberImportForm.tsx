@@ -76,6 +76,7 @@ function MemberImportPreviewTable({
               <th className="py-2 pr-2">Kontakt-ID</th>
               <th className="py-2 pr-2">Name</th>
               <th className="py-2 pr-2">E-Mail</th>
+              <th className="py-2 pr-2">Telefon</th>
               <th className="py-2 pr-2">Team</th>
               <th className="py-2 pr-2">Soll-Std.</th>
               <th className="py-2 pr-2">Status</th>
@@ -100,6 +101,7 @@ function MemberImportPreviewTable({
                   {row.firstName} {row.lastName}
                 </td>
                 <td className="py-2 pr-2">{row.email || "–"}</td>
+                <td className="py-2 pr-2">{row.phone || "–"}</td>
                 <td className="py-2 pr-2">
                   <select
                     value={row.ageGroupId ?? NO_STUFE}

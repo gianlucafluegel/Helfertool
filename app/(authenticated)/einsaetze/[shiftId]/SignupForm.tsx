@@ -53,7 +53,13 @@ export function SignupForm({
         required
         defaultValue={defaultEmail}
       />
-      <FormField label="Telefonnummer" name="helperPhone" defaultValue={defaultPhone} />
+      <FormField
+        label="Telefonnummer"
+        name="helperPhone"
+        type="tel"
+        required
+        defaultValue={defaultPhone}
+      />
 
       {requiresPayoutChoice && (
         <div className="flex flex-col gap-2 rounded-lg border border-border p-3">

@@ -6,8 +6,11 @@ export type ParsedMemberRow = {
   email: string;
   firstName: string;
   lastName: string;
+  phone: string;
   targetHours: number;
-  /** Base "U<n>" number extracted from the roster's Team/Stufe column, if present. */
+  /** Raw value of the roster's Team column (e.g. "U14", "3. Liga"), if present. */
+  teamRaw: string | null;
+  /** Base "U<n>" number extracted from the Team column, if present. */
   ageGroupNumber: number | null;
 };
 
@@ -28,13 +31,15 @@ function cellNumber(value: ExcelJS.CellValue): number | null {
 
 /**
  * Parses the club's member/roster export ("...aktualisierungsexport
- * privatpersonen...xlsx"). The Sollstunden column's header carries the
- * current season label (e.g. "Sollstunden (Saison 26/27)"), and the
- * Team/Stufe column carries a dynamic field-count suffix (e.g.
- * "Teams [6/13]") — both matched by prefix so export variations still parse.
- * The Team/Stufe value itself is normalised down to a bare "U<n>" number
- * (same rule as the Helfereinsätze-Import), in case it ever carries a
- * league-tier suffix like "U14-Top".
+ * privatpersonen...xlsx"). The Sollstunden column's header varies by source
+ * system (e.g. "Sollstunden (Saison 26/27)" for Nachwuchs, "Soll
+ * Helferstunden 26-27" for Aktivmannschaften) and the Team column carries a
+ * dynamic field-count suffix (e.g. "Teams [6/13]") — both matched by prefix
+ * so export variations still parse. The raw Team value is kept as-is
+ * (matched against the AgeGroup catalog by exact name first, e.g. "3. Liga")
+ * and also normalised down to a bare "U<n>" number as a fallback (same rule
+ * as the Helfereinsätze-Import), in case it ever carries a league-tier
+ * suffix like "U14-Top".
  */
 export async function parseMemberWorkbook(
   buffer: ArrayBuffer,
@@ -62,8 +67,11 @@ export async function parseMemberWorkbook(
   }
 
   const emailCol = headerIndex.get("Primäre E-Mail") ?? headerIndex.get("E-Mail");
+  const phoneCol = headerIndex.get("Handy") ?? headerIndex.get("Telefon") ?? headerIndex.get("Telefonnummer");
+  // Matches both "Sollstunden (Saison 26/27)" (Nachwuchs) and "Soll
+  // Helferstunden 26-27" (Aktivmannschaften) — both start with "soll".
   const sollstundenHeader = [...headerIndex.keys()].find((h) =>
-    h.toLowerCase().startsWith("sollstunden"),
+    h.toLowerCase().startsWith("soll"),
   );
   const sollstundenCol = sollstundenHeader ? headerIndex.get(sollstundenHeader) : undefined;
   const teamHeader = [...headerIndex.keys()].find((h) => h.toLowerCase().startsWith("team"));
@@ -82,13 +90,17 @@ export async function parseMemberWorkbook(
     const lastName = cellString(row.getCell(lastNameCol).value).trim();
     if (!contactId || !firstName || !lastName) return;
 
+    const teamValue = teamCol ? cellString(row.getCell(teamCol).value).trim() : "";
+
     rows.push({
       contactId,
       email: emailCol ? cellString(row.getCell(emailCol).value).trim() : "",
       firstName,
       lastName,
+      phone: phoneCol ? cellString(row.getCell(phoneCol).value).trim() : "",
       targetHours: (sollstundenCol ? cellNumber(row.getCell(sollstundenCol).value) : null) ?? 0,
-      ageGroupNumber: teamCol ? extractAgeNumber(cellString(row.getCell(teamCol).value).trim()) : null,
+      teamRaw: teamValue || null,
+      ageGroupNumber: teamValue ? extractAgeNumber(teamValue) : null,
     });
   });
 

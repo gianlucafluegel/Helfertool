@@ -20,6 +20,7 @@ export type MemberImportPreviewRow = {
   email: string;
   firstName: string;
   lastName: string;
+  phone: string;
   targetHours: number;
   ageGroupGuessId: string | null;
   willUpdate: boolean;
@@ -71,16 +72,25 @@ export async function parseMemberImportFile(
   return {
     status: "preview",
     rows: rows.map((r) => {
-      const ageGroupGuessId =
-        r.ageGroupNumber !== null
-          ? (ageGroups.find((ag) => extractAgeNumber(ag.name) === r.ageGroupNumber)?.id ?? null)
-          : null;
+      // Exact name match first (covers Aktivmannschaften like "3. Liga",
+      // which have no "U<n>" pattern to extract) — extractAgeNumber is only
+      // a fallback for Nachwuchs rows carrying a league-tier suffix like
+      // "U14-Top" that wouldn't exact-match the catalog's plain "U14".
+      const exactMatch = r.teamRaw
+        ? ageGroups.find((ag) => ag.name.toLowerCase() === r.teamRaw!.toLowerCase())
+        : undefined;
+      const numberMatch =
+        !exactMatch && r.ageGroupNumber !== null
+          ? ageGroups.find((ag) => extractAgeNumber(ag.name) === r.ageGroupNumber)
+          : undefined;
+      const ageGroupGuessId = exactMatch?.id ?? numberMatch?.id ?? null;
       const category = ageGroups.find((ag) => ag.id === ageGroupGuessId)?.category ?? null;
       return {
         contactId: r.contactId,
         email: r.email,
         firstName: r.firstName,
         lastName: r.lastName,
+        phone: r.phone,
         targetHours: r.targetHours,
         ageGroupGuessId,
         willUpdate: existingKeys.has(`${r.contactId}::${category ?? ""}`),
@@ -142,6 +152,7 @@ export async function commitMemberImport(
       firstName: row.firstName,
       lastName: row.lastName,
       email: row.email || null,
+      phone: row.phone || null,
       ageGroupId: row.ageGroupId,
       category,
       targetHours: row.targetHours,

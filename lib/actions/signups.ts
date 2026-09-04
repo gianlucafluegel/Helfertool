@@ -26,8 +26,8 @@ export async function createSignup(
   const payoutType = (formData.get("payoutType") as SignupPayoutType) || "HELFERKONTINGENT";
   const iban = String(formData.get("iban") ?? "").trim() || null;
 
-  if (!helperFirstName || !helperLastName || !helperEmail) {
-    return "Name, Vorname und E-Mail sind Pflichtfelder.";
+  if (!helperFirstName || !helperLastName || !helperEmail || !helperPhone) {
+    return "Name, Vorname, E-Mail und Telefonnummer sind Pflichtfelder.";
   }
 
   const shiftSlot = await prisma.shiftSlot.findUnique({
