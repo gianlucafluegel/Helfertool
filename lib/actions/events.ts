@@ -254,15 +254,23 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
   await requireGeschaeftsstelle();
 
   const activityId = String(formData.get("activityId") ?? "");
-  const area = formData.get("area") as "HELFER" | "FUNKTIONAER";
   const capacity = Number(formData.get("capacity") ?? 1);
   const creditHours = Number(formData.get("creditHours") ?? 0);
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const ageGroupIds = formData.getAll("ageGroupIds").map(String);
 
-  if (!activityId || !area) {
-    return "Tätigkeit und Bereich sind Pflichtfelder.";
+  if (!activityId) {
+    return "Tätigkeit ist ein Pflichtfeld.";
   }
+
+  // Bereich (Helfer/Funktionär) ist keine eigene Eingabe mehr — er ergibt
+  // sich aus der gewählten Tätigkeit (z.B. "Reporter" ist immer Funktionär),
+  // statt bei jeder neuen Rolle erneut manuell gewählt werden zu müssen.
+  const activity = await prisma.activity.findUnique({ where: { id: activityId } });
+  if (!activity) {
+    return "Tätigkeit nicht gefunden.";
+  }
+  const area = activity.defaultArea ?? "HELFER";
 
   await prisma.shiftSlot.create({
     data: {

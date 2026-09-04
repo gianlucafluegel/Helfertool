@@ -21,37 +21,22 @@ export function AddShiftSlotForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-3 rounded-lg border border-border p-3">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text" htmlFor="activityId">
-            Tätigkeit
-          </label>
-          <select
-            id="activityId"
-            name="activityId"
-            required
-            className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
-          >
-            {activities.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text" htmlFor="area">
-            Bereich
-          </label>
-          <select
-            id="area"
-            name="area"
-            className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
-          >
-            <option value="HELFER">Helfer</option>
-            <option value="FUNKTIONAER">Funktionär</option>
-          </select>
-        </div>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-text" htmlFor="activityId">
+          Tätigkeit
+        </label>
+        <select
+          id="activityId"
+          name="activityId"
+          required
+          className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
+        >
+          {activities.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <FormField label="Anzahl Plätze" name="capacity" type="number" min={1} defaultValue={1} />
