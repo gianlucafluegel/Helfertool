@@ -77,7 +77,10 @@ export function AdminSignupRow({
       <div>
         <p className="text-sm text-text">
           {signup.helperFirstName} {signup.helperLastName}{" "}
-          <span className="text-muted">· {signup.helperEmail}</span>
+          <span className="text-muted">
+            · {signup.helperEmail}
+            {signup.helperPhone ? ` · ${signup.helperPhone}` : ""}
+          </span>
         </p>
         {error && <p className="text-xs text-status-open-text">{error}</p>}
       </div>

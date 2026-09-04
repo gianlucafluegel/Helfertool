@@ -13,6 +13,8 @@ export type ShiftSlotRowData = {
     memberId: string;
     helperFirstName: string;
     helperLastName: string;
+    helperEmail: string;
+    helperPhone: string | null;
   }[];
 };
 
@@ -63,9 +65,14 @@ export function ShiftSlotRow({
         </Badge>
 
         {showOccupant && filledCount > 0 && (
-          <p className="text-sm text-muted">
-            {slot.signups.map((s) => `${s.helperFirstName} ${s.helperLastName}`).join(", ")}
-          </p>
+          <div className="flex flex-col gap-0.5">
+            {slot.signups.map((s) => (
+              <p key={s.id} className="text-sm text-muted">
+                {s.helperFirstName} {s.helperLastName} · {s.helperEmail}
+                {s.helperPhone ? ` · ${s.helperPhone}` : ""}
+              </p>
+            ))}
+          </div>
         )}
 
         {readOnly ? null : mySignup && allowSelfCancel ? (
