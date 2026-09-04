@@ -73,15 +73,13 @@ export function AdminSignupRow({
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2">
-      <div>
-        <p className="text-sm text-text">
-          {signup.helperFirstName} {signup.helperLastName}{" "}
-          <span className="text-muted">
-            · {signup.helperEmail}
-            {signup.helperPhone ? ` · ${signup.helperPhone}` : ""}
-          </span>
+    <div className="flex flex-wrap items-start justify-between gap-2">
+      <div className="flex flex-col">
+        <p className="text-base font-semibold text-text">
+          {signup.helperFirstName} {signup.helperLastName}
         </p>
+        <p className="text-sm text-muted">{signup.helperEmail}</p>
+        {signup.helperPhone && <p className="text-sm text-muted">{signup.helperPhone}</p>}
         {error && <p className="text-xs text-status-open-text">{error}</p>}
       </div>
       <div className="flex gap-2">

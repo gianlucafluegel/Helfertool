@@ -49,12 +49,15 @@ export default async function ShiftSignupPage({
           Dieser Einsatz ist bereits vollständig besetzt.
         </p>
         {canViewOccupant && (
-          <div className="mt-2 flex flex-col gap-1">
+          <div className="mt-3 flex flex-col gap-3">
             {shiftSlot.signups.map((s) => (
-              <p key={s.id} className="text-sm text-muted">
-                {s.helperFirstName} {s.helperLastName} · {s.helperEmail}
-                {s.helperPhone ? ` · ${s.helperPhone}` : ""}
-              </p>
+              <div key={s.id} className="flex flex-col">
+                <p className="text-base font-semibold text-text">
+                  {s.helperFirstName} {s.helperLastName}
+                </p>
+                <p className="text-sm text-muted">{s.helperEmail}</p>
+                {s.helperPhone && <p className="text-sm text-muted">{s.helperPhone}</p>}
+              </div>
             ))}
           </div>
         )}
