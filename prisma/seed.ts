@@ -28,7 +28,16 @@ async function main() {
     { name: "4. Liga", sortOrder: 8, triggersBarbezugChoice: false, category: "AKTIV" as const },
     { name: "SWHL B", sortOrder: 9, triggersBarbezugChoice: false, category: "AKTIV" as const },
     { name: "SWHL C", sortOrder: 10, triggersBarbezugChoice: false, category: "AKTIV" as const },
-    { name: "Senioren", sortOrder: 11, triggersBarbezugChoice: false, category: "AKTIV" as const },
+    {
+      name: "Senioren",
+      sortOrder: 11,
+      triggersBarbezugChoice: false,
+      category: "AKTIV" as const,
+      // Keine Helferpflicht, wird nur selten gebraucht — Login/Einschreiben
+      // funktioniert normal, taucht aber nicht im Team-Filter (Spiele &
+      // Events) oder in der Reminder-Gruppenauswahl auf.
+      visibleInTeamFilters: false,
+    },
   ];
   for (const def of ageGroupDefs) {
     await prisma.ageGroup.upsert({
@@ -37,6 +46,7 @@ async function main() {
         sortOrder: def.sortOrder,
         triggersBarbezugChoice: def.triggersBarbezugChoice,
         category: def.category,
+        visibleInTeamFilters: "visibleInTeamFilters" in def ? def.visibleInTeamFilters : true,
       },
       create: def,
     });

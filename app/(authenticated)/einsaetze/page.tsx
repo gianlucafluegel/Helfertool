@@ -36,7 +36,10 @@ export default async function EinsaetzePage({
   const [season, locations, ageGroups] = await Promise.all([
     getCurrentSeason(),
     prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-    prisma.ageGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+    prisma.ageGroup.findMany({
+      where: { isActive: true, visibleInTeamFilters: true },
+      orderBy: { sortOrder: "asc" },
+    }),
   ]);
 
   if (!season) {

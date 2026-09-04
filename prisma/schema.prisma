@@ -110,6 +110,12 @@ model AgeGroup {
   // don't need a manual backfill; Aktiv rows get tagged explicitly whenever
   // they're added to the catalog.
   category               MemberCategory  @default(NACHWUCHS)
+  // For teams with no real Helferpflicht (e.g. Senioren) that should stay
+  // fully usable (member creation/edit, roster import matching, signing up
+  // for a shift) but not clutter the Team-filter on Spiele & Events or the
+  // Reminder group picker. Unlike isActive, this never hides the team from
+  // the catalog itself — only from those two specific pickers.
+  visibleInTeamFilters   Boolean         @default(true)
 
   shiftSlotRestrictions   ShiftSlotAgeGroup[]
   stufenleiterAssignments StufenleiterAssignment[]

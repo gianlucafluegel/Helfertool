@@ -4,7 +4,7 @@ import { ReminderForm } from "@/components/reminders/ReminderForm";
 
 export default async function GeschaeftsstelleRemindersPage() {
   const ageGroups = await prisma.ageGroup.findMany({
-    where: { isActive: true },
+    where: { isActive: true, visibleInTeamFilters: true },
     orderBy: { sortOrder: "asc" },
   });
 
