@@ -56,10 +56,10 @@ export async function parseExternalEventsImportFile(
     return { status: "error", message: "Keine Rollen-Zeilen in der Datei gefunden." };
   }
 
-  // Zeilen mit identischem Start/Ende bilden zusammen einen Helfereinsatz —
-  // jede Zeile wird darin zu einer eigenen Rolle. Titel und Einsatzbeschrieb
-  // werden von der ersten Zeile jeder Gruppe übernommen (in der Vorlage
-  // innerhalb einer Gruppe ohnehin identisch).
+  // Zeilen mit identischem Start/Ende UND identischem Einsatzbeschrieb bilden
+  // zusammen einen Helfereinsatz mit mehreren Rollen — unterschiedliche
+  // Einsatzbeschriebe bleiben auch bei gleicher Zeit getrennte Einsätze
+  // (z.B. "Brückli südlich" und "Einweiser" zur selben Zeit).
   const groups = new Map<
     string,
     { startDateTime: Date; endDateTime: Date; einsatzbeschrieb: string; anforderungen: string | null; roleCount: number }
@@ -72,7 +72,7 @@ export async function parseExternalEventsImportFile(
       endDateTime = new Date(endDateTime.getTime() + 24 * 60 * 60 * 1000);
     }
 
-    const key = `${startDateTime.toISOString()}|${endDateTime.toISOString()}`;
+    const key = `${startDateTime.toISOString()}|${endDateTime.toISOString()}|${row.einsatzbeschrieb}`;
     const existing = groups.get(key);
     if (existing) {
       existing.roleCount += 1;
