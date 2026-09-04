@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { CreateGameEventForm } from "./CreateGameEventForm";
 import { CreateExternalEventForm } from "./CreateExternalEventForm";
 import { ImportForm } from "./ImportForm";
+import { ExternalEventsImportForm } from "./ExternalEventsImportForm";
 
 export default async function HelfereinsaetzePage() {
   const [season, locations, members] = await Promise.all([
@@ -50,6 +51,19 @@ export default async function HelfereinsaetzePage() {
           aktualisiert statt doppelt angelegt — bestehende Einsätze/Anmeldungen bleiben erhalten.
         </p>
         <ImportForm />
+      </Card>
+
+      <Card>
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted">
+          Helfereinsätze Externe Events importieren
+        </h2>
+        <p className="mb-3 text-sm text-muted">
+          Excel gemäss Vorlage hochladen (Zeile 1 Titel, Zeile 2 Ort, ab Zeile 4 eine Zeile pro
+          Rolle mit Datum/Beginn/Ende/Einsatzbeschrieb). Zeilen mit gleichem Datum/Zeit werden zu
+          einem Helfereinsatz mit mehreren Rollen zusammengefasst, der Titel setzt sich aus dem
+          Dokument-Titel und dem Einsatzbeschrieb zusammen.
+        </p>
+        <ExternalEventsImportForm />
       </Card>
     </div>
   );
