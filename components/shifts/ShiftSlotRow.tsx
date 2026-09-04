@@ -39,7 +39,6 @@ export function ShiftSlotRow({
   const mySignup = activeMemberId
     ? slot.signups.find((s) => s.memberId === activeMemberId)
     : undefined;
-  const restrictionLabel = slot.ageGroupRestrictions.map((r) => r.ageGroup.name).join(", ");
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border py-3 last:border-b-0">
@@ -49,7 +48,6 @@ export function ShiftSlotRow({
         </Badge>
         <div>
           <p className="text-sm font-medium text-text">{slot.activity.name}</p>
-          {restrictionLabel && <p className="text-xs text-muted">Nur {restrictionLabel}</p>}
         </div>
       </div>
 

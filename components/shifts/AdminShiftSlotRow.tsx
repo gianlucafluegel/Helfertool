@@ -25,7 +25,6 @@ export function AdminShiftSlotRow({
   eventId?: string;
 }) {
   const isFull = slot.signups.length >= slot.capacity;
-  const restrictionLabel = slot.ageGroupRestrictions.map((r) => r.ageGroup.name).join(", ");
 
   return (
     <div className="flex flex-col gap-2 border-b border-border py-3 last:border-b-0">
@@ -36,7 +35,6 @@ export function AdminShiftSlotRow({
           </Badge>
           <div>
             <p className="text-sm font-medium text-text">{slot.activity.name}</p>
-            {restrictionLabel && <p className="text-xs text-muted">Nur {restrictionLabel}</p>}
           </div>
         </div>
         <div className="flex items-center gap-2">
