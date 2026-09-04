@@ -5,26 +5,41 @@ import { updateEvent, deleteEvent } from "@/lib/actions/events";
 import { FormField } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 
-function toLocalInputValue(date: Date) {
+function toDateInputValue(date: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function toTimeInputValue(date: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 export function EventEditForm({
   eventId,
+  type,
   title,
   description,
   locationId,
+  locationText,
+  requirements,
+  pickupLocation,
   startDateTime,
+  endDateTime,
   status,
   locations,
   canDelete = true,
 }: {
   eventId: string;
+  type: "GAME" | "EXTERNAL";
   title: string;
   description: string;
   locationId: string;
+  locationText: string;
+  requirements: string;
+  pickupLocation: string;
   startDateTime: Date;
+  endDateTime: Date | null;
   status: string;
   locations: { id: string; name: string }[];
   canDelete?: boolean;
@@ -37,7 +52,8 @@ export function EventEditForm({
       action={(formData) => startTransition(() => updateEvent(eventId, formData))}
     >
       <FormField label="Titel" name="title" required defaultValue={title} />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+      {type === "GAME" ? (
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-text" htmlFor="locationId">
             Standort
@@ -56,25 +72,13 @@ export function EventEditForm({
             ))}
           </select>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text" htmlFor="status">
-            Status
-          </label>
-          <select
-            id="status"
-            name="status"
-            defaultValue={status}
-            className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
-          >
-            <option value="SCHEDULED">Geplant</option>
-            <option value="POSTPONED">Verschoben</option>
-            <option value="CANCELLED">Abgesagt</option>
-          </select>
-        </div>
-      </div>
+      ) : (
+        <FormField label="Ort" name="locationText" required defaultValue={locationText} />
+      )}
+
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-text" htmlFor="description">
-          Beschreibung
+          Einsatzbeschrieb
         </label>
         <textarea
           id="description"
@@ -85,12 +89,62 @@ export function EventEditForm({
           className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
         />
       </div>
-      <FormField
-        label="Datum/Zeit"
-        name="startDateTime"
-        type="datetime-local"
-        defaultValue={toLocalInputValue(startDateTime)}
-      />
+
+      {type === "EXTERNAL" && (
+        <>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-text" htmlFor="requirements">
+              Anforderungen
+            </label>
+            <textarea
+              id="requirements"
+              name="requirements"
+              required
+              rows={2}
+              defaultValue={requirements}
+              className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
+            />
+          </div>
+          <FormField
+            label="Abholort (optional)"
+            name="pickupLocation"
+            defaultValue={pickupLocation}
+          />
+        </>
+      )}
+
+      <FormField label="Datum" name="date" type="date" defaultValue={toDateInputValue(startDateTime)} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <FormField
+          label="Start"
+          name="startTime"
+          type="time"
+          defaultValue={toTimeInputValue(startDateTime)}
+        />
+        <FormField
+          label="Ende"
+          name="endTime"
+          type="time"
+          defaultValue={endDateTime ? toTimeInputValue(endDateTime) : ""}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-text" htmlFor="status">
+          Status
+        </label>
+        <select
+          id="status"
+          name="status"
+          defaultValue={status}
+          className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
+        >
+          <option value="SCHEDULED">Geplant</option>
+          <option value="POSTPONED">Verschoben</option>
+          <option value="CANCELLED">Abgesagt</option>
+        </select>
+      </div>
+
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={pending}>
           {pending ? "Wird gespeichert…" : "Speichern"}

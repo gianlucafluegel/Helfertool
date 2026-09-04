@@ -235,6 +235,15 @@ model Event {
   title         String
   description   String
   locationId    String?
+  // Freitext-Standort — nur für EXTERNAL genutzt. Der Location-Katalog
+  // (locationId) deckt nur die beiden vereinseigenen Hallen ab; ein externes
+  // Event kann aber praktisch überall stattfinden, deshalb dort statt eines
+  // Dropdowns ein frei definierbarer Ort.
+  locationText   String?
+  // Nur für EXTERNAL: was vor Ort von den Helfer:innen verlangt wird, und wo
+  // (optional) abgeholt wird.
+  requirements   String?
+  pickupLocation String?
   startDateTime DateTime
   endDateTime   DateTime?
   status        EventStatus @default(SCHEDULED)

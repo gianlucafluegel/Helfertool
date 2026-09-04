@@ -72,6 +72,14 @@ function ImportPreviewTable({
     })),
   );
 
+  // Der MySIHF-Export hat keine Endzeit — Ende ist daher immer Start +
+  // Helferstunden, statt einer eigenen, unabhängig editierbaren Spalte.
+  function recalcEndDateTimeIso(startDateTimeIso: string, creditHours: number): string {
+    return new Date(
+      new Date(startDateTimeIso).getTime() + creditHours * 60 * 60 * 1000,
+    ).toISOString();
+  }
+
   const selectedCount = rowState.filter((r) => r.selected).length;
 
   return (
@@ -82,9 +90,12 @@ function ImportPreviewTable({
             <tr className="border-b border-border text-left text-xs uppercase text-muted">
               <th className="py-2 pr-2" />
               <th className="py-2 pr-2">Datum</th>
+              <th className="py-2 pr-2">Start</th>
+              <th className="py-2 pr-2">Ende</th>
               <th className="py-2 pr-2">Titel</th>
               <th className="py-2 pr-2">Standort</th>
               <th className="py-2 pr-2">Team</th>
+              <th className="py-2 pr-2">Std.</th>
               <th className="py-2 pr-2">Status</th>
             </tr>
           </thead>
@@ -105,10 +116,20 @@ function ImportPreviewTable({
                   />
                 </td>
                 <td className="py-2 pr-2 whitespace-nowrap">
-                  {new Date(row.startDateTimeIso).toLocaleString("de-CH", {
+                  {new Date(row.startDateTimeIso).toLocaleDateString("de-CH", {
                     day: "2-digit",
                     month: "2-digit",
                     year: "numeric",
+                  })}
+                </td>
+                <td className="py-2 pr-2 whitespace-nowrap">
+                  {new Date(row.startDateTimeIso).toLocaleTimeString("de-CH", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </td>
+                <td className="py-2 pr-2 whitespace-nowrap text-muted">
+                  {new Date(row.endDateTimeIso).toLocaleTimeString("de-CH", {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
@@ -161,6 +182,31 @@ function ImportPreviewTable({
                   </select>
                 </td>
                 <td className="py-2 pr-2">
+                  <input
+                    type="number"
+                    step="0.5"
+                    min={0}
+                    value={row.creditHours}
+                    onChange={(e) => {
+                      const creditHours = Number(e.target.value);
+                      setRowState((prev) =>
+                        prev.map((r, j) =>
+                          j === i
+                            ? {
+                                ...r,
+                                creditHours,
+                                endDateTimeIso: Number.isFinite(creditHours)
+                                  ? recalcEndDateTimeIso(r.startDateTimeIso, creditHours)
+                                  : r.endDateTimeIso,
+                              }
+                            : r,
+                        ),
+                      );
+                    }}
+                    className="w-16 rounded border border-border bg-white px-2 py-1 text-xs"
+                  />
+                </td>
+                <td className="py-2 pr-2">
                   <div className="flex flex-wrap gap-1">
                     {row.cancelled && <Badge variant="open">abgesagt</Badge>}
                     {row.hasProbleme && <Badge variant="neutral">⚠ Probleme</Badge>}
@@ -192,6 +238,8 @@ function ImportPreviewTable({
                   title: r.title,
                   description: r.description,
                   startDateTimeIso: r.startDateTimeIso,
+                  endDateTimeIso: r.endDateTimeIso,
+                  creditHours: r.creditHours,
                   cancelled: r.cancelled,
                   locationId: r.locationId,
                   ageGroupId: r.ageGroupId,

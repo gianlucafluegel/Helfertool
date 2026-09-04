@@ -72,10 +72,26 @@ export default async function ShiftSignupPage({
             year: "numeric",
             hour: "2-digit",
             minute: "2-digit",
-          })}{" "}
-          Uhr{shiftSlot.event.location ? ` · ${shiftSlot.event.location.name}` : ""}
+          })}
+          {shiftSlot.event.endDateTime &&
+            ` – ${shiftSlot.event.endDateTime.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })}`}{" "}
+          Uhr
+          {(shiftSlot.event.location?.name ?? shiftSlot.event.locationText) &&
+            ` · ${shiftSlot.event.location?.name ?? shiftSlot.event.locationText}`}
         </p>
-        <p className="text-sm font-medium text-text">{shiftSlot.activity.name}</p>
+        <p className="mb-2 text-sm font-medium text-text">{shiftSlot.activity.name}</p>
+        {shiftSlot.event.requirements && (
+          <p className="text-sm text-muted">
+            <span className="font-medium text-text">Anforderungen:</span>{" "}
+            {shiftSlot.event.requirements}
+          </p>
+        )}
+        {shiftSlot.event.pickupLocation && (
+          <p className="text-sm text-muted">
+            <span className="font-medium text-text">Abholort:</span>{" "}
+            {shiftSlot.event.pickupLocation}
+          </p>
+        )}
       </Card>
 
       <Card>

@@ -108,7 +108,7 @@ export async function createSignup(
     event: shiftSlot.event.title,
     datum: shiftSlot.event.startDateTime.toLocaleString("de-CH"),
     taetigkeit: shiftSlot.activity.name,
-    standort: shiftSlot.event.location?.name ?? "",
+    standort: shiftSlot.event.location?.name ?? shiftSlot.event.locationText ?? "",
   });
 
   revalidatePath("/einsaetze");

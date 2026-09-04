@@ -202,7 +202,7 @@ export default async function StufenleiterOverviewPage({
                         {event.title}
                       </Link>
                     </td>
-                    <td className="py-2 pr-3">{event.location?.name ?? "–"}</td>
+                    <td className="py-2 pr-3">{event.location?.name ?? event.locationText ?? "–"}</td>
                     <td className="py-2 pr-3">
                       {event.status === "CANCELLED" ? (
                         <Badge variant="open">abgesagt</Badge>

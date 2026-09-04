@@ -73,7 +73,7 @@ export default async function StufenleiterStufePage({
           eventId={event.id}
           title={event.title}
           startDateTime={event.startDateTime}
-          locationName={event.location?.name ?? null}
+          locationName={event.location?.name ?? event.locationText ?? null}
           shiftSlots={event.shiftSlots}
           detailHrefBase={`/stufenleiter/${ageGroupId}`}
         />

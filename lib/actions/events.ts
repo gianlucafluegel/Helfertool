@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getCurrentSeason } from "@/lib/season";
 import { canManageShiftSlot } from "@/lib/visibility";
-import type { EventType } from "@/generated/prisma/enums";
 
 async function requireGeschaeftsstelle() {
   const session = await auth();
@@ -52,30 +52,152 @@ async function assertCanEditEvent(eventId: string) {
   throw new Error("Keine Berechtigung.");
 }
 
-export async function createEvent(prevState: string | undefined, formData: FormData) {
+/** Combines separate Datum/Start(/Ende)-Feldern into one Date. */
+function combineDateTime(date: string, time: string): Date {
+  return new Date(`${date}T${time}`);
+}
+
+/**
+ * Creates the ShiftSlot every manually erfasster Helfereinsatz gets — always
+ * the generic "Helfer (allgemein)"-Tätigkeit, Bereich Helfer, ein Platz.
+ * Differentiated Rollen (andere Tätigkeit/Bereich/Kapazität/Team-
+ * Einschränkung) bleiben weiterhin über "Weitere Rolle hinzufügen" auf der
+ * Einsatz-Detailseite ergänzbar — dieser Flow deckt nur den Standardfall ab.
+ */
+async function createDefaultShiftSlot(eventId: string, creditHours: number, memberId: string | null) {
+  const defaultActivity = await prisma.activity.findFirst({
+    where: { name: "Helfer (allgemein)" },
+  });
+  if (!defaultActivity) {
+    throw new Error(
+      "Standard-Tätigkeit 'Helfer (allgemein)' nicht gefunden. Bitte Geschäftsstelle kontaktieren.",
+    );
+  }
+
+  const member = memberId ? await prisma.member.findUnique({ where: { id: memberId } }) : null;
+
+  await prisma.shiftSlot.create({
+    data: {
+      eventId,
+      activityId: defaultActivity.id,
+      area: "HELFER",
+      capacity: 1,
+      creditHours,
+      ...(member
+        ? {
+            signups: {
+              create: {
+                memberId: member.id,
+                ageGroupSnapshot: "Alle Teams",
+                helperFirstName: member.firstName,
+                helperLastName: member.lastName,
+                helperEmail: member.email ?? "",
+                helperPhone: member.phone,
+                payoutType: "HELFERKONTINGENT",
+              },
+            },
+          }
+        : {}),
+    },
+  });
+}
+
+export async function createGameEvent(prevState: string | undefined, formData: FormData) {
   await requireGeschaeftsstelle();
 
-  const seasonId = String(formData.get("seasonId") ?? "");
-  const type = formData.get("type") as EventType;
   const title = String(formData.get("title") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
   const locationId = String(formData.get("locationId") ?? "") || null;
-  const startDateTime = String(formData.get("startDateTime") ?? "");
+  const description = String(formData.get("description") ?? "").trim();
+  const date = String(formData.get("date") ?? "");
+  const startTime = String(formData.get("startTime") ?? "");
+  const endTime = String(formData.get("endTime") ?? "");
+  const creditHoursRaw = formData.get("creditHours");
+  const creditHours = Number(creditHoursRaw);
+  const memberId = String(formData.get("memberId") ?? "") || null;
 
-  if (!seasonId || !title || !description || !startDateTime) {
-    return "Saison, Titel, Beschreibung und Datum/Zeit sind Pflichtfelder.";
+  if (
+    !title ||
+    !locationId ||
+    !description ||
+    !date ||
+    !startTime ||
+    !endTime ||
+    creditHoursRaw === null ||
+    creditHoursRaw === "" ||
+    !Number.isFinite(creditHours)
+  ) {
+    return "Titel, Standort, Einsatzbeschrieb, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
   }
+
+  const season = await getCurrentSeason();
+  if (!season) return "Keine aktive Saison konfiguriert.";
 
   const event = await prisma.event.create({
     data: {
-      seasonId,
-      type,
+      seasonId: season.id,
+      type: "GAME",
       title,
       description,
       locationId,
-      startDateTime: new Date(startDateTime),
+      startDateTime: combineDateTime(date, startTime),
+      endDateTime: combineDateTime(date, endTime),
     },
   });
+
+  await createDefaultShiftSlot(event.id, creditHours, memberId);
+
+  revalidatePath("/geschaeftsstelle/helfereinsaetze");
+  redirect(`/geschaeftsstelle/helfereinsaetze/${event.id}`);
+}
+
+export async function createExternalEvent(prevState: string | undefined, formData: FormData) {
+  await requireGeschaeftsstelle();
+
+  const title = String(formData.get("title") ?? "").trim();
+  const locationText = String(formData.get("locationText") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const requirements = String(formData.get("requirements") ?? "").trim();
+  const pickupLocation = String(formData.get("pickupLocation") ?? "").trim() || null;
+  const date = String(formData.get("date") ?? "");
+  const startTime = String(formData.get("startTime") ?? "");
+  const endTime = String(formData.get("endTime") ?? "");
+  const creditHoursRaw = formData.get("creditHours");
+  const creditHours = Number(creditHoursRaw);
+  const memberId = String(formData.get("memberId") ?? "") || null;
+
+  if (
+    !title ||
+    !locationText ||
+    !description ||
+    !requirements ||
+    !date ||
+    !startTime ||
+    !endTime ||
+    creditHoursRaw === null ||
+    creditHoursRaw === "" ||
+    !Number.isFinite(creditHours)
+  ) {
+    return "Titel, Ort, Einsatzbeschrieb, Anforderungen, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
+  }
+
+  const season = await getCurrentSeason();
+  if (!season) return "Keine aktive Saison konfiguriert.";
+
+  const event = await prisma.event.create({
+    data: {
+      seasonId: season.id,
+      type: "EXTERNAL",
+      title,
+      description,
+      locationText,
+      requirements,
+      pickupLocation,
+      startDateTime: combineDateTime(date, startTime),
+      endDateTime: combineDateTime(date, endTime),
+    },
+  });
+
+  await createDefaultShiftSlot(event.id, creditHours, memberId);
 
   revalidatePath("/geschaeftsstelle/helfereinsaetze");
   redirect(`/geschaeftsstelle/helfereinsaetze/${event.id}`);
@@ -86,8 +208,16 @@ export async function updateEvent(eventId: string, formData: FormData) {
 
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
+  // GAME sendet locationId (Dropdown), EXTERNAL sendet locationText/
+  // requirements/pickupLocation (Freitext) — je nach Typ des Events fehlt
+  // das jeweils andere Set im FormData und wird hier korrekt zu null.
   const locationId = String(formData.get("locationId") ?? "") || null;
-  const startDateTime = String(formData.get("startDateTime") ?? "");
+  const locationText = String(formData.get("locationText") ?? "").trim() || null;
+  const requirements = String(formData.get("requirements") ?? "").trim() || null;
+  const pickupLocation = String(formData.get("pickupLocation") ?? "").trim() || null;
+  const date = String(formData.get("date") ?? "");
+  const startTime = String(formData.get("startTime") ?? "");
+  const endTime = String(formData.get("endTime") ?? "");
   const status = String(formData.get("status") ?? "SCHEDULED") as
     | "SCHEDULED"
     | "CANCELLED"
@@ -103,7 +233,11 @@ export async function updateEvent(eventId: string, formData: FormData) {
       title,
       description,
       locationId,
-      startDateTime: startDateTime ? new Date(startDateTime) : undefined,
+      locationText,
+      requirements,
+      pickupLocation,
+      startDateTime: date && startTime ? combineDateTime(date, startTime) : undefined,
+      endDateTime: date && endTime ? combineDateTime(date, endTime) : null,
       status,
     },
   });

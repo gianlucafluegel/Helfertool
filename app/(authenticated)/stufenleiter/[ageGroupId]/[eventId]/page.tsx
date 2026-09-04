@@ -54,10 +54,15 @@ export default async function StufenleiterEventDetailPage({
         <h1 className="mb-3 text-base font-semibold text-text">Helfereinsatz bearbeiten</h1>
         <EventEditForm
           eventId={event.id}
+          type={event.type}
           title={event.title}
           description={event.description}
           locationId={event.locationId ?? ""}
+          locationText={event.locationText ?? ""}
+          requirements={event.requirements ?? ""}
+          pickupLocation={event.pickupLocation ?? ""}
           startDateTime={event.startDateTime}
+          endDateTime={event.endDateTime}
           status={event.status}
           locations={locations}
           canDelete={false}

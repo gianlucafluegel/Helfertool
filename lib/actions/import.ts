@@ -14,11 +14,18 @@ async function requireGeschaeftsstelle() {
   return session;
 }
 
+// Der MySIHF-Export enthält keine Endzeit — Ende wird deshalb aus
+// Start + Anzahl Helferstunden berechnet, mit diesem Wert als Standard
+// (deckungsgleich mit dem club-üblichen Helferstunden-Ansatz pro Spiel).
+const DEFAULT_GAME_CREDIT_HOURS = 2.5;
+
 export type ImportPreviewRow = {
   spielNr: string;
   title: string;
   description: string;
   startDateTimeIso: string;
+  endDateTimeIso: string;
+  creditHours: number;
   cancelled: boolean;
   hasProbleme: boolean;
   locationGuessId: string | null;
@@ -83,11 +90,17 @@ export async function parseImportFile(
       (ag) => rowAgeNumber !== null && extractAgeNumber(ag.name) === rowAgeNumber,
     );
 
+    const endDateTime = new Date(
+      row.startDateTime.getTime() + DEFAULT_GAME_CREDIT_HOURS * 60 * 60 * 1000,
+    );
+
     return {
       spielNr: row.spielNr,
       title: row.title,
       description: row.description,
       startDateTimeIso: row.startDateTime.toISOString(),
+      endDateTimeIso: endDateTime.toISOString(),
+      creditHours: DEFAULT_GAME_CREDIT_HOURS,
       cancelled: row.cancelled,
       hasProbleme: row.hasProbleme,
       locationGuessId: locationGuess?.id ?? null,
@@ -110,6 +123,8 @@ export async function commitImport(
     title: string;
     description: string;
     startDateTimeIso: string;
+    endDateTimeIso: string;
+    creditHours: number;
     cancelled: boolean;
     locationId: string | null;
     ageGroupId: string | null;
@@ -155,6 +170,7 @@ export async function commitImport(
           title: row.title,
           description: row.description,
           startDateTime: new Date(row.startDateTimeIso),
+          endDateTime: new Date(row.endDateTimeIso),
           locationId: row.locationId,
           status: row.cancelled ? "CANCELLED" : "SCHEDULED",
           importBatchId: batch.id,
@@ -169,6 +185,7 @@ export async function commitImport(
           title: row.title,
           description: row.description,
           startDateTime: new Date(row.startDateTimeIso),
+          endDateTime: new Date(row.endDateTimeIso),
           locationId: row.locationId,
           status: row.cancelled ? "CANCELLED" : "SCHEDULED",
           externalRef: row.spielNr,
@@ -178,7 +195,7 @@ export async function commitImport(
               activityId: defaultActivity.id,
               area: "HELFER",
               capacity: 1,
-              creditHours: 2.5,
+              creditHours: row.creditHours,
               ...(row.ageGroupId
                 ? { ageGroupRestrictions: { create: { ageGroupId: row.ageGroupId } } }
                 : {}),
