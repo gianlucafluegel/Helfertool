@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/Badge";
 import { AdminSignupRow } from "@/components/shifts/AdminSignupRow";
 import { DeleteShiftSlotButton } from "@/components/shifts/DeleteShiftSlotButton";
+import { AssignMemberForm } from "@/components/shifts/AssignMemberForm";
 
 export type AdminShiftSlotRowData = {
   id: string;
@@ -20,9 +21,13 @@ export type AdminShiftSlotRowData = {
 export function AdminShiftSlotRow({
   slot,
   eventId,
+  members,
 }: {
   slot: AdminShiftSlotRowData;
   eventId?: string;
+  /** Nur nötig, wenn eventId gesetzt ist (Geschäftsstelle-Kontext) — für die
+   * direkte Zuordnung eines Mitglieds zu einer noch offenen Rolle. */
+  members?: { id: string; firstName: string; lastName: string }[];
 }) {
   const isFull = slot.signups.length >= slot.capacity;
 
@@ -50,6 +55,12 @@ export function AdminShiftSlotRow({
           {slot.signups.map((s) => (
             <AdminSignupRow key={s.id} signup={s} />
           ))}
+        </div>
+      )}
+
+      {!isFull && eventId && members && (
+        <div className="pl-1">
+          <AssignMemberForm shiftSlotId={slot.id} members={members} />
         </div>
       )}
     </div>

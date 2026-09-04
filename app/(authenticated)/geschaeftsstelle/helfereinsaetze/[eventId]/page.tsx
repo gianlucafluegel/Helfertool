@@ -12,7 +12,7 @@ export default async function EventDetailPage({
 }) {
   const { eventId } = await params;
 
-  const [event, locations, activities] = await Promise.all([
+  const [event, locations, activities, members] = await Promise.all([
     prisma.event.findUnique({
       where: { id: eventId },
       include: {
@@ -29,6 +29,11 @@ export default async function EventDetailPage({
     }),
     prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.activity.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+    prisma.member.findMany({
+      where: { isActive: true },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      select: { id: true, firstName: true, lastName: true },
+    }),
   ]);
 
   if (!event || event.deletedAt) notFound();
@@ -64,7 +69,7 @@ export default async function EventDetailPage({
         </div>
         <div className="mb-4">
           {event.shiftSlots.map((slot) => (
-            <AdminShiftSlotRow key={slot.id} slot={slot} eventId={event.id} />
+            <AdminShiftSlotRow key={slot.id} slot={slot} eventId={event.id} members={members} />
           ))}
           {event.shiftSlots.length === 0 && (
             <p className="text-sm text-muted">Noch keine Rollen für diesen Helfereinsatz.</p>

@@ -304,3 +304,59 @@ export async function deleteShiftSlot(eventId: string, shiftSlotId: string) {
   await prisma.shiftSlot.update({ where: { id: shiftSlotId }, data: { deletedAt: new Date() } });
   revalidatePath(`/geschaeftsstelle/helfereinsaetze/${eventId}`);
 }
+
+/**
+ * Direkte Zuordnung durch die Geschäftsstelle — für eine bereits bestehende
+ * Rolle, nicht nur beim Erstellen. Legt den Signup direkt aus den
+ * Mitgliedsdaten an (wie beim Helfer-Feld in den Erfassungsformularen),
+ * ohne den öffentlichen Anmelde-Flow.
+ */
+export async function assignMemberToShiftSlot(
+  shiftSlotId: string,
+  memberId: string,
+): Promise<{ error?: string }> {
+  await requireGeschaeftsstelle();
+
+  const [shiftSlot, member] = await Promise.all([
+    prisma.shiftSlot.findUnique({
+      where: { id: shiftSlotId },
+      include: {
+        ageGroupRestrictions: { include: { ageGroup: true } },
+        signups: { where: { status: "CONFIRMED" } },
+      },
+    }),
+    prisma.member.findUnique({ where: { id: memberId } }),
+  ]);
+
+  if (!shiftSlot || shiftSlot.deletedAt) return { error: "Rolle nicht gefunden." };
+  if (!member) return { error: "Mitglied nicht gefunden." };
+  if (shiftSlot.signups.length >= shiftSlot.capacity) {
+    return { error: "Diese Rolle ist bereits vollständig besetzt." };
+  }
+  if (shiftSlot.signups.some((s) => s.memberId === memberId)) {
+    return { error: "Dieses Mitglied ist für diese Rolle bereits eingetragen." };
+  }
+
+  const ageGroupSnapshot = shiftSlot.ageGroupRestrictions[0]?.ageGroup.name ?? "Alle Teams";
+
+  await prisma.signup.create({
+    data: {
+      shiftSlotId,
+      memberId: member.id,
+      ageGroupSnapshot,
+      helperFirstName: member.firstName,
+      helperLastName: member.lastName,
+      helperEmail: member.email ?? "",
+      helperPhone: member.phone,
+      payoutType: "HELFERKONTINGENT",
+    },
+  });
+
+  revalidatePath(`/geschaeftsstelle/helfereinsaetze/${shiftSlot.eventId}`);
+  revalidatePath("/geschaeftsstelle/helfereinsaetze");
+  revalidatePath("/geschaeftsstelle");
+  revalidatePath("/einsaetze");
+  revalidatePath("/mein-konto");
+  revalidatePath("/stufenleiter", "layout");
+  return {};
+}
