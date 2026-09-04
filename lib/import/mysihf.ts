@@ -6,7 +6,6 @@ export type ParsedGameRow = {
   description: string;
   startDateTime: Date;
   cancelled: boolean;
-  hasProbleme: boolean;
   spielklasseHt: string | null;
   locationText: string;
   heimteam: string;
@@ -77,7 +76,6 @@ export async function parseMysihfWorkbook(
     const eisbahn = cellString(get(row, "Eisbahn")).trim();
     const ortEisbahn = cellString(get(row, "Ort Eisbahn")).trim();
     const spielstatus = cellString(get(row, "Spielstatus")).trim();
-    const probleme = cellString(get(row, "Probleme")).trim().toLowerCase() === "ja";
 
     // MySIHF's Spielklasse is a league-tier label ("U15-Top", "U21-A", ...)
     // more granular than our club's Stufen — only the bare "U<n>" survives
@@ -104,7 +102,6 @@ export async function parseMysihfWorkbook(
       description: descriptionParts.join(" · "),
       startDateTime: dateValue,
       cancelled: spielstatus.toLowerCase() === "abgesagt",
-      hasProbleme: probleme,
       spielklasseHt,
       locationText: [eisbahn, ortEisbahn].filter(Boolean).join(" "),
       heimteam,

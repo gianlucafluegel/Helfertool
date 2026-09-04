@@ -30,7 +30,6 @@ export type ImportPreviewRow = {
   endDateTimeIso: string;
   creditHours: number;
   cancelled: boolean;
-  hasProbleme: boolean;
   locationGuessId: string | null;
   ageGroupGuessId: string | null;
   willUpdate: boolean;
@@ -106,7 +105,6 @@ export async function parseImportFile(
       endDateTimeIso: shiftEnd.toISOString(),
       creditHours: DEFAULT_GAME_CREDIT_HOURS,
       cancelled: row.cancelled,
-      hasProbleme: row.hasProbleme,
       locationGuessId: locationGuess?.id ?? null,
       ageGroupGuessId: ageGroupGuess?.id ?? null,
       willUpdate: existingRefs.has(row.spielNr),

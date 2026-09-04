@@ -209,7 +209,6 @@ function ImportPreviewTable({
                 <td className="py-2 pr-2">
                   <div className="flex flex-wrap gap-1">
                     {row.cancelled && <Badge variant="open">abgesagt</Badge>}
-                    {row.hasProbleme && <Badge variant="neutral">⚠ Probleme</Badge>}
                     {row.willUpdate && <Badge variant="neutral">Update</Badge>}
                   </div>
                 </td>
