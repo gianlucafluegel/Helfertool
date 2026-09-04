@@ -17,6 +17,11 @@ export function AdminSignupRow({
   };
 }) {
   const [editing, setEditing] = useState(false);
+  // Ersetzt einen nativen confirm()-Dialog: der bleibt in manchen Browsern
+  // dauerhaft stumm, sobald einmal "Weitere Dialogfelder verhindern"
+  // angehakt wurde — ohne sichtbaren Hinweis, dass er unterdrückt wird. Ein
+  // Zwei-Klick-Ablauf in der App selbst umgeht das komplett.
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -82,29 +87,52 @@ export function AdminSignupRow({
         {signup.helperPhone && <p className="text-sm text-muted">{signup.helperPhone}</p>}
         {error && <p className="text-xs text-status-open-text">{error}</p>}
       </div>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className="text-xs font-medium text-muted hover:text-text"
-        >
-          Bearbeiten
-        </button>
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => {
-            if (!confirm("Diese Anmeldung entfernen?")) return;
-            setError(null);
-            startTransition(async () => {
-              const result = await cancelSignup(signup.id);
-              if (result.error) setError(result.error);
-            });
-          }}
-          className="text-xs font-medium text-status-open-text hover:underline"
-        >
-          Entfernen
-        </button>
+      <div className="flex items-center gap-2">
+        {confirmingRemove ? (
+          <>
+            <span className="text-xs text-muted">Wirklich entfernen?</span>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => {
+                setError(null);
+                startTransition(async () => {
+                  const result = await cancelSignup(signup.id);
+                  if (result.error) setError(result.error);
+                  setConfirmingRemove(false);
+                });
+              }}
+              className="text-xs font-medium text-status-open-text hover:underline disabled:opacity-50"
+            >
+              {pending ? "Wird entfernt…" : "Ja, entfernen"}
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => setConfirmingRemove(false)}
+              className="text-xs font-medium text-muted hover:text-text disabled:opacity-50"
+            >
+              Abbrechen
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="text-xs font-medium text-muted hover:text-text"
+            >
+              Bearbeiten
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingRemove(true)}
+              className="text-xs font-medium text-status-open-text hover:underline"
+            >
+              Entfernen
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

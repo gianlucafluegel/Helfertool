@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { updateEvent, deleteEvent } from "@/lib/actions/events";
 import { FormField } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
@@ -43,6 +43,11 @@ export function EventEditForm({
   canDelete?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  // Ersetzt einen nativen confirm()-Dialog: der bleibt in manchen Browsern
+  // dauerhaft stumm, sobald einmal "Weitere Dialogfelder verhindern"
+  // angehakt wurde — ohne sichtbaren Hinweis, dass er unterdrückt wird. Ein
+  // Zwei-Klick-Ablauf in der App selbst umgeht das komplett.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   return (
     <form
@@ -136,23 +141,36 @@ export function EventEditForm({
         </select>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={pending}>
           {pending ? "Wird gespeichert…" : "Speichern"}
         </Button>
-        {canDelete && (
-          <Button
-            type="button"
-            variant="danger"
-            onClick={() => {
-              if (confirm("Diesen Helfereinsatz wirklich löschen?")) {
-                startTransition(() => deleteEvent(eventId));
-              }
-            }}
-          >
-            Helfereinsatz löschen
-          </Button>
-        )}
+        {canDelete &&
+          (confirmingDelete ? (
+            <span className="inline-flex items-center gap-2 text-sm">
+              <span className="text-muted">Wirklich löschen?</span>
+              <Button
+                type="button"
+                variant="danger"
+                disabled={pending}
+                onClick={() => startTransition(() => deleteEvent(eventId))}
+              >
+                {pending ? "Wird gelöscht…" : "Ja, löschen"}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={pending}
+                onClick={() => setConfirmingDelete(false)}
+              >
+                Abbrechen
+              </Button>
+            </span>
+          ) : (
+            <Button type="button" variant="danger" onClick={() => setConfirmingDelete(true)}>
+              Helfereinsatz löschen
+            </Button>
+          ))}
       </div>
     </form>
   );
