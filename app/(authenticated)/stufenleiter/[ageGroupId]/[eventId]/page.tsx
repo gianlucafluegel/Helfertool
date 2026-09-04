@@ -70,7 +70,7 @@ export default async function StufenleiterEventDetailPage({
 
       <Card>
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Einsätze</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Rollen</h2>
           <a
             href={`/api/exports/event/${event.id}`}
             className="text-xs font-medium text-gold-hover hover:underline"

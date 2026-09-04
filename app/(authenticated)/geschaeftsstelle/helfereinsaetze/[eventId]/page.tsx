@@ -55,7 +55,7 @@ export default async function EventDetailPage({
 
       <Card>
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Einsätze</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Rollen</h2>
           <a
             href={`/api/exports/event/${event.id}`}
             className="text-xs font-medium text-gold-hover hover:underline"
@@ -68,7 +68,7 @@ export default async function EventDetailPage({
             <AdminShiftSlotRow key={slot.id} slot={slot} eventId={event.id} />
           ))}
           {event.shiftSlots.length === 0 && (
-            <p className="text-sm text-muted">Noch keine Einsätze für diesen Helfereinsatz.</p>
+            <p className="text-sm text-muted">Noch keine Rollen für diesen Helfereinsatz.</p>
           )}
         </div>
         <AddShiftSlotForm eventId={event.id} activities={activities} ageGroups={ageGroups} />

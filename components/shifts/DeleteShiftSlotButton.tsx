@@ -17,7 +17,7 @@ export function DeleteShiftSlotButton({
       type="button"
       disabled={pending}
       onClick={() => {
-        if (!confirm("Diesen Einsatz löschen?")) return;
+        if (!confirm("Diese Rolle löschen?")) return;
         startTransition(() => deleteShiftSlot(eventId, shiftSlotId));
       }}
       className="text-xs font-medium text-status-open-text hover:underline"
