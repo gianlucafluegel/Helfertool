@@ -2,7 +2,10 @@ import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isShiftSlotVisible } from "@/lib/visibility";
-import { shiftRequiresPayoutChoice } from "@/lib/rules/signup-rules";
+import {
+  requiresWristbandPickupChoice,
+  shiftRequiresPayoutChoice,
+} from "@/lib/rules/signup-rules";
 import { Card } from "@/components/ui/Card";
 import { SignupForm } from "./SignupForm";
 
@@ -101,6 +104,7 @@ export default async function ShiftSignupPage({
             shiftSlot.activity.requiresPayoutChoice,
             shiftSlot.ageGroupRestrictions,
           )}
+          requiresWristbandPickupChoice={requiresWristbandPickupChoice(shiftSlot.event.title)}
           defaultFirstName={activeMember.firstName}
           defaultLastName={activeMember.lastName}
           defaultEmail={member?.email ?? ""}

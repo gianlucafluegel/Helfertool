@@ -4,9 +4,13 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isShiftSlotVisible, canManageShiftSlot } from "@/lib/visibility";
-import { canCancelSignup, validatePayoutChoice } from "@/lib/rules/signup-rules";
+import {
+  canCancelSignup,
+  requiresWristbandPickupChoice,
+  validatePayoutChoice,
+} from "@/lib/rules/signup-rules";
 import { sendMail } from "@/lib/mail/send";
-import type { SignupPayoutType } from "@/generated/prisma/enums";
+import type { SignupPayoutType, WristbandPickupLocation } from "@/generated/prisma/enums";
 
 export async function createSignup(
   prevState: string | undefined,
@@ -25,6 +29,8 @@ export async function createSignup(
   const helperPhone = String(formData.get("helperPhone") ?? "").trim() || null;
   const payoutType = (formData.get("payoutType") as SignupPayoutType) || "HELFERKONTINGENT";
   const iban = String(formData.get("iban") ?? "").trim() || null;
+  const wristbandPickup =
+    (formData.get("wristbandPickup") as WristbandPickupLocation) || null;
 
   if (!helperFirstName || !helperLastName || !helperEmail || !helperPhone) {
     return "Name, Vorname, E-Mail und Telefonnummer sind Pflichtfelder.";
@@ -46,6 +52,12 @@ export async function createSignup(
 
   if (!isShiftSlotVisible({ area: shiftSlot.area }, session.user.role)) {
     return "Dieser Einsatz ist für dich nicht freigegeben.";
+  }
+
+  // Sonderfall Truckerfestival — nie nur der Client-Angabe vertrauen, ob die
+  // Frage nötig war, sondern anhand des tatsächlichen Event-Titels prüfen.
+  if (requiresWristbandPickupChoice(shiftSlot.event.title) && !wristbandPickup) {
+    return "Bitte angeben, wo das Armband abgeholt werden soll.";
   }
 
   const ageGroupTriggersBarbezug = shiftSlot.ageGroupRestrictions.some(
@@ -89,6 +101,7 @@ export async function createSignup(
           helperPhone,
           payoutType,
           ibanSnapshot: payoutType === "BARBEZUG" ? iban : null,
+          wristbandPickup,
         },
       });
     });

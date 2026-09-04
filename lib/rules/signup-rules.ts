@@ -16,6 +16,17 @@ export function shiftRequiresPayoutChoice(
   );
 }
 
+/**
+ * Sonderfall Truckerfestival: Helfer:innen für Einsätze, deren Titel
+ * "Trucker" enthält (z.B. "Truckerfestival", "Trucker Festival"), müssen
+ * beim Anmelden zusätzlich angeben, wo sie ihr Armband abholen möchten.
+ * Reiner Titel-Substring-Match — bewusst kein generisches
+ * "Zusatzfrage pro Event"-System, da dies der einzige bekannte Fall ist.
+ */
+export function requiresWristbandPickupChoice(eventTitle: string): boolean {
+  return /trucker/i.test(eventTitle);
+}
+
 export function validatePayoutChoice(input: {
   activityRequiresPayoutChoice: boolean;
   ageGroupTriggersBarbezug: boolean;

@@ -41,6 +41,13 @@ enum SignupStatus {
   CANCELLED
 }
 
+// Sonderfall Truckerfestival (siehe requiresWristbandPickupChoice in
+// lib/rules/signup-rules.ts) — wo ein Helfer sein Armband abholen möchte.
+enum WristbandPickupLocation {
+  GESCHAEFTSSTELLE
+  TRAINING
+}
+
 enum MailTemplateKey {
   SIGNUP_CONFIRMATION
   REMINDER_UNFILLED
@@ -303,6 +310,7 @@ model Signup {
   helperPhone      String?
   payoutType       SignupPayoutType @default(HELFERKONTINGENT)
   ibanSnapshot     String?
+  wristbandPickup  WristbandPickupLocation?
   status           SignupStatus     @default(CONFIRMED)
   cancelledAt      DateTime?
   cancelReason     String?

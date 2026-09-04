@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 export function SignupForm({
   shiftSlotId,
   requiresPayoutChoice,
+  requiresWristbandPickupChoice,
   defaultFirstName,
   defaultLastName,
   defaultEmail,
@@ -16,6 +17,7 @@ export function SignupForm({
 }: {
   shiftSlotId: string;
   requiresPayoutChoice: boolean;
+  requiresWristbandPickupChoice: boolean;
   defaultFirstName: string;
   defaultLastName: string;
   defaultEmail: string;
@@ -24,6 +26,9 @@ export function SignupForm({
   const router = useRouter();
   const [payoutType, setPayoutType] = useState<"HELFERKONTINGENT" | "BARBEZUG">(
     "HELFERKONTINGENT",
+  );
+  const [wristbandPickup, setWristbandPickup] = useState<"GESCHAEFTSSTELLE" | "TRAINING" | "">(
+    "",
   );
   const [error, formAction, pending] = useActionState(async (_prev: string | undefined, formData: FormData) => {
     const result = await createSignup(_prev, formData);
@@ -87,6 +92,34 @@ export function SignupForm({
           {payoutType === "BARBEZUG" && (
             <FormField label="IBAN" name="iban" required placeholder="CH00 0000 0000 0000 0000 0" />
           )}
+        </div>
+      )}
+
+      {requiresWristbandPickupChoice && (
+        <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+          <p className="text-sm font-medium text-text">Wo möchtest du dein Armband abholen?</p>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="wristbandPickup"
+              value="GESCHAEFTSSTELLE"
+              required
+              checked={wristbandPickup === "GESCHAEFTSSTELLE"}
+              onChange={() => setWristbandPickup("GESCHAEFTSSTELLE")}
+            />
+            Auf der Geschäftsstelle (Bierigutstrasse 14, 3608 Thun)
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              name="wristbandPickup"
+              value="TRAINING"
+              required
+              checked={wristbandPickup === "TRAINING"}
+              onChange={() => setWristbandPickup("TRAINING")}
+            />
+            Im Training
+          </label>
         </div>
       )}
 
