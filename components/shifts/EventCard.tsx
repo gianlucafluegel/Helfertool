@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/Card";
 import { ShiftSlotRow, type ShiftSlotRowData } from "@/components/shifts/ShiftSlotRow";
+import { formatDateTime } from "@/lib/format";
 
 export function EventCard({
   title,
@@ -22,13 +23,7 @@ export function EventCard({
   readOnly?: boolean;
   canViewOccupant?: boolean;
 }) {
-  const formattedDate = startDateTime.toLocaleString("de-CH", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const formattedDate = formatDateTime(startDateTime);
 
   return (
     <Card>

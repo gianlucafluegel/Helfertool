@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import { formatDate, formatTime } from "@/lib/format";
 
 export type GameEventExportRow = {
   vorname: string;
@@ -59,15 +60,9 @@ export async function buildGameEventExcel(params: {
     cell.border = { bottom: { style: "thin" } };
   });
 
-  const datum = startDateTime.toLocaleDateString("de-CH", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-  const beginn = startDateTime.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" });
-  const ende = endDateTime
-    ? endDateTime.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })
-    : "";
+  const datum = formatDate(startDateTime);
+  const beginn = formatTime(startDateTime);
+  const ende = endDateTime ? formatTime(endDateTime) : "";
   const dauer = endDateTime
     ? Math.round(((endDateTime.getTime() - startDateTime.getTime()) / (60 * 60 * 1000)) * 100) / 100
     : "";

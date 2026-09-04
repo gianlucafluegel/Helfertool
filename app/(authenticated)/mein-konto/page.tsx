@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { CancelSignupButton } from "@/components/shifts/CancelSignupButton";
 import { MemberTabs } from "@/components/layout/MemberTabs";
+import { formatDate, formatDateTime } from "@/lib/format";
 
 export default async function MeinKontoPage() {
   const session = await auth();
@@ -81,13 +82,7 @@ export default async function MeinKontoPage() {
               <div>
                 <p className="text-sm font-medium text-text">{s.shiftSlot.event.title}</p>
                 <p className="text-xs text-muted">
-                  {s.shiftSlot.event.startDateTime.toLocaleString("de-CH", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}{" "}
+                  {formatDateTime(s.shiftSlot.event.startDateTime)}{" "}
                   Uhr · {s.shiftSlot.activity.name}
                 </p>
               </div>
@@ -108,7 +103,7 @@ export default async function MeinKontoPage() {
               <div>
                 <p className="text-sm font-medium text-text">{s.shiftSlot.event.title}</p>
                 <p className="text-xs text-muted">
-                  {s.shiftSlot.event.startDateTime.toLocaleDateString("de-CH")} ·{" "}
+                  {formatDate(s.shiftSlot.event.startDateTime)} ·{" "}
                   {s.shiftSlot.activity.name}
                 </p>
               </div>

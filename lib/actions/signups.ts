@@ -10,6 +10,7 @@ import {
   validatePayoutChoice,
 } from "@/lib/rules/signup-rules";
 import { sendMail } from "@/lib/mail/send";
+import { formatDateTime } from "@/lib/format";
 import type { SignupPayoutType, WristbandPickupLocation } from "@/generated/prisma/enums";
 
 export async function createSignup(
@@ -119,7 +120,7 @@ export async function createSignup(
     vorname: helperFirstName,
     nachname: helperLastName,
     event: shiftSlot.event.title,
-    datum: shiftSlot.event.startDateTime.toLocaleString("de-CH"),
+    datum: formatDateTime(shiftSlot.event.startDateTime),
     taetigkeit: shiftSlot.activity.name,
     standort: shiftSlot.event.location?.name ?? shiftSlot.event.locationText ?? "",
   });

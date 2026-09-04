@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { formatDateTime } from "@/lib/format";
 
 type Zeitraum = "zukunft" | "vergangen" | "alle";
 
@@ -178,13 +179,7 @@ export default async function GeschaeftsstelleOverviewPage({
                 return (
                   <tr key={event.id} className="border-b border-border last:border-b-0">
                     <td className="py-2 pr-3 whitespace-nowrap">
-                      {event.startDateTime.toLocaleString("de-CH", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {formatDateTime(event.startDateTime)}
                     </td>
                     <td className="py-2 pr-3">
                       <Link

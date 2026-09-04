@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { AdminShiftSlotRow, type AdminShiftSlotRowData } from "@/components/shifts/AdminShiftSlotRow";
+import { formatDateTime } from "@/lib/format";
 
 export function AdminEventCard({
   eventId,
@@ -20,13 +21,7 @@ export function AdminEventCard({
   /** When provided, the title links to `${detailHrefBase}/${eventId}`. */
   detailHrefBase?: string;
 }) {
-  const formattedDate = startDateTime.toLocaleString("de-CH", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const formattedDate = formatDateTime(startDateTime);
 
   return (
     <Card>

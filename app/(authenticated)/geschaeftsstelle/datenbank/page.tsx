@@ -4,6 +4,7 @@ import { getCurrentSeason } from "@/lib/season";
 import { Card } from "@/components/ui/Card";
 import { MemberImportForm } from "./MemberImportForm";
 import { ArchiveSeasonForm } from "./ArchiveSeasonForm";
+import { formatDate } from "@/lib/format";
 
 export default async function DatenbankPage({
   searchParams,
@@ -110,7 +111,7 @@ export default async function DatenbankPage({
               className="flex items-center justify-between border-b border-border py-2 text-sm last:border-b-0 hover:text-gold-hover"
             >
               <span>{a.seasonLabel}</span>
-              <span className="text-muted">archiviert am {a.archivedAt.toLocaleDateString("de-CH")}</span>
+              <span className="text-muted">archiviert am {formatDate(a.archivedAt)}</span>
             </Link>
           ))}
           {archives.length === 0 && (

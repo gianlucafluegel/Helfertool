@@ -7,6 +7,7 @@ import {
   shiftRequiresPayoutChoice,
 } from "@/lib/rules/signup-rules";
 import { Card } from "@/components/ui/Card";
+import { formatDateTime, formatTime } from "@/lib/format";
 import { SignupForm } from "./SignupForm";
 
 export default async function ShiftSignupPage({
@@ -75,15 +76,9 @@ export default async function ShiftSignupPage({
       <Card>
         <h1 className="text-base font-semibold text-text">{shiftSlot.event.title}</h1>
         <p className="mb-1 text-sm text-muted">
-          {shiftSlot.event.startDateTime.toLocaleString("de-CH", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+          {formatDateTime(shiftSlot.event.startDateTime)}
           {shiftSlot.event.endDateTime &&
-            ` – ${shiftSlot.event.endDateTime.toLocaleTimeString("de-CH", { hour: "2-digit", minute: "2-digit" })}`}{" "}
+            ` – ${formatTime(shiftSlot.event.endDateTime)}`}{" "}
           Uhr
           {(shiftSlot.event.location?.name ?? shiftSlot.event.locationText) &&
             ` · ${shiftSlot.event.location?.name ?? shiftSlot.event.locationText}`}

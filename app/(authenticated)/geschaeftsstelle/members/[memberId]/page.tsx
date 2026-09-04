@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { MemberEditForm } from "./MemberEditForm";
 import { InviteLoginForm } from "./InviteLoginForm";
+import { formatDate } from "@/lib/format";
 
 export default async function MemberDetailPage({
   params,
@@ -80,7 +81,7 @@ export default async function MemberDetailPage({
                 {s.shiftSlot.event.title} · {s.shiftSlot.activity.name}
               </span>
               <span className="flex items-center gap-2 text-muted">
-                {s.shiftSlot.event.startDateTime.toLocaleDateString("de-CH")}
+                {formatDate(s.shiftSlot.event.startDateTime)}
                 {s.shiftSlot.event.isManualEntry && <Badge variant="neutral">manuell</Badge>}
                 <Badge variant={s.payoutType === "HELFERKONTINGENT" ? "filled" : "neutral"}>
                   {s.payoutType}

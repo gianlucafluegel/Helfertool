@@ -9,6 +9,7 @@ import {
   type ExternalEventGroupPreview,
 } from "@/lib/actions/external-events-import";
 import { Button } from "@/components/ui/Button";
+import { formatDate, formatTime } from "@/lib/format";
 
 export function ExternalEventsImportForm() {
   const [state, formAction, pending] = useActionState<ExternalEventsImportPreviewState, FormData>(
@@ -82,23 +83,13 @@ function ExternalEventsPreviewTable({ groups }: { groups: ExternalEventGroupPrev
                   />
                 </td>
                 <td className="py-2 pr-2 whitespace-nowrap">
-                  {new Date(row.startDateTimeIso).toLocaleDateString("de-CH", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  })}
+                  {formatDate(new Date(row.startDateTimeIso))}
                 </td>
                 <td className="py-2 pr-2 whitespace-nowrap">
-                  {new Date(row.startDateTimeIso).toLocaleTimeString("de-CH", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {formatTime(new Date(row.startDateTimeIso))}
                 </td>
                 <td className="py-2 pr-2 whitespace-nowrap text-muted">
-                  {new Date(row.endDateTimeIso).toLocaleTimeString("de-CH", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {formatTime(new Date(row.endDateTimeIso))}
                 </td>
                 <td className="py-2 pr-2 whitespace-nowrap text-muted">{row.creditHours}</td>
                 <td className="py-2 pr-2">{row.title}</td>

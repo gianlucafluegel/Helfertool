@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { formatDate } from "@/lib/format";
 
 type ArchivedSignup = {
   id: string;
@@ -68,7 +69,7 @@ export default async function SeasonArchiveDetailPage({
         </Link>
         <h1 className="mt-1 text-lg font-semibold text-navy">Saison {data.seasonLabel} (archiviert)</h1>
         <p className="text-sm text-muted">
-          Archiviert am {new Date(data.archivedAt).toLocaleDateString("de-CH")} · {data.members.length}{" "}
+          Archiviert am {formatDate(new Date(data.archivedAt))} · {data.members.length}{" "}
           Mitglieder · {realEvents.length} Helfereinsätze — nur lesbar.
         </p>
       </div>
@@ -121,7 +122,7 @@ export default async function SeasonArchiveDetailPage({
             <div key={e.id} className="border-b border-border pb-4 last:border-b-0">
               <p className="font-medium text-text">{e.title}</p>
               <p className="mb-2 text-xs text-muted">
-                {new Date(e.startDateTime).toLocaleDateString("de-CH")}
+                {formatDate(new Date(e.startDateTime))}
                 {e.locationName ? ` · ${e.locationName}` : ""}
               </p>
               <div className="flex flex-col gap-1.5 pl-3">

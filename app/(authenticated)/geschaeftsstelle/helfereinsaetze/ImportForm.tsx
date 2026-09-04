@@ -10,6 +10,7 @@ import {
 } from "@/lib/actions/import";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { formatDate, formatTime } from "@/lib/format";
 
 const ALL_AGE_GROUPS = "__all__";
 
@@ -116,23 +117,13 @@ function ImportPreviewTable({
                   />
                 </td>
                 <td className="py-2 pr-2 whitespace-nowrap">
-                  {new Date(row.startDateTimeIso).toLocaleDateString("de-CH", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  })}
+                  {formatDate(new Date(row.startDateTimeIso))}
                 </td>
                 <td className="py-2 pr-2 whitespace-nowrap">
-                  {new Date(row.startDateTimeIso).toLocaleTimeString("de-CH", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {formatTime(new Date(row.startDateTimeIso))}
                 </td>
                 <td className="py-2 pr-2 whitespace-nowrap text-muted">
-                  {new Date(row.endDateTimeIso).toLocaleTimeString("de-CH", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {formatTime(new Date(row.endDateTimeIso))}
                 </td>
                 <td className="py-2 pr-2">{row.title}</td>
                 <td className="py-2 pr-2">
