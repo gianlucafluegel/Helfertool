@@ -21,7 +21,7 @@ export default async function StufenleiterEventDetailPage({
   });
   if (!assignment) notFound();
 
-  const [event, locations] = await Promise.all([
+  const [event, locations, members] = await Promise.all([
     prisma.event.findUnique({
       where: { id: eventId },
       include: {
@@ -37,6 +37,11 @@ export default async function StufenleiterEventDetailPage({
       },
     }),
     prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+    prisma.member.findMany({
+      where: { isActive: true },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      select: { id: true, firstName: true, lastName: true },
+    }),
   ]);
 
   if (!event || event.deletedAt || event.shiftSlots.length === 0) notFound();
@@ -79,7 +84,7 @@ export default async function StufenleiterEventDetailPage({
           </a>
         </div>
         {event.shiftSlots.map((slot) => (
-          <AdminShiftSlotRow key={slot.id} slot={slot} />
+          <AdminShiftSlotRow key={slot.id} slot={slot} members={members} />
         ))}
       </Card>
     </div>

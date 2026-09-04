@@ -24,9 +24,12 @@ export function AdminShiftSlotRow({
   members,
 }: {
   slot: AdminShiftSlotRowData;
+  /** Nur gesetzt im Geschäftsstelle-Kontext — schaltet den Löschen-Button
+   * frei (Stufenleiter dürfen Rollen nicht löschen). */
   eventId?: string;
-  /** Nur nötig, wenn eventId gesetzt ist (Geschäftsstelle-Kontext) — für die
-   * direkte Zuordnung eines Mitglieds zu einer noch offenen Rolle. */
+  /** Für die direkte Zuordnung eines Mitglieds zu einer noch offenen Rolle —
+   * unabhängig von eventId, da Geschäftsstelle UND Stufenleiter (für ihre
+   * eigenen Teams) das dürfen. */
   members?: { id: string; firstName: string; lastName: string }[];
 }) {
   const isFull = slot.signups.length >= slot.capacity;
@@ -58,7 +61,7 @@ export function AdminShiftSlotRow({
         </div>
       )}
 
-      {!isFull && eventId && members && (
+      {!isFull && members && (
         <div className="pl-1">
           <AssignMemberForm shiftSlotId={slot.id} members={members} />
         </div>

@@ -306,16 +306,24 @@ export async function deleteShiftSlot(eventId: string, shiftSlotId: string) {
 }
 
 /**
- * Direkte Zuordnung durch die Geschäftsstelle — für eine bereits bestehende
- * Rolle, nicht nur beim Erstellen. Legt den Signup direkt aus den
- * Mitgliedsdaten an (wie beim Helfer-Feld in den Erfassungsformularen),
- * ohne den öffentlichen Anmelde-Flow.
+ * Direkte Zuordnung durch Geschäftsstelle oder Stufenleiter — für eine
+ * bereits bestehende Rolle, nicht nur beim Erstellen. Legt den Signup
+ * direkt aus den Mitgliedsdaten an (wie beim Helfer-Feld in den
+ * Erfassungsformularen), ohne den öffentlichen Anmelde-Flow. Ein
+ * Stufenleiter darf das nur für Rollen, die einer seiner zugewiesenen
+ * Stufen zugeordnet sind — welches Mitglied zugeordnet wird, ist dabei
+ * nicht eingeschränkt (Mitglieder jedes Teams können jeden Einsatz
+ * leisten, nur welche Rolle bearbeitet werden darf, ist gescopet).
  */
 export async function assignMemberToShiftSlot(
   shiftSlotId: string,
   memberId: string,
 ): Promise<{ error?: string }> {
-  await requireGeschaeftsstelle();
+  const session = await auth();
+  if (!session?.user) return { error: "Bitte melde dich an." };
+  if (session.user.role !== "GESCHAEFTSSTELLE" && session.user.role !== "STUFENLEITER") {
+    return { error: "Keine Berechtigung." };
+  }
 
   const [shiftSlot, member] = await Promise.all([
     prisma.shiftSlot.findUnique({
@@ -330,6 +338,20 @@ export async function assignMemberToShiftSlot(
 
   if (!shiftSlot || shiftSlot.deletedAt) return { error: "Rolle nicht gefunden." };
   if (!member) return { error: "Mitglied nicht gefunden." };
+
+  if (session.user.role === "STUFENLEITER") {
+    const assignments = await prisma.stufenleiterAssignment.findMany({
+      where: { userId: session.user.id },
+      select: { ageGroupId: true },
+    });
+    const allowed = new Set(assignments.map((a) => a.ageGroupId));
+    const canManage = canManageShiftSlot(
+      "STUFENLEITER",
+      shiftSlot.ageGroupRestrictions.map((r) => r.ageGroupId),
+      allowed,
+    );
+    if (!canManage) return { error: "Keine Berechtigung." };
+  }
   if (shiftSlot.signups.length >= shiftSlot.capacity) {
     return { error: "Diese Rolle ist bereits vollständig besetzt." };
   }
