@@ -157,7 +157,6 @@ export async function createExternalEvent(prevState: string | undefined, formDat
   const locationText = String(formData.get("locationText") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const requirements = String(formData.get("requirements") ?? "").trim();
-  const pickupLocation = String(formData.get("pickupLocation") ?? "").trim() || null;
   const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
@@ -191,7 +190,6 @@ export async function createExternalEvent(prevState: string | undefined, formDat
       description,
       locationText,
       requirements,
-      pickupLocation,
       startDateTime: combineDateTime(date, startTime),
       endDateTime: combineDateTime(date, endTime),
     },
@@ -209,12 +207,11 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   // GAME sendet locationId (Dropdown), EXTERNAL sendet locationText/
-  // requirements/pickupLocation (Freitext) — je nach Typ des Events fehlt
-  // das jeweils andere Set im FormData und wird hier korrekt zu null.
+  // requirements (Freitext) — je nach Typ des Events fehlt das jeweils
+  // andere Set im FormData und wird hier korrekt zu null.
   const locationId = String(formData.get("locationId") ?? "") || null;
   const locationText = String(formData.get("locationText") ?? "").trim() || null;
   const requirements = String(formData.get("requirements") ?? "").trim() || null;
-  const pickupLocation = String(formData.get("pickupLocation") ?? "").trim() || null;
   const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
@@ -235,7 +232,6 @@ export async function updateEvent(eventId: string, formData: FormData) {
       locationId,
       locationText,
       requirements,
-      pickupLocation,
       startDateTime: date && startTime ? combineDateTime(date, startTime) : undefined,
       endDateTime: date && endTime ? combineDateTime(date, endTime) : null,
       status,

@@ -43,7 +43,6 @@ export function CreateExternalEventForm({
           className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
         />
       </div>
-      <FormField label="Abholort (optional)" name="pickupLocation" placeholder="z.B. Sagibach Wichtrach" />
       <FormField label="Datum" name="date" type="date" required />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField label="Start" name="startTime" type="time" required />

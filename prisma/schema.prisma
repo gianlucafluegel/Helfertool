@@ -240,10 +240,8 @@ model Event {
   // Event kann aber praktisch überall stattfinden, deshalb dort statt eines
   // Dropdowns ein frei definierbarer Ort.
   locationText   String?
-  // Nur für EXTERNAL: was vor Ort von den Helfer:innen verlangt wird, und wo
-  // (optional) abgeholt wird.
+  // Nur für EXTERNAL: was vor Ort von den Helfer:innen verlangt wird.
   requirements   String?
-  pickupLocation String?
   startDateTime DateTime
   endDateTime   DateTime?
   status        EventStatus @default(SCHEDULED)

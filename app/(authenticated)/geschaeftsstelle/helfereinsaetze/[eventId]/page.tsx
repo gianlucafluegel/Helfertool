@@ -46,7 +46,6 @@ export default async function EventDetailPage({
           locationId={event.locationId ?? ""}
           locationText={event.locationText ?? ""}
           requirements={event.requirements ?? ""}
-          pickupLocation={event.pickupLocation ?? ""}
           startDateTime={event.startDateTime}
           endDateTime={event.endDateTime}
           status={event.status}

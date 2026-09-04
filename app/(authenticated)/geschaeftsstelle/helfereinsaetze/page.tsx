@@ -20,7 +20,7 @@ export default async function HelfereinsaetzePage() {
     <div className="flex flex-col gap-5">
       <Card>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-          Helfereinsatz Spiel manuell erfassen
+          Helfereinsatz Spiel erfassen
         </h2>
         {season ? (
           <CreateGameEventForm locations={locations} members={members} />

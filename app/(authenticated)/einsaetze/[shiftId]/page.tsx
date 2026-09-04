@@ -86,12 +86,6 @@ export default async function ShiftSignupPage({
             {shiftSlot.event.requirements}
           </p>
         )}
-        {shiftSlot.event.pickupLocation && (
-          <p className="text-sm text-muted">
-            <span className="font-medium text-text">Abholort:</span>{" "}
-            {shiftSlot.event.pickupLocation}
-          </p>
-        )}
       </Card>
 
       <Card>
