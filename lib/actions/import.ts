@@ -14,9 +14,12 @@ async function requireGeschaeftsstelle() {
   return session;
 }
 
-// Der MySIHF-Export enthält keine Endzeit — Ende wird deshalb aus
-// Start + Anzahl Helferstunden berechnet, mit diesem Wert als Standard
-// (deckungsgleich mit dem club-üblichen Helferstunden-Ansatz pro Spiel).
+// Der MySIHF-Export enthält nur die Anspielzeit, keinen eigenen
+// Einsatz-Zeitraum. Der Helfereinsatz beginnt deshalb standardmässig
+// SETUP_MINUTES_BEFORE_KICKOFF vor Anspielzeit (Vorbereitung) und dauert
+// dann DEFAULT_GAME_CREDIT_HOURS — Ende und Dauer werden daraus abgeleitet,
+// nicht separat erfasst.
+const SETUP_MINUTES_BEFORE_KICKOFF = 15;
 const DEFAULT_GAME_CREDIT_HOURS = 2.5;
 
 export type ImportPreviewRow = {
@@ -90,16 +93,17 @@ export async function parseImportFile(
       (ag) => rowAgeNumber !== null && extractAgeNumber(ag.name) === rowAgeNumber,
     );
 
-    const endDateTime = new Date(
-      row.startDateTime.getTime() + DEFAULT_GAME_CREDIT_HOURS * 60 * 60 * 1000,
+    const shiftStart = new Date(
+      row.startDateTime.getTime() - SETUP_MINUTES_BEFORE_KICKOFF * 60 * 1000,
     );
+    const shiftEnd = new Date(shiftStart.getTime() + DEFAULT_GAME_CREDIT_HOURS * 60 * 60 * 1000);
 
     return {
       spielNr: row.spielNr,
       title: row.title,
       description: row.description,
-      startDateTimeIso: row.startDateTime.toISOString(),
-      endDateTimeIso: endDateTime.toISOString(),
+      startDateTimeIso: shiftStart.toISOString(),
+      endDateTimeIso: shiftEnd.toISOString(),
       creditHours: DEFAULT_GAME_CREDIT_HOURS,
       cancelled: row.cancelled,
       hasProbleme: row.hasProbleme,
