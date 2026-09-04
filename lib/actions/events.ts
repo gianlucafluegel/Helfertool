@@ -57,6 +57,11 @@ function combineDateTime(date: string, time: string): Date {
   return new Date(`${date}T${time}`);
 }
 
+/** Anzahl Helferstunden wird immer aus Start/Ende berechnet, nie manuell erfasst. */
+function hoursBetween(start: Date, end: Date): number {
+  return Math.round(((end.getTime() - start.getTime()) / (60 * 60 * 1000)) * 100) / 100;
+}
+
 /**
  * Creates the ShiftSlot every manually erfasster Helfereinsatz gets — always
  * the generic "Helfer (allgemein)"-Tätigkeit, Bereich Helfer, ein Platz.
@@ -111,26 +116,20 @@ export async function createGameEvent(prevState: string | undefined, formData: F
   const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
-  const creditHoursRaw = formData.get("creditHours");
-  const creditHours = Number(creditHoursRaw);
   const memberId = String(formData.get("memberId") ?? "") || null;
 
-  if (
-    !title ||
-    !locationId ||
-    !description ||
-    !date ||
-    !startTime ||
-    !endTime ||
-    creditHoursRaw === null ||
-    creditHoursRaw === "" ||
-    !Number.isFinite(creditHours)
-  ) {
-    return "Titel, Standort, Einsatzbeschrieb, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
+  if (!title || !locationId || !description || !date || !startTime || !endTime) {
+    return "Titel, Standort, Einsatzbeschrieb, Datum, Start und Ende sind Pflichtfelder.";
   }
 
   const season = await getCurrentSeason();
   if (!season) return "Keine aktive Saison konfiguriert.";
+
+  const startDateTime = combineDateTime(date, startTime);
+  const endDateTime = combineDateTime(date, endTime);
+  if (endDateTime <= startDateTime) {
+    return "Ende muss nach Start liegen.";
+  }
 
   const event = await prisma.event.create({
     data: {
@@ -139,12 +138,12 @@ export async function createGameEvent(prevState: string | undefined, formData: F
       title,
       description,
       locationId,
-      startDateTime: combineDateTime(date, startTime),
-      endDateTime: combineDateTime(date, endTime),
+      startDateTime,
+      endDateTime,
     },
   });
 
-  await createDefaultShiftSlot(event.id, creditHours, memberId);
+  await createDefaultShiftSlot(event.id, hoursBetween(startDateTime, endDateTime), memberId);
 
   revalidatePath("/geschaeftsstelle/helfereinsaetze");
   redirect(`/geschaeftsstelle/helfereinsaetze/${event.id}`);
@@ -160,27 +159,20 @@ export async function createExternalEvent(prevState: string | undefined, formDat
   const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
-  const creditHoursRaw = formData.get("creditHours");
-  const creditHours = Number(creditHoursRaw);
   const memberId = String(formData.get("memberId") ?? "") || null;
 
-  if (
-    !title ||
-    !locationText ||
-    !description ||
-    !requirements ||
-    !date ||
-    !startTime ||
-    !endTime ||
-    creditHoursRaw === null ||
-    creditHoursRaw === "" ||
-    !Number.isFinite(creditHours)
-  ) {
-    return "Titel, Ort, Einsatzbeschrieb, Anforderungen, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
+  if (!title || !locationText || !description || !requirements || !date || !startTime || !endTime) {
+    return "Titel, Ort, Einsatzbeschrieb, Anforderungen, Datum, Start und Ende sind Pflichtfelder.";
   }
 
   const season = await getCurrentSeason();
   if (!season) return "Keine aktive Saison konfiguriert.";
+
+  const startDateTime = combineDateTime(date, startTime);
+  const endDateTime = combineDateTime(date, endTime);
+  if (endDateTime <= startDateTime) {
+    return "Ende muss nach Start liegen.";
+  }
 
   const event = await prisma.event.create({
     data: {
@@ -190,12 +182,12 @@ export async function createExternalEvent(prevState: string | undefined, formDat
       description,
       locationText,
       requirements,
-      startDateTime: combineDateTime(date, startTime),
-      endDateTime: combineDateTime(date, endTime),
+      startDateTime,
+      endDateTime,
     },
   });
 
-  await createDefaultShiftSlot(event.id, creditHours, memberId);
+  await createDefaultShiftSlot(event.id, hoursBetween(startDateTime, endDateTime), memberId);
 
   revalidatePath("/geschaeftsstelle/helfereinsaetze");
   redirect(`/geschaeftsstelle/helfereinsaetze/${event.id}`);
@@ -255,7 +247,6 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
 
   const activityId = String(formData.get("activityId") ?? "");
   const capacity = Number(formData.get("capacity") ?? 1);
-  const creditHours = Number(formData.get("creditHours") ?? 0);
   const notes = String(formData.get("notes") ?? "").trim() || null;
 
   if (!activityId) {
@@ -270,6 +261,20 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
     return "Tätigkeit nicht gefunden.";
   }
   const area = activity.defaultArea ?? "HELFER";
+
+  // Anzahl Helferstunden ist ebenfalls keine eigene Eingabe mehr — sie
+  // ergibt sich aus Start/Ende des Einsatzes, den diese Rolle ergänzt.
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { startDateTime: true, endDateTime: true },
+  });
+  if (!event) {
+    return "Helfereinsatz nicht gefunden.";
+  }
+  if (!event.endDateTime) {
+    return "Für diesen Helfereinsatz ist kein Ende hinterlegt — bitte zuerst unter 'Helfereinsatz bearbeiten' ein Ende setzen.";
+  }
+  const creditHours = hoursBetween(event.startDateTime, event.endDateTime);
 
   // Eine neue Rolle übernimmt automatisch dieselbe Team-Einschränkung wie
   // die bereits bestehenden Rollen dieses Einsatzes (z.B. "Nur U14" aus dem
@@ -288,7 +293,7 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
       activityId,
       area,
       capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 1,
-      creditHours: Number.isFinite(creditHours) ? creditHours : 0,
+      creditHours,
       notes,
       ageGroupRestrictions: {
         create: existingRestrictions.map((r) => ({ ageGroupId: r.ageGroupId })),

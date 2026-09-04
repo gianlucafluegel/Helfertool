@@ -48,15 +48,6 @@ export function CreateExternalEventForm({
         <FormField label="Start" name="startTime" type="time" required />
         <FormField label="Ende" name="endTime" type="time" required />
       </div>
-      <FormField
-        label="Anzahl Helferstunden"
-        name="creditHours"
-        type="number"
-        step="0.5"
-        min={0}
-        required
-        defaultValue={2.5}
-      />
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-text" htmlFor="memberId-search">
           Helfer (optional)
