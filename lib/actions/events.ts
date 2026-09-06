@@ -62,49 +62,78 @@ function hoursBetween(start: Date, end: Date): number {
   return Math.round(((end.getTime() - start.getTime()) / (60 * 60 * 1000)) * 100) / 100;
 }
 
+type RoleInput = { activityId: string; capacity: number; notes: string | null; memberId: string | null };
+
 /**
- * Creates the ShiftSlot every manually erfasster Helfereinsatz gets — always
- * the generic "Helfer (allgemein)"-Tätigkeit, Bereich Helfer, ein Platz.
- * Differentiated Rollen (andere Tätigkeit/Bereich/Kapazität/Team-
- * Einschränkung) bleiben weiterhin über "Weitere Rolle hinzufügen" auf der
- * Einsatz-Detailseite ergänzbar — dieser Flow deckt nur den Standardfall ab.
+ * Liest die Rollen aus dem RolesFieldset — jede Zeile teilt sich ein `name`
+ * (z.B. "roleActivityId"), die Reihenfolge über formData.getAll() entspricht
+ * der Zeilen-Reihenfolge im Formular.
  */
-async function createDefaultShiftSlot(eventId: string, creditHours: number, memberId: string | null) {
-  const defaultActivity = await prisma.activity.findFirst({
-    where: { name: "Helfer (allgemein)" },
-  });
-  if (!defaultActivity) {
-    throw new Error(
-      "Standard-Tätigkeit 'Helfer (allgemein)' nicht gefunden. Bitte Geschäftsstelle kontaktieren.",
-    );
+function parseRoleInputs(formData: FormData): RoleInput[] | string {
+  const activityIds = formData.getAll("roleActivityId").map(String);
+  const capacities = formData.getAll("roleCapacity").map(String);
+  const notesList = formData.getAll("roleNotes").map(String);
+  const memberIds = formData.getAll("roleMemberId").map(String);
+
+  if (activityIds.length === 0) {
+    return "Mindestens eine Rolle ist erforderlich.";
+  }
+  if (activityIds.some((id) => !id)) {
+    return "Bitte für jede Rolle eine Tätigkeit wählen.";
   }
 
-  const member = memberId ? await prisma.member.findUnique({ where: { id: memberId } }) : null;
-
-  await prisma.shiftSlot.create({
-    data: {
-      eventId,
-      activityId: defaultActivity.id,
-      area: "HELFER",
-      capacity: 1,
-      creditHours,
-      ...(member
-        ? {
-            signups: {
-              create: {
-                memberId: member.id,
-                ageGroupSnapshot: "Alle Teams",
-                helperFirstName: member.firstName,
-                helperLastName: member.lastName,
-                helperEmail: member.email ?? "",
-                helperPhone: member.phone,
-                payoutType: "HELFERKONTINGENT",
-              },
-            },
-          }
-        : {}),
-    },
+  return activityIds.map((activityId, i) => {
+    const capacity = Number(capacities[i]);
+    return {
+      activityId,
+      capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 1,
+      notes: notesList[i]?.trim() || null,
+      memberId: memberIds[i]?.trim() || null,
+    };
   });
+}
+
+/** Legt für jede Rolle eine ShiftSlot an, optional direkt mit zugeordnetem Helfer. */
+async function createShiftSlotsForEvent(
+  eventId: string,
+  creditHours: number,
+  roles: RoleInput[],
+): Promise<string | undefined> {
+  for (const role of roles) {
+    const activity = await prisma.activity.findUnique({ where: { id: role.activityId } });
+    if (!activity) return "Tätigkeit nicht gefunden.";
+
+    const member = role.memberId
+      ? await prisma.member.findUnique({ where: { id: role.memberId } })
+      : null;
+
+    await prisma.shiftSlot.create({
+      data: {
+        eventId,
+        activityId: role.activityId,
+        area: activity.defaultArea ?? "HELFER",
+        capacity: role.capacity,
+        creditHours,
+        notes: role.notes,
+        ...(member
+          ? {
+              signups: {
+                create: {
+                  memberId: member.id,
+                  ageGroupSnapshot: "Alle Teams",
+                  helperFirstName: member.firstName,
+                  helperLastName: member.lastName,
+                  helperEmail: member.email ?? "",
+                  helperPhone: member.phone,
+                  payoutType: "HELFERKONTINGENT",
+                },
+              },
+            }
+          : {}),
+      },
+    });
+  }
+  return undefined;
 }
 
 export async function createGameEvent(prevState: string | undefined, formData: FormData) {
@@ -116,11 +145,13 @@ export async function createGameEvent(prevState: string | undefined, formData: F
   const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
-  const memberId = String(formData.get("memberId") ?? "") || null;
 
   if (!title || !locationId || !description || !date || !startTime || !endTime) {
     return "Titel, Standort, Einsatzbeschrieb, Datum, Start und Ende sind Pflichtfelder.";
   }
+
+  const roles = parseRoleInputs(formData);
+  if (typeof roles === "string") return roles;
 
   const season = await getCurrentSeason();
   if (!season) return "Keine aktive Saison konfiguriert.";
@@ -143,7 +174,12 @@ export async function createGameEvent(prevState: string | undefined, formData: F
     },
   });
 
-  await createDefaultShiftSlot(event.id, hoursBetween(startDateTime, endDateTime), memberId);
+  const rolesError = await createShiftSlotsForEvent(
+    event.id,
+    hoursBetween(startDateTime, endDateTime),
+    roles,
+  );
+  if (rolesError) return rolesError;
 
   revalidatePath("/geschaeftsstelle/helfereinsaetze");
   redirect(`/geschaeftsstelle/helfereinsaetze/${event.id}`);
@@ -159,11 +195,13 @@ export async function createExternalEvent(prevState: string | undefined, formDat
   const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
-  const memberId = String(formData.get("memberId") ?? "") || null;
 
   if (!title || !locationText || !description || !requirements || !date || !startTime || !endTime) {
     return "Titel, Ort, Einsatzbeschrieb, Anforderungen, Datum, Start und Ende sind Pflichtfelder.";
   }
+
+  const roles = parseRoleInputs(formData);
+  if (typeof roles === "string") return roles;
 
   const season = await getCurrentSeason();
   if (!season) return "Keine aktive Saison konfiguriert.";
@@ -187,7 +225,12 @@ export async function createExternalEvent(prevState: string | undefined, formDat
     },
   });
 
-  await createDefaultShiftSlot(event.id, hoursBetween(startDateTime, endDateTime), memberId);
+  const rolesError = await createShiftSlotsForEvent(
+    event.id,
+    hoursBetween(startDateTime, endDateTime),
+    roles,
+  );
+  if (rolesError) return rolesError;
 
   revalidatePath("/geschaeftsstelle/helfereinsaetze");
   redirect(`/geschaeftsstelle/helfereinsaetze/${event.id}`);

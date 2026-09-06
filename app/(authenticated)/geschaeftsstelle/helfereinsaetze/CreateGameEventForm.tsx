@@ -4,13 +4,15 @@ import { useActionState } from "react";
 import { createGameEvent } from "@/lib/actions/events";
 import { FormField } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
-import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { RolesFieldset } from "./RolesFieldset";
 
 export function CreateGameEventForm({
   locations,
+  activities,
   members,
 }: {
   locations: { id: string; name: string }[];
+  activities: { id: string; name: string }[];
   members: { id: string; firstName: string; lastName: string }[];
 }) {
   const [error, formAction, pending] = useActionState(createGameEvent, undefined);
@@ -57,16 +59,7 @@ export function CreateGameEventForm({
         <FormField label="Start" name="startTime" type="time" required />
         <FormField label="Ende" name="endTime" type="time" required />
       </div>
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-text" htmlFor="memberId-search">
-          Helfer (optional)
-        </label>
-        <SearchableSelect
-          name="memberId"
-          placeholder="Mitglied suchen…"
-          options={members.map((m) => ({ id: m.id, label: `${m.firstName} ${m.lastName}` }))}
-        />
-      </div>
+      <RolesFieldset activities={activities} members={members} />
       {error && <p className="text-sm text-status-open-text">{error}</p>}
       <Button type="submit" disabled={pending}>
         {pending ? "Wird erstellt…" : "Helfereinsatz erstellen"}
