@@ -53,17 +53,17 @@ async function main() {
   }
 
   const activityDefs = [
-    { name: "Strafbankbetreuer", defaultArea: "HELFER" as const, requiresPayoutChoice: false },
-    { name: "Speaker", defaultArea: "HELFER" as const, requiresPayoutChoice: false },
-    { name: "Matchuhr", defaultArea: "HELFER" as const, requiresPayoutChoice: false },
-    { name: "Schiedsrichter", defaultArea: "HELFER" as const, requiresPayoutChoice: true },
-    { name: "Reporter", defaultArea: "FUNKTIONAER" as const, requiresPayoutChoice: false },
-    { name: "Helfer (allgemein)", defaultArea: "HELFER" as const, requiresPayoutChoice: false },
+    { name: "Strafbankbetreuer", requiresPayoutChoice: false },
+    { name: "Speaker", requiresPayoutChoice: false },
+    { name: "Matchuhr", requiresPayoutChoice: false },
+    { name: "Schiedsrichter", requiresPayoutChoice: true },
+    { name: "Reporter", requiresPayoutChoice: false },
+    { name: "Helfer (allgemein)", requiresPayoutChoice: false },
   ];
   for (const def of activityDefs) {
     await prisma.activity.upsert({
       where: { name: def.name },
-      update: { defaultArea: def.defaultArea, requiresPayoutChoice: def.requiresPayoutChoice },
+      update: { requiresPayoutChoice: def.requiresPayoutChoice },
       create: def,
     });
   }

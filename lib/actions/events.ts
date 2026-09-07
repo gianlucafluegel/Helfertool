@@ -62,30 +62,30 @@ function hoursBetween(start: Date, end: Date): number {
   return Math.round(((end.getTime() - start.getTime()) / (60 * 60 * 1000)) * 100) / 100;
 }
 
-type RoleInput = { activityId: string; capacity: number; notes: string | null; memberId: string | null };
+type RoleInput = { activityName: string; capacity: number; notes: string | null; memberId: string | null };
 
 /**
  * Liest die Rollen aus dem RolesFieldset — jede Zeile teilt sich ein `name`
- * (z.B. "roleActivityId"), die Reihenfolge über formData.getAll() entspricht
+ * (z.B. "roleActivityName"), die Reihenfolge über formData.getAll() entspricht
  * der Zeilen-Reihenfolge im Formular.
  */
 function parseRoleInputs(formData: FormData): RoleInput[] | string {
-  const activityIds = formData.getAll("roleActivityId").map(String);
+  const activityNames = formData.getAll("roleActivityName").map((v) => String(v).trim());
   const capacities = formData.getAll("roleCapacity").map(String);
   const notesList = formData.getAll("roleNotes").map(String);
   const memberIds = formData.getAll("roleMemberId").map(String);
 
-  if (activityIds.length === 0) {
+  if (activityNames.length === 0) {
     return "Mindestens eine Rolle ist erforderlich.";
   }
-  if (activityIds.some((id) => !id)) {
-    return "Bitte für jede Rolle eine Tätigkeit wählen.";
+  if (activityNames.some((name) => !name)) {
+    return "Bitte für jede Rolle eine Tätigkeit angeben.";
   }
 
-  return activityIds.map((activityId, i) => {
+  return activityNames.map((activityName, i) => {
     const capacity = Number(capacities[i]);
     return {
-      activityId,
+      activityName,
       capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 1,
       notes: notesList[i]?.trim() || null,
       memberId: memberIds[i]?.trim() || null,
@@ -93,15 +93,24 @@ function parseRoleInputs(formData: FormData): RoleInput[] | string {
   });
 }
 
-/** Legt für jede Rolle eine ShiftSlot an, optional direkt mit zugeordnetem Helfer. */
+/**
+ * Legt für jede Rolle eine ShiftSlot an, optional direkt mit zugeordnetem
+ * Helfer. Die Tätigkeit ist ein Freitextfeld statt einer festen Auswahl —
+ * beim Speichern wird per Namen eine bestehende Activity wiederverwendet
+ * oder neu angelegt. Keine Tätigkeit ist exklusiv für Funktionäre, jede so
+ * erstellte Rolle ist deshalb immer Bereich "Helfer".
+ */
 async function createShiftSlotsForEvent(
   eventId: string,
   creditHours: number,
   roles: RoleInput[],
 ): Promise<string | undefined> {
   for (const role of roles) {
-    const activity = await prisma.activity.findUnique({ where: { id: role.activityId } });
-    if (!activity) return "Tätigkeit nicht gefunden.";
+    const activity = await prisma.activity.upsert({
+      where: { name: role.activityName },
+      update: {},
+      create: { name: role.activityName },
+    });
 
     const member = role.memberId
       ? await prisma.member.findUnique({ where: { id: role.memberId } })
@@ -110,8 +119,8 @@ async function createShiftSlotsForEvent(
     await prisma.shiftSlot.create({
       data: {
         eventId,
-        activityId: role.activityId,
-        area: activity.defaultArea ?? "HELFER",
+        activityId: activity.id,
+        area: "HELFER",
         capacity: role.capacity,
         creditHours,
         notes: role.notes,
@@ -288,22 +297,24 @@ export async function deleteEvent(eventId: string) {
 export async function addShiftSlot(eventId: string, formData: FormData) {
   await requireGeschaeftsstelle();
 
-  const activityId = String(formData.get("activityId") ?? "");
+  const activityName = String(formData.get("activityName") ?? "").trim();
   const capacity = Number(formData.get("capacity") ?? 1);
   const notes = String(formData.get("notes") ?? "").trim() || null;
 
-  if (!activityId) {
+  if (!activityName) {
     return "Tätigkeit ist ein Pflichtfeld.";
   }
 
-  // Bereich (Helfer/Funktionär) ist keine eigene Eingabe mehr — er ergibt
-  // sich aus der gewählten Tätigkeit (z.B. "Reporter" ist immer Funktionär),
-  // statt bei jeder neuen Rolle erneut manuell gewählt werden zu müssen.
-  const activity = await prisma.activity.findUnique({ where: { id: activityId } });
-  if (!activity) {
-    return "Tätigkeit nicht gefunden.";
-  }
-  const area = activity.defaultArea ?? "HELFER";
+  // Tätigkeit ist ein Freitextfeld statt einer festen Auswahl — beim
+  // Speichern wird per Namen eine bestehende Activity wiederverwendet oder
+  // neu angelegt. Keine Tätigkeit ist exklusiv für Funktionäre, der Bereich
+  // ist deshalb immer "Helfer".
+  const activity = await prisma.activity.upsert({
+    where: { name: activityName },
+    update: {},
+    create: { name: activityName },
+  });
+  const area = "HELFER" as const;
 
   // Anzahl Helferstunden ist ebenfalls keine eigene Eingabe mehr — sie
   // ergibt sich aus Start/Ende des Einsatzes, den diese Rolle ergänzt.
@@ -333,7 +344,7 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
   await prisma.shiftSlot.create({
     data: {
       eventId,
-      activityId,
+      activityId: activity.id,
       area,
       capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 1,
       creditHours,

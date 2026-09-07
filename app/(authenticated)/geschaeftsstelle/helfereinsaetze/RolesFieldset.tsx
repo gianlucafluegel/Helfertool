@@ -4,15 +4,19 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 
-type RoleRow = { key: number; activityId: string };
+type RoleRow = { key: number };
+
+const DEFAULT_ACTIVITY_NAME = "Helfer (allgemein)";
 
 /**
  * Rollen-Abschnitt für die manuellen Erfassungsformulare (Spiel/Externes
  * Event) — dieselben Felder wie "Weitere Rolle hinzufügen" auf der
  * Einsatz-Detailseite (Tätigkeit/Anzahl Plätze/Notiz/optional Helfer), aber
  * mehrere davon gleich bei der Erstellung statt einzeln danach. Alle Zeilen
- * teilen sich je ein `name` (z.B. "roleActivityId") — der Server liest sie
- * per `formData.getAll(...)` in Zeilen-Reihenfolge aus.
+ * teilen sich je ein `name` (z.B. "roleActivityName") — der Server liest sie
+ * per `formData.getAll(...)` in Zeilen-Reihenfolge aus. Die Tätigkeit ist ein
+ * Freitextfeld (keine Tätigkeit ist exklusiv für Funktionäre) — `activities`
+ * dient nur noch als Vorschlagsliste (Datalist), nicht als feste Auswahl.
  */
 export function RolesFieldset({
   activities,
@@ -21,15 +25,10 @@ export function RolesFieldset({
   activities: { id: string; name: string }[];
   members: { id: string; firstName: string; lastName: string }[];
 }) {
-  const defaultActivityId =
-    activities.find((a) => a.name === "Helfer (allgemein)")?.id ?? activities[0]?.id ?? "";
-  const [rows, setRows] = useState<RoleRow[]>([{ key: 0, activityId: defaultActivityId }]);
+  const [rows, setRows] = useState<RoleRow[]>([{ key: 0 }]);
 
   function addRow() {
-    setRows((prev) => [
-      ...prev,
-      { key: (prev.at(-1)?.key ?? -1) + 1, activityId: defaultActivityId },
-    ]);
+    setRows((prev) => [...prev, { key: (prev.at(-1)?.key ?? -1) + 1 }]);
   }
 
   function removeRow(key: number) {
@@ -41,6 +40,11 @@ export function RolesFieldset({
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm font-medium text-text">Rollen</p>
+      <datalist id="activity-suggestions">
+        {activities.map((a) => (
+          <option key={a.id} value={a.name} />
+        ))}
+      </datalist>
       {rows.map((row, i) => (
         <div key={row.key} className="flex flex-col gap-3 rounded-lg border border-border p-3">
           <div className="flex items-center justify-between">
@@ -58,22 +62,17 @@ export function RolesFieldset({
             )}
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-text" htmlFor={`roleActivityId-${row.key}`}>
+            <label className="text-sm font-medium text-text" htmlFor={`roleActivityName-${row.key}`}>
               Tätigkeit
             </label>
-            <select
-              id={`roleActivityId-${row.key}`}
-              name="roleActivityId"
+            <input
+              id={`roleActivityName-${row.key}`}
+              name="roleActivityName"
+              list="activity-suggestions"
               required
-              defaultValue={row.activityId}
-              className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
-            >
-              {activities.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
+              defaultValue={DEFAULT_ACTIVITY_NAME}
+              className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
+            />
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-text" htmlFor={`roleCapacity-${row.key}`}>
