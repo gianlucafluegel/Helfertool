@@ -50,6 +50,14 @@ export function CreateExternalEventForm({
         <FormField label="Start" name="startTime" type="time" required />
         <FormField label="Ende" name="endTime" type="time" required />
       </div>
+      <FormField
+        label="Anzahl Helferstunden"
+        name="creditHours"
+        type="number"
+        step="0.5"
+        min={0}
+        required
+      />
       <RolesFieldset activities={activities} members={members} activityPlaceholder="Parkplatz" />
       {error && <p className="text-sm text-status-open-text">{error}</p>}
       <Button type="submit" disabled={pending}>

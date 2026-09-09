@@ -52,6 +52,7 @@ export default async function EventDetailPage({
           requirements={event.requirements ?? ""}
           startDateTime={event.startDateTime}
           endDateTime={event.endDateTime}
+          creditHours={Number(event.shiftSlots[0]?.creditHours ?? 0)}
           status={event.status}
           locations={locations}
         />

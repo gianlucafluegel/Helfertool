@@ -154,9 +154,19 @@ export async function createGameEvent(prevState: string | undefined, formData: F
   const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
+  const creditHours = Number(formData.get("creditHours"));
 
-  if (!title || !locationId || !description || !date || !startTime || !endTime) {
-    return "Titel, Standort, Einsatzbeschrieb, Datum, Start und Ende sind Pflichtfelder.";
+  if (
+    !title ||
+    !locationId ||
+    !description ||
+    !date ||
+    !startTime ||
+    !endTime ||
+    !Number.isFinite(creditHours) ||
+    creditHours <= 0
+  ) {
+    return "Titel, Standort, Einsatzbeschrieb, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
   }
 
   const roles = parseRoleInputs(formData);
@@ -183,11 +193,7 @@ export async function createGameEvent(prevState: string | undefined, formData: F
     },
   });
 
-  const rolesError = await createShiftSlotsForEvent(
-    event.id,
-    hoursBetween(startDateTime, endDateTime),
-    roles,
-  );
+  const rolesError = await createShiftSlotsForEvent(event.id, creditHours, roles);
   if (rolesError) return rolesError;
 
   revalidatePath("/geschaeftsstelle/helfereinsaetze");
@@ -204,9 +210,20 @@ export async function createExternalEvent(prevState: string | undefined, formDat
   const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
+  const creditHours = Number(formData.get("creditHours"));
 
-  if (!title || !locationText || !description || !requirements || !date || !startTime || !endTime) {
-    return "Titel, Ort, Einsatzbeschrieb, Anforderungen, Datum, Start und Ende sind Pflichtfelder.";
+  if (
+    !title ||
+    !locationText ||
+    !description ||
+    !requirements ||
+    !date ||
+    !startTime ||
+    !endTime ||
+    !Number.isFinite(creditHours) ||
+    creditHours <= 0
+  ) {
+    return "Titel, Ort, Einsatzbeschrieb, Anforderungen, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
   }
 
   const roles = parseRoleInputs(formData);
@@ -234,11 +251,7 @@ export async function createExternalEvent(prevState: string | undefined, formDat
     },
   });
 
-  const rolesError = await createShiftSlotsForEvent(
-    event.id,
-    hoursBetween(startDateTime, endDateTime),
-    roles,
-  );
+  const rolesError = await createShiftSlotsForEvent(event.id, creditHours, roles);
   if (rolesError) return rolesError;
 
   revalidatePath("/geschaeftsstelle/helfereinsaetze");
@@ -259,12 +272,13 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
+  const creditHours = Number(formData.get("creditHours"));
   const status = String(formData.get("status") ?? "SCHEDULED") as
     | "SCHEDULED"
     | "CANCELLED"
     | "POSTPONED";
 
-  if (!title || !description) {
+  if (!title || !description || !Number.isFinite(creditHours) || creditHours <= 0) {
     return;
   }
 
@@ -280,6 +294,14 @@ export async function updateEvent(eventId: string, formData: FormData) {
       endDateTime: date && endTime ? combineDateTime(date, endTime) : null,
       status,
     },
+  });
+
+  // Die Anzahl Helferstunden gilt einheitlich für alle Rollen dieses
+  // Einsatzes — hier wird sie für alle (nicht gelöschten) Rollen zusammen
+  // aktualisiert, statt pro Rolle einzeln erfasst zu werden.
+  await prisma.shiftSlot.updateMany({
+    where: { eventId, deletedAt: null },
+    data: { creditHours },
   });
 
   revalidatePath(`/geschaeftsstelle/helfereinsaetze/${eventId}`);

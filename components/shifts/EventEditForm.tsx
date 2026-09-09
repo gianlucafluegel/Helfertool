@@ -25,6 +25,7 @@ export function EventEditForm({
   requirements,
   startDateTime,
   endDateTime,
+  creditHours,
   status,
   locations,
   canDelete = true,
@@ -38,6 +39,7 @@ export function EventEditForm({
   requirements: string;
   startDateTime: Date;
   endDateTime: Date | null;
+  creditHours: number;
   status: string;
   locations: { id: string; name: string }[];
   canDelete?: boolean;
@@ -124,6 +126,16 @@ export function EventEditForm({
           defaultValue={endDateTime ? toTimeInputValue(endDateTime) : ""}
         />
       </div>
+
+      <FormField
+        label="Anzahl Helferstunden"
+        name="creditHours"
+        type="number"
+        step="0.5"
+        min={0}
+        required
+        defaultValue={creditHours}
+      />
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-text" htmlFor="status">
