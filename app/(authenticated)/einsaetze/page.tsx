@@ -5,6 +5,7 @@ import { isShiftSlotVisible } from "@/lib/visibility";
 import { FilterChipLink } from "@/components/ui/FilterChipLink";
 import { LocationPinIcon } from "@/components/ui/LocationPinIcon";
 import { EventCard } from "@/components/shifts/EventCard";
+import { TeamFilterSelect } from "@/components/shifts/TeamFilterSelect";
 import { MemberTabs } from "@/components/layout/MemberTabs";
 
 type Filters = {
@@ -136,25 +137,11 @@ export default async function EinsaetzePage({
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <FilterChipLink
-          active={!filters.stufe}
-          activeVariant="blue"
-          href={buildHref(filters, { stufe: undefined })}
-        >
-          Alle Teams
-        </FilterChipLink>
-        {ageGroups.map((ag) => (
-          <FilterChipLink
-            key={ag.id}
-            active={filters.stufe === ag.id}
-            activeVariant="blue"
-            href={buildHref(filters, { stufe: ag.id })}
-          >
-            {ag.name}
-          </FilterChipLink>
-        ))}
-      </div>
+      <TeamFilterSelect
+        ageGroups={ageGroups}
+        value={filters.stufe ?? ""}
+        baseHref={buildHref(filters, { stufe: undefined })}
+      />
 
       <div className="flex flex-wrap gap-2">
         <FilterChipLink active={!filters.typ} href={buildHref(filters, { typ: undefined })}>
