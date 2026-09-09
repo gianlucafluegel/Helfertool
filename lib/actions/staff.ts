@@ -31,6 +31,7 @@ async function createStaffMember(
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim() || null;
   const stufenleiterAgeGroupIds = formData.getAll("stufenleiterAgeGroupIds").map(String);
 
   if (!firstName || !lastName || !email) {
@@ -75,7 +76,7 @@ async function createStaffMember(
   }
 
   const member = await prisma.member.create({
-    data: { firstName, lastName, email, externalContactId, targetHours },
+    data: { firstName, lastName, email, phone, externalContactId, targetHours },
   });
   const user = await prisma.user.create({ data: { email, role, memberId: member.id } });
 

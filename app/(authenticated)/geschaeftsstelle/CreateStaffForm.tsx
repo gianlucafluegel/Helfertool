@@ -26,7 +26,14 @@ export function CreateStaffForm({
         <FormField label="Vorname" name="firstName" required />
         <FormField label="Name" name="lastName" required />
       </div>
-      <FormField label="E-Mail" name="email" type="email" required />
+      {showContactAndHours ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label="E-Mail" name="email" type="email" required />
+          <FormField label="Telefon" name="phone" />
+        </div>
+      ) : (
+        <FormField label="E-Mail" name="email" type="email" required />
+      )}
       {showContactAndHours && (
         <FormField
           label="Soll-Stunden"
