@@ -45,6 +45,7 @@ export default async function MemberDetailPage({
           targetHours={Number(member.targetHours)}
           ageGroups={ageGroups}
           isActive={member.isActive}
+          role={memberUser?.role}
         />
       </Card>
 
