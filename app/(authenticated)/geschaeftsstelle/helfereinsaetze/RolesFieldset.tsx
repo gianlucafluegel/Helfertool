@@ -19,9 +19,11 @@ type RoleRow = { key: number };
 export function RolesFieldset({
   activities,
   members,
+  activityPlaceholder = "Speaker",
 }: {
   activities: { id: string; name: string }[];
   members: { id: string; firstName: string; lastName: string }[];
+  activityPlaceholder?: string;
 }) {
   const [rows, setRows] = useState<RoleRow[]>([{ key: 0 }]);
 
@@ -68,7 +70,7 @@ export function RolesFieldset({
               name="roleActivityName"
               list="activity-suggestions"
               required
-              placeholder="Speaker"
+              placeholder={activityPlaceholder}
               className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
             />
           </div>
