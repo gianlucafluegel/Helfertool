@@ -24,6 +24,7 @@ export async function createMember(prevState: string | undefined, formData: Form
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim() || null;
   const ageGroupId = String(formData.get("ageGroupId") ?? "").trim();
   const targetHoursRaw = formData.get("targetHours");
   const targetHours = Number(targetHoursRaw);
@@ -59,7 +60,7 @@ export async function createMember(prevState: string | undefined, formData: Form
   }
 
   const member = await prisma.member.create({
-    data: { firstName, lastName, email, externalContactId, ageGroupId, category, targetHours },
+    data: { firstName, lastName, email, phone, externalContactId, ageGroupId, category, targetHours },
   });
 
   revalidatePath("/geschaeftsstelle/members");

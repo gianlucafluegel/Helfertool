@@ -15,7 +15,10 @@ export function CreateMemberForm({ ageGroups }: { ageGroups: { id: string; name:
         <FormField label="Vorname" name="firstName" required />
         <FormField label="Name" name="lastName" required />
       </div>
-      <FormField label="E-Mail" name="email" type="email" required />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <FormField label="E-Mail" name="email" type="email" required />
+        <FormField label="Telefon" name="phone" />
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-text" htmlFor="ageGroupId">
