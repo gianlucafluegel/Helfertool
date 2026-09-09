@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isShiftSlotVisible } from "@/lib/visibility";
@@ -48,24 +49,29 @@ export default async function ShiftSignupPage({
     const canViewOccupant = session.user.role !== "MITGLIED";
 
     return (
-      <Card>
-        <p className="text-sm text-status-open-text">
-          Dieser Einsatz ist bereits vollständig besetzt.
-        </p>
-        {canViewOccupant && (
-          <div className="mt-3 flex flex-col gap-3">
-            {shiftSlot.signups.map((s) => (
-              <div key={s.id} className="flex flex-col">
-                <p className="text-base font-semibold text-text">
-                  {s.helperFirstName} {s.helperLastName}
-                </p>
-                <p className="text-sm text-muted">{s.helperEmail}</p>
-                {s.helperPhone && <p className="text-sm text-muted">{s.helperPhone}</p>}
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+      <div className="flex flex-col gap-5">
+        <Link href="/einsaetze" className="text-sm font-medium text-muted hover:text-navy">
+          ← Zurück zu den Einsätzen
+        </Link>
+        <Card>
+          <p className="text-sm text-status-open-text">
+            Dieser Einsatz ist bereits vollständig besetzt.
+          </p>
+          {canViewOccupant && (
+            <div className="mt-3 flex flex-col gap-3">
+              {shiftSlot.signups.map((s) => (
+                <div key={s.id} className="flex flex-col">
+                  <p className="text-base font-semibold text-text">
+                    {s.helperFirstName} {s.helperLastName}
+                  </p>
+                  <p className="text-sm text-muted">{s.helperEmail}</p>
+                  {s.helperPhone && <p className="text-sm text-muted">{s.helperPhone}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
     );
   }
 
@@ -73,6 +79,10 @@ export default async function ShiftSignupPage({
 
   return (
     <div className="flex flex-col gap-5">
+      <Link href="/einsaetze" className="text-sm font-medium text-muted hover:text-navy">
+        ← Zurück zu den Einsätzen
+      </Link>
+
       <Card>
         <h1 className="text-base font-semibold text-text">{shiftSlot.event.title}</h1>
         <p className="mb-1 text-sm text-muted">
