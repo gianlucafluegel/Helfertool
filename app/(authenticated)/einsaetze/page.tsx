@@ -180,6 +180,7 @@ export default async function EinsaetzePage({
           title={event.title}
           startDateTime={event.startDateTime}
           locationName={event.location?.name ?? event.locationText ?? null}
+          requirements={event.requirements}
           shiftSlots={slots}
           showOccupant={false}
           activeMemberId={activeMember?.id ?? null}
