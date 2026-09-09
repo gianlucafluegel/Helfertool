@@ -1,7 +1,7 @@
 "use client";
 
-import { useTransition } from "react";
-import { updateMember } from "@/lib/actions/members";
+import { useState, useTransition } from "react";
+import { updateMember, deactivateMember, reactivateMember } from "@/lib/actions/members";
 import { FormField } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 
@@ -14,6 +14,7 @@ export function MemberEditForm({
   ageGroupId,
   targetHours,
   ageGroups,
+  isActive,
 }: {
   memberId: string;
   firstName: string;
@@ -23,8 +24,14 @@ export function MemberEditForm({
   ageGroupId: string | null;
   targetHours: number;
   ageGroups: { id: string; name: string }[];
+  isActive: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  // Ersetzt einen nativen confirm()-Dialog: der bleibt in manchen Browsern
+  // dauerhaft stumm, sobald einmal "Weitere Dialogfelder verhindern"
+  // angehakt wurde — ohne sichtbaren Hinweis, dass er unterdrückt wird. Ein
+  // Zwei-Klick-Ablauf in der App selbst umgeht das komplett.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   return (
     <form
@@ -67,9 +74,50 @@ export function MemberEditForm({
           defaultValue={targetHours}
         />
       </div>
-      <Button type="submit" disabled={pending} className="self-start">
-        {pending ? "Wird gespeichert…" : "Speichern"}
-      </Button>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="submit" disabled={pending} className="self-start">
+          {pending ? "Wird gespeichert…" : "Speichern"}
+        </Button>
+        {isActive ? (
+          confirmingDelete ? (
+            <span className="inline-flex items-center gap-2 text-sm">
+              <span className="text-muted">Wirklich löschen?</span>
+              <Button
+                type="button"
+                variant="danger"
+                disabled={pending}
+                onClick={() => {
+                  setConfirmingDelete(false);
+                  startTransition(() => deactivateMember(memberId));
+                }}
+              >
+                {pending ? "Wird gelöscht…" : "Ja, löschen"}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={pending}
+                onClick={() => setConfirmingDelete(false)}
+              >
+                Abbrechen
+              </Button>
+            </span>
+          ) : (
+            <Button type="button" variant="danger" onClick={() => setConfirmingDelete(true)}>
+              Mitglied löschen
+            </Button>
+          )
+        ) : (
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={pending}
+            onClick={() => startTransition(() => reactivateMember(memberId))}
+          >
+            {pending ? "Wird reaktiviert…" : "Mitglied reaktivieren"}
+          </Button>
+        )}
+      </div>
     </form>
   );
 }

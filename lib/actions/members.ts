@@ -102,6 +102,44 @@ export async function updateMember(memberId: string, formData: FormData) {
 }
 
 /**
+ * "Löschen" ist hier — wie bei Helfereinsatz/Rolle — ein Soft-Delete: der
+ * Roster-Import deaktiviert Mitglieder genauso, statt sie zu entfernen,
+ * damit Signups/Helferstunden-Historie nie verwaist (Signup.memberId ist
+ * ein Pflichtfeld, ein echtes Löschen würde entweder daran scheitern oder
+ * die Historie mitreissen). Ein verknüpfter Login wird gleich mit
+ * deaktiviert.
+ */
+export async function deactivateMember(memberId: string) {
+  await requireGeschaeftsstelle();
+
+  const member = await prisma.member.findUnique({ where: { id: memberId }, include: { user: true } });
+  if (!member) return;
+
+  await prisma.member.update({ where: { id: memberId }, data: { isActive: false } });
+  if (member.user) {
+    await prisma.user.update({ where: { id: member.user.id }, data: { isActive: false } });
+  }
+
+  revalidatePath(`/geschaeftsstelle/members/${memberId}`);
+  revalidatePath("/geschaeftsstelle/members");
+}
+
+export async function reactivateMember(memberId: string) {
+  await requireGeschaeftsstelle();
+
+  const member = await prisma.member.findUnique({ where: { id: memberId }, include: { user: true } });
+  if (!member) return;
+
+  await prisma.member.update({ where: { id: memberId }, data: { isActive: true } });
+  if (member.user) {
+    await prisma.user.update({ where: { id: member.user.id }, data: { isActive: true } });
+  }
+
+  revalidatePath(`/geschaeftsstelle/members/${memberId}`);
+  revalidatePath("/geschaeftsstelle/members");
+}
+
+/**
  * Credits a member with hours for an Einsatz that was never tracked in the
  * tool (e.g. done before go-live, or corrected after the fact). Asks for the
  * same info as creating a real Helfereinsatz (Titel/Typ/Standort/

@@ -33,7 +33,7 @@ export default async function MemberDetailPage({
       <Card>
         <h1 className="mb-3 flex items-center gap-2 text-base font-semibold text-text">
           {member.firstName} {member.lastName}
-          {!member.isActive && <Badge variant="neutral">inaktiv — fehlt im letzten Import</Badge>}
+          {!member.isActive && <Badge variant="neutral">inaktiv</Badge>}
         </h1>
         <MemberEditForm
           memberId={member.id}
@@ -44,6 +44,7 @@ export default async function MemberDetailPage({
           ageGroupId={member.ageGroupId}
           targetHours={Number(member.targetHours)}
           ageGroups={ageGroups}
+          isActive={member.isActive}
         />
       </Card>
 
