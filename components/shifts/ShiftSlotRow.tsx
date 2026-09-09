@@ -6,6 +6,7 @@ export type ShiftSlotRowData = {
   id: string;
   area: "HELFER" | "FUNKTIONAER";
   capacity: number;
+  creditHours: number;
   activity: { name: string };
   ageGroupRestrictions: { ageGroup: { name: string } }[];
   signups: {

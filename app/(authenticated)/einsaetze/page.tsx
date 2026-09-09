@@ -97,7 +97,10 @@ export default async function EinsaetzePage({
         );
       }
 
-      return { event, slots };
+      return {
+        event,
+        slots: slots.map((slot) => ({ ...slot, creditHours: Number(slot.creditHours) })),
+      };
     })
     .filter(({ slots }) => slots.length > 0);
 
@@ -179,6 +182,7 @@ export default async function EinsaetzePage({
           key={event.id}
           title={event.title}
           startDateTime={event.startDateTime}
+          endDateTime={event.endDateTime}
           locationName={event.location?.name ?? event.locationText ?? null}
           requirements={event.requirements}
           shiftSlots={slots}
