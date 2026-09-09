@@ -12,6 +12,8 @@ type Filters = {
   stufe?: string;
   typ?: string;
   nurMeine?: string;
+  von?: string;
+  bis?: string;
 };
 
 function buildHref(current: Filters, patch: Partial<Filters>) {
@@ -48,17 +50,23 @@ export default async function EinsaetzePage({
 
   const activeMember = session.user.member;
 
+  // Man kann sich für einen bereits stattgefundenen Einsatz ohnehin nicht
+  // mehr anmelden — vergangene Einsätze werden hier deshalb immer
+  // ausgeblendet, auch wenn "Von" in der Vergangenheit liegt.
+  const now = new Date();
+  const vonDate = filters.von ? new Date(filters.von) : null;
+  const bisDate = filters.bis ? new Date(filters.bis) : null;
+
   const events = await prisma.event.findMany({
     where: {
       seasonId: season.id,
       deletedAt: null,
       isManualEntry: false,
       status: { not: "CANCELLED" },
-      // Man kann sich für einen bereits stattgefundenen Einsatz ohnehin nicht
-      // mehr anmelden — vergangene Einsätze werden hier deshalb ausgeblendet,
-      // nicht nur "Mein Konto" zeigt sie weiterhin (dort per memberId, nicht
-      // per Datum gefiltert).
-      startDateTime: { gte: new Date() },
+      startDateTime: {
+        gte: vonDate && vonDate > now ? vonDate : now,
+        ...(bisDate ? { lt: new Date(bisDate.getTime() + 24 * 60 * 60 * 1000) } : {}),
+      },
       ...(filters.standort ? { locationId: filters.standort } : {}),
       ...(filters.typ === "GAME" || filters.typ === "EXTERNAL" ? { type: filters.typ } : {}),
     },
@@ -162,6 +170,48 @@ export default async function EinsaetzePage({
           Externe Events
         </FilterChipLink>
       </div>
+
+      <form action="/einsaetze" className="flex flex-wrap items-end gap-2">
+        <input type="hidden" name="standort" value={filters.standort ?? ""} />
+        <input type="hidden" name="stufe" value={filters.stufe ?? ""} />
+        <input type="hidden" name="typ" value={filters.typ ?? ""} />
+        <input type="hidden" name="nurMeine" value={filters.nurMeine ?? ""} />
+        <div className="flex flex-col gap-1">
+          <label htmlFor="von" className="text-xs font-medium text-muted">
+            Von
+          </label>
+          <input
+            id="von"
+            name="von"
+            type="date"
+            defaultValue={filters.von ?? ""}
+            className="rounded-lg border border-border bg-white px-3 py-1.5 text-sm"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="bis" className="text-xs font-medium text-muted">
+            Bis
+          </label>
+          <input
+            id="bis"
+            name="bis"
+            type="date"
+            defaultValue={filters.bis ?? ""}
+            className="rounded-lg border border-border bg-white px-3 py-1.5 text-sm"
+          />
+        </div>
+        <button
+          type="submit"
+          className="rounded-full border border-border bg-white px-3.5 py-1.5 text-sm font-semibold text-text hover:border-navy/40"
+        >
+          Filtern
+        </button>
+        {(filters.von || filters.bis) && (
+          <FilterChipLink href={buildHref(filters, { von: undefined, bis: undefined })}>
+            Datumsfilter zurücksetzen
+          </FilterChipLink>
+        )}
+      </form>
 
       {activeMember && (
         <FilterChipLink
