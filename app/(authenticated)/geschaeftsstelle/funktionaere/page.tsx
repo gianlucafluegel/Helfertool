@@ -39,7 +39,11 @@ export default async function FunktionaerePage({
           Legt das Mitglied an und verschickt sofort eine Login-Einladung mit der Rolle
           Funktionär.
         </p>
-        <CreateStaffForm action={createFunktionaer} submitLabel="Funktionär erfassen & einladen" />
+        <CreateStaffForm
+          action={createFunktionaer}
+          submitLabel="Funktionär erfassen & einladen"
+          successMessage="Funktionär wurde erstellt und eingeladen."
+        />
       </Card>
 
       <Card>

@@ -1,26 +1,41 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
+import type { CreateStaffState } from "@/lib/actions/staff";
 import { FormField } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 
 export function CreateStaffForm({
   action,
   submitLabel,
+  successMessage,
   ageGroups,
   showContactAndHours = true,
 }: {
-  action: (prevState: string | undefined, formData: FormData) => Promise<string | undefined>;
+  action: (prevState: CreateStaffState, formData: FormData) => Promise<CreateStaffState>;
   submitLabel: string;
+  successMessage: string;
   /** Present only for Stufenadmins — lets you pick which Stufe(n) they administer. */
   ageGroups?: { id: string; name: string }[];
   /** Off for Stufenadmins — they only need Vorname/Nachname/E-Mail/Stufe(n). */
   showContactAndHours?: boolean;
 }) {
-  const [error, formAction, pending] = useActionState(action, undefined);
+  const [state, formAction, pending] = useActionState<CreateStaffState, FormData>(action, {
+    status: "idle",
+  });
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Statt zur Detailseite umzuleiten, bleibt man auf dem Erfassungsformular
+  // und bekommt nur eine kurze Erfolgsmeldung — die Weiterleitung auf die
+  // Bearbeiten-Seite wirkte so, als müsse man dort noch etwas tun.
+  useEffect(() => {
+    if (state.status === "success") {
+      formRef.current?.reset();
+    }
+  }, [state]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form ref={formRef} action={formAction} className="flex flex-col gap-4">
       {showContactAndHours && <FormField label="Kontakt-ID" name="externalContactId" required />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField label="Vorname" name="firstName" required />
@@ -57,7 +72,10 @@ export function CreateStaffForm({
           </div>
         </div>
       )}
-      {error && <p className="text-sm text-status-open-text">{error}</p>}
+      {state.status === "error" && <p className="text-sm text-status-open-text">{state.message}</p>}
+      {state.status === "success" && (
+        <p className="text-sm text-status-filled-text">{successMessage}</p>
+      )}
       <Button type="submit" disabled={pending} className="self-start">
         {pending ? "Wird erstellt und eingeladen…" : submitLabel}
       </Button>

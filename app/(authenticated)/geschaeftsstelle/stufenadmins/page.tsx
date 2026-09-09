@@ -42,6 +42,7 @@ export default async function StufenadminsPage({
         <CreateStaffForm
           action={createStufenadmin}
           submitLabel="Stufenadmin erfassen & einladen"
+          successMessage="Stufenadmin wurde erstellt und eingeladen."
           ageGroups={ageGroups}
           showContactAndHours={false}
         />

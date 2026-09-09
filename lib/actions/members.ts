@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
@@ -18,7 +17,15 @@ async function requireGeschaeftsstelle() {
   return session;
 }
 
-export async function createMember(prevState: string | undefined, formData: FormData) {
+export type CreateMemberState =
+  | { status: "idle" }
+  | { status: "error"; message: string }
+  | { status: "success" };
+
+export async function createMember(
+  prevState: CreateMemberState,
+  formData: FormData,
+): Promise<CreateMemberState> {
   await requireGeschaeftsstelle();
 
   const externalContactId = String(formData.get("externalContactId") ?? "").trim();
@@ -40,7 +47,10 @@ export async function createMember(prevState: string | undefined, formData: Form
     targetHoursRaw === "" ||
     !Number.isFinite(targetHours)
   ) {
-    return "Kontakt-ID, Vorname, Name, E-Mail, Team und Soll-Stunden sind Pflichtfelder.";
+    return {
+      status: "error",
+      message: "Kontakt-ID, Vorname, Name, E-Mail, Team und Soll-Stunden sind Pflichtfelder.",
+    };
   }
 
   // Nachwuchs and Aktivmannschaften are separate source systems with
@@ -57,15 +67,15 @@ export async function createMember(prevState: string | undefined, formData: Form
     where: { externalContactId, category },
   });
   if (contactIdTaken) {
-    return "Diese Kontakt-ID wird in dieser Kategorie bereits verwendet.";
+    return { status: "error", message: "Diese Kontakt-ID wird in dieser Kategorie bereits verwendet." };
   }
 
-  const member = await prisma.member.create({
+  await prisma.member.create({
     data: { firstName, lastName, email, phone, externalContactId, ageGroupId, category, targetHours },
   });
 
   revalidatePath("/geschaeftsstelle/members");
-  redirect(`/geschaeftsstelle/members/${member.id}`);
+  return { status: "success" };
 }
 
 export async function updateMember(memberId: string, formData: FormData) {

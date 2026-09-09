@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAuthToken } from "@/lib/auth-tokens";
@@ -15,6 +14,11 @@ async function requireGeschaeftsstelle() {
   return session;
 }
 
+export type CreateStaffState =
+  | { status: "idle" }
+  | { status: "error"; message: string }
+  | { status: "success" };
+
 /**
  * Funktionäre and Stufenadmins are Members too, but — unlike a plain
  * Mitglied — the whole point of adding one is that they get a login with
@@ -25,7 +29,7 @@ async function requireGeschaeftsstelle() {
 async function createStaffMember(
   role: "FUNKTIONAER" | "STUFENLEITER",
   formData: FormData,
-): Promise<string | undefined> {
+): Promise<CreateStaffState> {
   await requireGeschaeftsstelle();
 
   const firstName = String(formData.get("firstName") ?? "").trim();
@@ -35,7 +39,7 @@ async function createStaffMember(
   const stufenleiterAgeGroupIds = formData.getAll("stufenleiterAgeGroupIds").map(String);
 
   if (!firstName || !lastName || !email) {
-    return "Vorname, Name und E-Mail sind Pflichtfelder.";
+    return { status: "error", message: "Vorname, Name und E-Mail sind Pflichtfelder." };
   }
 
   // Funktionäre are tracked like a Mitglied (Kontakt-ID/Soll-Stunden for
@@ -55,7 +59,10 @@ async function createStaffMember(
       targetHoursRaw === "" ||
       !Number.isFinite(targetHoursNum)
     ) {
-      return "Kontakt-ID, Vorname, Name, E-Mail und Soll-Stunden sind Pflichtfelder.";
+      return {
+        status: "error",
+        message: "Kontakt-ID, Vorname, Name, E-Mail und Soll-Stunden sind Pflichtfelder.",
+      };
     }
     targetHours = targetHoursNum;
   }
@@ -70,9 +77,14 @@ async function createStaffMember(
       : null,
     prisma.user.findUnique({ where: { email } }),
   ]);
-  if (contactIdTaken) return "Diese Kontakt-ID wird bereits verwendet.";
+  if (contactIdTaken) {
+    return { status: "error", message: "Diese Kontakt-ID wird bereits verwendet." };
+  }
   if (emailTaken) {
-    return "Diese E-Mail-Adresse wird bereits für einen anderen Login verwendet.";
+    return {
+      status: "error",
+      message: "Diese E-Mail-Adresse wird bereits für einen anderen Login verwendet.",
+    };
   }
 
   const member = await prisma.member.create({
@@ -91,13 +103,19 @@ async function createStaffMember(
   await sendMail("ACCOUNT_SETUP", email, { vorname: firstName, nachname: lastName, link });
 
   revalidatePath(role === "FUNKTIONAER" ? "/geschaeftsstelle/funktionaere" : "/geschaeftsstelle/stufenadmins");
-  redirect(`/geschaeftsstelle/members/${member.id}`);
+  return { status: "success" };
 }
 
-export async function createFunktionaer(prevState: string | undefined, formData: FormData) {
+export async function createFunktionaer(
+  prevState: CreateStaffState,
+  formData: FormData,
+): Promise<CreateStaffState> {
   return createStaffMember("FUNKTIONAER", formData);
 }
 
-export async function createStufenadmin(prevState: string | undefined, formData: FormData) {
+export async function createStufenadmin(
+  prevState: CreateStaffState,
+  formData: FormData,
+): Promise<CreateStaffState> {
   return createStaffMember("STUFENLEITER", formData);
 }
