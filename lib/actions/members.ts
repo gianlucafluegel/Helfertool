@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
 import { createAuthToken } from "@/lib/auth-tokens";
 import { sendMail } from "@/lib/mail/send";
+import { isAllowedInviteRole } from "@/lib/rules/staff-roles";
 import type { EventType, ShiftArea, UserRole } from "@/generated/prisma/enums";
 
 async function requireGeschaeftsstelle() {
@@ -234,6 +235,10 @@ export async function inviteMemberLogin(
 
   const role = formData.get("role") as UserRole;
   const stufenleiterAgeGroupIds = formData.getAll("stufenleiterAgeGroupIds").map(String);
+
+  if (!isAllowedInviteRole(member.user?.role ?? null, role)) {
+    return { error: "Diese Rolle ist für dieses Mitglied nicht zulässig." };
+  }
 
   let user = member.user;
 

@@ -2,7 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { inviteMemberLogin } from "@/lib/actions/members";
+import { ALLOWED_INVITE_ROLES } from "@/lib/rules/staff-roles";
 import { Button } from "@/components/ui/Button";
+import type { UserRole } from "@/generated/prisma/enums";
+
+const ROLE_LABELS: Record<UserRole, string> = {
+  MITGLIED: "Mitglied / Helfer",
+  FUNKTIONAER: "Funktionär",
+  STUFENLEITER: "Stufenleiter",
+  GESCHAEFTSSTELLE: "Geschäftsstelle",
+};
 
 export function InviteLoginForm({
   memberId,
@@ -11,9 +20,13 @@ export function InviteLoginForm({
 }: {
   memberId: string;
   ageGroups: { id: string; name: string }[];
-  currentRole?: string;
+  currentRole?: UserRole;
 }) {
-  const [role, setRole] = useState(currentRole ?? "MITGLIED");
+  const roleOptions = ALLOWED_INVITE_ROLES[currentRole ?? "MITGLIED"].map((value) => ({
+    value,
+    label: ROLE_LABELS[value],
+  }));
+  const [role, setRole] = useState(roleOptions[0].value);
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
 
@@ -28,23 +41,31 @@ export function InviteLoginForm({
         });
       }}
     >
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-text" htmlFor="role">
-          Rolle
-        </label>
-        <select
-          id="role"
-          name="role"
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
-        >
-          <option value="MITGLIED">Mitglied / Helfer</option>
-          <option value="FUNKTIONAER">Funktionär</option>
-          <option value="STUFENLEITER">Stufenleiter</option>
-          <option value="GESCHAEFTSSTELLE">Geschäftsstelle</option>
-        </select>
-      </div>
+      {roleOptions.length > 1 ? (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-text" htmlFor="role">
+            Rolle
+          </label>
+          <select
+            id="role"
+            name="role"
+            value={role}
+            onChange={(e) => setRole(e.target.value as UserRole)}
+            className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
+          >
+            {roleOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        <>
+          <input type="hidden" name="role" value={roleOptions[0].value} />
+          <p className="text-sm text-muted">Rolle: {roleOptions[0].label}</p>
+        </>
+      )}
 
       {role === "STUFENLEITER" && (
         <div>
