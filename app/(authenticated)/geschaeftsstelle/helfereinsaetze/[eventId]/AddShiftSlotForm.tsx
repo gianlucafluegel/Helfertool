@@ -29,9 +29,9 @@ export function AddShiftSlotForm({
         name="activityName"
         list="activity-suggestions"
         required
-        defaultValue="Helfer (allgemein)"
+        placeholder="Speaker"
       />
-      <FormField label="Anzahl Plätze" name="capacity" type="number" min={1} defaultValue={1} />
+      <FormField label="Anzahl Plätze" name="capacity" type="number" min={1} placeholder="1" />
       <FormField label="Notiz (optional)" name="notes" />
       {error && <p className="text-sm text-status-open-text">{error}</p>}
       <Button type="submit" disabled={pending} className="self-start">

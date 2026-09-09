@@ -6,8 +6,6 @@ import { SearchableSelect } from "@/components/ui/SearchableSelect";
 
 type RoleRow = { key: number };
 
-const DEFAULT_ACTIVITY_NAME = "Helfer (allgemein)";
-
 /**
  * Rollen-Abschnitt für die manuellen Erfassungsformulare (Spiel/Externes
  * Event) — dieselben Felder wie "Weitere Rolle hinzufügen" auf der
@@ -70,7 +68,7 @@ export function RolesFieldset({
               name="roleActivityName"
               list="activity-suggestions"
               required
-              defaultValue={DEFAULT_ACTIVITY_NAME}
+              placeholder="Speaker"
               className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
             />
           </div>
@@ -83,7 +81,7 @@ export function RolesFieldset({
               name="roleCapacity"
               type="number"
               min={1}
-              defaultValue={1}
+              placeholder="1"
               className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
             />
           </div>
