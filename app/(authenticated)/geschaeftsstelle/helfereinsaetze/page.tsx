@@ -60,9 +60,10 @@ export default async function HelfereinsaetzePage() {
         </h2>
         <p className="mb-3 text-sm text-muted">
           Excel gemäss Vorlage hochladen (Zeile 1 Titel, Zeile 2 Ort, ab Zeile 4 eine Zeile pro
-          Platz mit Datum/Beginn/Ende/Einsatzbeschrieb). Zeilen mit gleichem Datum/Zeit werden zu
-          einer Rolle mit entsprechend mehreren Plätzen zusammengefasst, der Titel setzt sich aus
-          dem Dokument-Titel und dem Einsatzbeschrieb zusammen.
+          Platz mit Datum/Beginn/Ende/Anzahl Helferstunden/Einsatzbeschrieb). Zeilen mit gleichem
+          Datum/Zeit/Einsatzbeschrieb/Std. werden zu einer Rolle mit entsprechend mehreren Plätzen
+          zusammengefasst, der Titel setzt sich aus dem Dokument-Titel und dem Einsatzbeschrieb
+          zusammen.
         </p>
         <ExternalEventsImportForm />
       </Card>

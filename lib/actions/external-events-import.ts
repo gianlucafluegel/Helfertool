@@ -14,11 +14,6 @@ async function requireGeschaeftsstelle() {
   return session;
 }
 
-/** Anzahl Helferstunden wird immer aus Start/Ende berechnet, nie manuell erfasst. */
-function hoursBetween(start: Date, end: Date): number {
-  return Math.round(((end.getTime() - start.getTime()) / (60 * 60 * 1000)) * 100) / 100;
-}
-
 export type ExternalEventGroupPreview = {
   key: string;
   title: string;
@@ -56,13 +51,21 @@ export async function parseExternalEventsImportFile(
     return { status: "error", message: "Keine Rollen-Zeilen in der Datei gefunden." };
   }
 
-  // Zeilen mit identischem Start/Ende UND identischem Einsatzbeschrieb bilden
-  // zusammen einen Helfereinsatz mit mehreren Rollen — unterschiedliche
-  // Einsatzbeschriebe bleiben auch bei gleicher Zeit getrennte Einsätze
-  // (z.B. "Brückli südlich" und "Einweiser" zur selben Zeit).
+  // Zeilen mit identischem Start/Ende, Einsatzbeschrieb UND Anzahl
+  // Helferstunden bilden zusammen einen Helfereinsatz mit mehreren Rollen —
+  // unterschiedliche Einsatzbeschriebe (oder eine abweichende Std.-Zahl)
+  // bleiben auch bei gleicher Zeit getrennte Einsätze (z.B. "Brückli
+  // südlich" und "Einweiser" zur selben Zeit).
   const groups = new Map<
     string,
-    { startDateTime: Date; endDateTime: Date; einsatzbeschrieb: string; anforderungen: string | null; roleCount: number }
+    {
+      startDateTime: Date;
+      endDateTime: Date;
+      einsatzbeschrieb: string;
+      anforderungen: string | null;
+      helferstunden: number;
+      roleCount: number;
+    }
   >();
 
   for (const row of parsed.rows) {
@@ -72,7 +75,7 @@ export async function parseExternalEventsImportFile(
       endDateTime = new Date(endDateTime.getTime() + 24 * 60 * 60 * 1000);
     }
 
-    const key = `${startDateTime.toISOString()}|${endDateTime.toISOString()}|${row.einsatzbeschrieb}`;
+    const key = `${startDateTime.toISOString()}|${endDateTime.toISOString()}|${row.einsatzbeschrieb}|${row.helferstunden}`;
     const existing = groups.get(key);
     if (existing) {
       existing.roleCount += 1;
@@ -82,6 +85,7 @@ export async function parseExternalEventsImportFile(
         endDateTime,
         einsatzbeschrieb: row.einsatzbeschrieb,
         anforderungen: row.anforderungen,
+        helferstunden: row.helferstunden,
         roleCount: 1,
       });
     }
@@ -95,7 +99,7 @@ export async function parseExternalEventsImportFile(
     requirements: g.anforderungen,
     startDateTimeIso: g.startDateTime.toISOString(),
     endDateTimeIso: g.endDateTime.toISOString(),
-    creditHours: hoursBetween(g.startDateTime, g.endDateTime),
+    creditHours: g.helferstunden,
     roleCount: g.roleCount,
   }));
 

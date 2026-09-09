@@ -4,6 +4,7 @@ export type ParsedExternalEventRow = {
   datum: Date;
   beginn: Date;
   ende: Date;
+  helferstunden: number;
   einsatzbeschrieb: string;
   anforderungen: string | null;
 };
@@ -14,7 +15,13 @@ export type ParsedExternalEventsFile = {
   rows: ParsedExternalEventRow[];
 };
 
-const REQUIRED_HEADERS = ["Datum", "Beginn", "Ende (ca.)", "Einsatzbeschrieb"] as const;
+const REQUIRED_HEADERS = [
+  "Datum",
+  "Beginn",
+  "Ende (ca.)",
+  "Anzahl Helferstunden",
+  "Einsatzbeschrieb",
+] as const;
 
 function cellString(value: ExcelJS.CellValue): string {
   if (value === null || value === undefined) return "";
@@ -25,6 +32,15 @@ function cellString(value: ExcelJS.CellValue): string {
 
 function cellDate(value: ExcelJS.CellValue): Date | null {
   return value instanceof Date ? value : null;
+}
+
+function cellNumber(value: ExcelJS.CellValue): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value.trim().replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
 }
 
 /**
@@ -84,12 +100,13 @@ export async function parseExternalEventsWorkbook(
     const datum = cellDate(get(row, "Datum"));
     const beginn = cellDate(get(row, "Beginn"));
     const ende = cellDate(get(row, "Ende (ca.)"));
+    const helferstunden = cellNumber(get(row, "Anzahl Helferstunden"));
     const einsatzbeschrieb = cellString(get(row, "Einsatzbeschrieb")).trim();
-    if (!datum || !beginn || !ende || !einsatzbeschrieb) return;
+    if (!datum || !beginn || !ende || helferstunden === null || !einsatzbeschrieb) return;
 
     const anforderungen = cellString(get(row, "Anforderungen")).trim() || null;
 
-    rows.push({ datum, beginn, ende, einsatzbeschrieb, anforderungen });
+    rows.push({ datum, beginn, ende, helferstunden, einsatzbeschrieb, anforderungen });
   });
 
   return { file: { title, locationText, rows } };
