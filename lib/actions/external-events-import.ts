@@ -147,12 +147,12 @@ export async function commitExternalEventsImport(
         endDateTime: new Date(group.endDateTimeIso),
         importBatchId: batch.id,
         shiftSlots: {
-          create: Array.from({ length: group.roleCount }, () => ({
+          create: {
             activityId: defaultActivity.id,
             area: "HELFER" as const,
-            capacity: 1,
+            capacity: group.roleCount,
             creditHours: group.creditHours,
-          })),
+          },
         },
       },
     });

@@ -65,7 +65,7 @@ function ExternalEventsPreviewTable({ groups }: { groups: ExternalEventGroupPrev
               <th className="py-2 pr-2">Std.</th>
               <th className="py-2 pr-2">Titel</th>
               <th className="py-2 pr-2">Ort</th>
-              <th className="py-2 pr-2">Rollen</th>
+              <th className="py-2 pr-2">Plätze</th>
             </tr>
           </thead>
           <tbody>
