@@ -18,7 +18,13 @@ export default async function MembersPage({
     prisma.ageGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
   ]);
 
+  // Funktionäre und Stufenadmins haben ihre eigenen Seiten
+  // (/geschaeftsstelle/funktionaere, /geschaeftsstelle/stufenadmins) und
+  // sollen hier nicht doppelt auftauchen.
   const allMembers = await prisma.member.findMany({
+    where: {
+      OR: [{ user: null }, { user: { role: { notIn: ["FUNKTIONAER", "STUFENLEITER"] } } }],
+    },
     include: { user: true, ageGroup: true },
     orderBy: [{ isActive: "desc" }, { lastName: "asc" }, { firstName: "asc" }],
   });
