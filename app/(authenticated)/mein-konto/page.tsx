@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { CancelSignupButton } from "@/components/shifts/CancelSignupButton";
 import { MemberTabs } from "@/components/layout/MemberTabs";
-import { formatDate, formatDateTime } from "@/lib/format";
+import { formatDate, formatDateTime, formatTime } from "@/lib/format";
 
 export default async function MeinKontoPage() {
   const session = await auth();
@@ -82,8 +82,10 @@ export default async function MeinKontoPage() {
               <div>
                 <p className="text-sm font-medium text-text">{s.shiftSlot.event.title}</p>
                 <p className="text-xs text-muted">
-                  {formatDateTime(s.shiftSlot.event.startDateTime)}{" "}
-                  Uhr · {s.shiftSlot.activity.name}
+                  {formatDateTime(s.shiftSlot.event.startDateTime)}
+                  {s.shiftSlot.event.endDateTime &&
+                    ` – ${formatTime(s.shiftSlot.event.endDateTime)}`}{" "}
+                  Uhr · {Number(s.shiftSlot.creditHours)} Std. · {s.shiftSlot.activity.name}
                 </p>
               </div>
               <CancelSignupButton signupId={s.id} />
@@ -103,8 +105,11 @@ export default async function MeinKontoPage() {
               <div>
                 <p className="text-sm font-medium text-text">{s.shiftSlot.event.title}</p>
                 <p className="text-xs text-muted">
-                  {formatDate(s.shiftSlot.event.startDateTime)} ·{" "}
-                  {s.shiftSlot.activity.name}
+                  {formatDate(s.shiftSlot.event.startDateTime)},{" "}
+                  {formatTime(s.shiftSlot.event.startDateTime)}
+                  {s.shiftSlot.event.endDateTime &&
+                    ` – ${formatTime(s.shiftSlot.event.endDateTime)}`}{" "}
+                  Uhr · {s.shiftSlot.activity.name}
                 </p>
               </div>
               <Badge variant={s.payoutType === "HELFERKONTINGENT" ? "filled" : "neutral"}>
