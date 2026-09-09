@@ -8,9 +8,14 @@ import { formatDateTime } from "@/lib/format";
 
 type Zeitraum = "zukunft" | "vergangen" | "alle";
 
-function buildHref(q: string | undefined, zeitraum: Zeitraum) {
+function buildHref(
+  current: { q?: string; von?: string; bis?: string },
+  zeitraum: Zeitraum,
+) {
   const params = new URLSearchParams();
-  if (q) params.set("q", q);
+  if (current.q) params.set("q", current.q);
+  if (current.von) params.set("von", current.von);
+  if (current.bis) params.set("bis", current.bis);
   if (zeitraum !== "zukunft") params.set("zeitraum", zeitraum);
   const qs = params.toString();
   return qs ? `/geschaeftsstelle?${qs}` : "/geschaeftsstelle";
@@ -19,9 +24,9 @@ function buildHref(q: string | undefined, zeitraum: Zeitraum) {
 export default async function GeschaeftsstelleOverviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; zeitraum?: string }>;
+  searchParams: Promise<{ q?: string; zeitraum?: string; von?: string; bis?: string }>;
 }) {
-  const { q, zeitraum: zeitraumRaw } = await searchParams;
+  const { q, zeitraum: zeitraumRaw, von, bis } = await searchParams;
   const zeitraum: Zeitraum =
     zeitraumRaw === "vergangen" || zeitraumRaw === "alle" ? zeitraumRaw : "zukunft";
   const season = await getCurrentSeason();
@@ -30,12 +35,26 @@ export default async function GeschaeftsstelleOverviewPage({
   }
 
   const now = new Date();
-  const dateFilter =
-    zeitraum === "vergangen"
-      ? { startDateTime: { lt: now } }
-      : zeitraum === "alle"
-        ? {}
-        : { startDateTime: { gte: now } };
+  let gte = zeitraum === "zukunft" ? now : undefined;
+  let lt = zeitraum === "vergangen" ? now : undefined;
+
+  // "Von"/"Bis" verfeinern den Zeitraum-Toggle zusätzlich, statt ihn zu
+  // ersetzen — es gilt jeweils die restriktivere (spätere/frühere) Grenze.
+  const vonDate = von ? new Date(von) : null;
+  if (vonDate) gte = gte && gte > vonDate ? gte : vonDate;
+
+  const bisDate = bis ? new Date(bis) : null;
+  if (bisDate) {
+    const bisExclusive = new Date(bisDate.getTime() + 24 * 60 * 60 * 1000);
+    lt = lt && lt < bisExclusive ? lt : bisExclusive;
+  }
+
+  const dateFilter = {
+    startDateTime: {
+      ...(gte ? { gte } : {}),
+      ...(lt ? { lt } : {}),
+    },
+  };
 
   const [statsEvents, listEvents] = await Promise.all([
     prisma.event.findMany({
@@ -109,7 +128,7 @@ export default async function GeschaeftsstelleOverviewPage({
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
           Helfereinsätze suchen
         </h2>
-        <form className="mb-4 flex gap-2" action="/geschaeftsstelle">
+        <form className="mb-4 flex flex-wrap items-end gap-2" action="/geschaeftsstelle">
           <input type="hidden" name="zeitraum" value={zeitraum} />
           <input
             type="text"
@@ -118,13 +137,37 @@ export default async function GeschaeftsstelleOverviewPage({
             placeholder="Titel oder Beschreibung durchsuchen…"
             className="w-full max-w-sm rounded-lg border border-border bg-white px-3 py-2 text-sm"
           />
+          <div className="flex flex-col gap-1">
+            <label htmlFor="von" className="text-xs font-medium text-muted">
+              Von
+            </label>
+            <input
+              id="von"
+              name="von"
+              type="date"
+              defaultValue={von ?? ""}
+              className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="bis" className="text-xs font-medium text-muted">
+              Bis
+            </label>
+            <input
+              id="bis"
+              name="bis"
+              type="date"
+              defaultValue={bis ?? ""}
+              className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
+            />
+          </div>
           <button
             type="submit"
             className="rounded-full bg-gold px-4 py-2 text-sm font-semibold text-navy hover:bg-gold-hover"
           >
             Suchen
           </button>
-          {(q || zeitraum !== "zukunft") && (
+          {(q || von || bis || zeitraum !== "zukunft") && (
             <Link
               href="/geschaeftsstelle"
               className="rounded-full border border-border px-4 py-2 text-sm font-medium text-text hover:border-navy/40"
@@ -143,7 +186,7 @@ export default async function GeschaeftsstelleOverviewPage({
           ).map(([value, label]) => (
             <Link
               key={value}
-              href={buildHref(q, value)}
+              href={buildHref({ q, von, bis }, value)}
               className={clsx(
                 "rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors",
                 zeitraum === value
