@@ -143,15 +143,17 @@ export async function commitImport(
     return { error: "Keine aktive Saison konfiguriert." };
   }
 
-  const defaultActivity = await prisma.activity.findFirst({
-    where: { name: "Helfer (allgemein)" },
-  });
-  if (!defaultActivity) {
-    return {
-      error:
-        "Standard-Tätigkeit 'Helfer (allgemein)' nicht gefunden. Bitte Geschäftsstelle kontaktieren.",
-    };
-  }
+  // Jedes neu importierte Spiel erhält standardmässig diese beiden Rollen —
+  // die Tätigkeiten werden per Namen wiederverwendet oder neu angelegt,
+  // genau wie beim manuellen Erfassen eines Helfereinsatzes.
+  const [speakerActivity, strafbankActivity] = await Promise.all([
+    prisma.activity.upsert({ where: { name: "Speaker" }, update: {}, create: { name: "Speaker" } }),
+    prisma.activity.upsert({
+      where: { name: "Strafbankbetreuer" },
+      update: {},
+      create: { name: "Strafbankbetreuer" },
+    }),
+  ]);
 
   const batch = await prisma.importBatch.create({
     data: { source: "MySIHF Excel-Import", importedByUserId: session.user.id },
@@ -193,15 +195,26 @@ export async function commitImport(
           externalRef: row.spielNr,
           importBatchId: batch.id,
           shiftSlots: {
-            create: {
-              activityId: defaultActivity.id,
-              area: "HELFER",
-              capacity: 1,
-              creditHours: row.creditHours,
-              ...(row.ageGroupId
-                ? { ageGroupRestrictions: { create: { ageGroupId: row.ageGroupId } } }
-                : {}),
-            },
+            create: [
+              {
+                activityId: speakerActivity.id,
+                area: "HELFER",
+                capacity: 1,
+                creditHours: row.creditHours,
+                ...(row.ageGroupId
+                  ? { ageGroupRestrictions: { create: { ageGroupId: row.ageGroupId } } }
+                  : {}),
+              },
+              {
+                activityId: strafbankActivity.id,
+                area: "HELFER",
+                capacity: 2,
+                creditHours: row.creditHours,
+                ...(row.ageGroupId
+                  ? { ageGroupRestrictions: { create: { ageGroupId: row.ageGroupId } } }
+                  : {}),
+              },
+            ],
           },
         },
       });
