@@ -202,7 +202,8 @@ export async function createGameEvent(prevState: string | undefined, formData: F
   if (rolesError) return rolesError;
 
   revalidatePath("/geschaeftsstelle/helfereinsaetze");
-  redirect(`/geschaeftsstelle/helfereinsaetze/${event.id}`);
+  revalidatePath("/geschaeftsstelle");
+  redirect("/geschaeftsstelle");
 }
 
 export async function createExternalEvent(prevState: string | undefined, formData: FormData) {
@@ -260,7 +261,8 @@ export async function createExternalEvent(prevState: string | undefined, formDat
   if (rolesError) return rolesError;
 
   revalidatePath("/geschaeftsstelle/helfereinsaetze");
-  redirect(`/geschaeftsstelle/helfereinsaetze/${event.id}`);
+  revalidatePath("/geschaeftsstelle");
+  redirect("/geschaeftsstelle");
 }
 
 export async function updateEvent(eventId: string, formData: FormData) {
