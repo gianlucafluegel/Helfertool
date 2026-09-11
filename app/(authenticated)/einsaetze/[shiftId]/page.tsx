@@ -93,6 +93,9 @@ export default async function ShiftSignupPage({
           {(shiftSlot.event.location?.name ?? shiftSlot.event.locationText) &&
             ` · ${shiftSlot.event.location?.name ?? shiftSlot.event.locationText}`}
         </p>
+        {shiftSlot.event.description && (
+          <p className="mb-2 text-sm text-muted">{shiftSlot.event.description}</p>
+        )}
         <p className="mb-2 text-sm font-medium text-text">{shiftSlot.activity.name}</p>
         {shiftSlot.event.requirements && (
           <p className="text-sm text-muted">
