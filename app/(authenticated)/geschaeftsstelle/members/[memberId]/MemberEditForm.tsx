@@ -135,7 +135,7 @@ export function MemberEditForm({
             disabled={pending}
             onClick={() => startTransition(() => reactivateMember(memberId))}
           >
-            {pending ? "Wird reaktiviert…" : "Mitglied reaktivieren"}
+            {pending ? "Wird reaktiviert…" : "Benutzer reaktivieren"}
           </Button>
         )}
         {confirmingHardDelete ? (
