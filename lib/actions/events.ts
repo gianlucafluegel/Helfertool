@@ -104,6 +104,7 @@ async function createShiftSlotsForEvent(
   eventId: string,
   creditHours: number,
   roles: RoleInput[],
+  ageGroupId?: string | null,
 ): Promise<string | undefined> {
   for (const role of roles) {
     const activity = await prisma.activity.upsert({
@@ -124,6 +125,9 @@ async function createShiftSlotsForEvent(
         capacity: role.capacity,
         creditHours,
         notes: role.notes,
+        ...(ageGroupId
+          ? { ageGroupRestrictions: { create: { ageGroupId } } }
+          : {}),
         ...(member
           ? {
               signups: {
@@ -155,6 +159,7 @@ export async function createGameEvent(prevState: string | undefined, formData: F
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
   const creditHours = Number(formData.get("creditHours"));
+  const ageGroupId = String(formData.get("ageGroupId") ?? "").trim() || null;
 
   if (
     !title ||
@@ -193,7 +198,7 @@ export async function createGameEvent(prevState: string | undefined, formData: F
     },
   });
 
-  const rolesError = await createShiftSlotsForEvent(event.id, creditHours, roles);
+  const rolesError = await createShiftSlotsForEvent(event.id, creditHours, roles, ageGroupId);
   if (rolesError) return rolesError;
 
   revalidatePath("/geschaeftsstelle/helfereinsaetze");

@@ -10,10 +10,12 @@ export function CreateGameEventForm({
   locations,
   activities,
   members,
+  ageGroups,
 }: {
   locations: { id: string; name: string }[];
   activities: { id: string; name: string }[];
   members: { id: string; firstName: string; lastName: string }[];
+  ageGroups: { id: string; name: string }[];
 }) {
   const [error, formAction, pending] = useActionState(createGameEvent, undefined);
 
@@ -37,6 +39,24 @@ export function CreateGameEventForm({
           {locations.map((loc) => (
             <option key={loc.id} value={loc.id}>
               {loc.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-text" htmlFor="ageGroupId">
+          Stufe
+        </label>
+        <select
+          id="ageGroupId"
+          name="ageGroupId"
+          defaultValue=""
+          className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
+        >
+          <option value="">– (dient nur zum Filtern, keine Einschränkung)</option>
+          {ageGroups.map((ag) => (
+            <option key={ag.id} value={ag.id}>
+              {ag.name}
             </option>
           ))}
         </select>
