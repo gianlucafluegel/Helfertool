@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
@@ -148,6 +149,35 @@ export async function reactivateMember(memberId: string) {
 
   revalidatePath(`/geschaeftsstelle/members/${memberId}`);
   revalidatePath("/geschaeftsstelle/members");
+}
+
+/**
+ * Echtes, unwiderrufliches Löschen — anders als deactivateMember bleibt
+ * hier nichts übrig: ein verknüpfter Login (inkl. StufenleiterAssignment/
+ * AuthToken) und alle Anmeldungen dieses Mitglieds werden mit entfernt,
+ * sonst würde das Pflichtfeld Signup.memberId eine verwaiste Zeile
+ * hinterlassen. Bewusst als eigene, deutlich benannte Aktion neben
+ * deactivateMember, da dabei — anders als beim Deaktivieren — echte
+ * Helferstunden-Historie verloren geht.
+ */
+export async function deleteMemberPermanently(memberId: string) {
+  await requireGeschaeftsstelle();
+
+  const member = await prisma.member.findUnique({ where: { id: memberId }, include: { user: true } });
+  if (!member) return;
+
+  if (member.user) {
+    await prisma.stufenleiterAssignment.deleteMany({ where: { userId: member.user.id } });
+    await prisma.authToken.deleteMany({ where: { userId: member.user.id } });
+    await prisma.user.delete({ where: { id: member.user.id } });
+  }
+  await prisma.signup.deleteMany({ where: { memberId } });
+  await prisma.member.delete({ where: { id: memberId } });
+
+  revalidatePath("/geschaeftsstelle/members");
+  revalidatePath("/geschaeftsstelle/funktionaere");
+  revalidatePath("/geschaeftsstelle/stufenadmins");
+  redirect("/geschaeftsstelle/members");
 }
 
 /**

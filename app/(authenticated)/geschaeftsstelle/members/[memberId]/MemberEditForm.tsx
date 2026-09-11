@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateMember, deactivateMember, reactivateMember } from "@/lib/actions/members";
+import {
+  updateMember,
+  deactivateMember,
+  reactivateMember,
+  deleteMemberPermanently,
+} from "@/lib/actions/members";
 import { FormField } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 import type { UserRole } from "@/generated/prisma/enums";
@@ -36,6 +41,7 @@ export function MemberEditForm({
   // angehakt wurde — ohne sichtbaren Hinweis, dass er unterdrückt wird. Ein
   // Zwei-Klick-Ablauf in der App selbst umgeht das komplett.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmingHardDelete, setConfirmingHardDelete] = useState(false);
 
   return (
     <form
@@ -130,6 +136,36 @@ export function MemberEditForm({
             onClick={() => startTransition(() => reactivateMember(memberId))}
           >
             {pending ? "Wird reaktiviert…" : "Mitglied reaktivieren"}
+          </Button>
+        )}
+        {confirmingHardDelete ? (
+          <span className="inline-flex items-center gap-2 text-sm">
+            <span className="text-muted">
+              Unwiderruflich löschen? Alle Daten (inkl. Anmeldungen/Helferstunden) werden entfernt.
+            </span>
+            <Button
+              type="button"
+              variant="danger"
+              disabled={pending}
+              onClick={() => {
+                setConfirmingHardDelete(false);
+                startTransition(() => deleteMemberPermanently(memberId));
+              }}
+            >
+              {pending ? "Wird gelöscht…" : "Ja, komplett löschen"}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={pending}
+              onClick={() => setConfirmingHardDelete(false)}
+            >
+              Abbrechen
+            </Button>
+          </span>
+        ) : (
+          <Button type="button" variant="danger" onClick={() => setConfirmingHardDelete(true)}>
+            Mitglied komplett löschen
           </Button>
         )}
       </div>
