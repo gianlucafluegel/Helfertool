@@ -12,7 +12,7 @@ export default async function EventDetailPage({
 }) {
   const { eventId } = await params;
 
-  const [event, locations, activities, members] = await Promise.all([
+  const [event, locations, activities, members, ageGroups] = await Promise.all([
     prisma.event.findUnique({
       where: { id: eventId },
       include: {
@@ -34,6 +34,7 @@ export default async function EventDetailPage({
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       select: { id: true, firstName: true, lastName: true },
     }),
+    prisma.ageGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
   ]);
 
   if (!event || event.deletedAt) notFound();
@@ -53,7 +54,8 @@ export default async function EventDetailPage({
           startDateTime={event.startDateTime}
           endDateTime={event.endDateTime}
           creditHours={Number(event.shiftSlots[0]?.creditHours ?? 0)}
-          status={event.status}
+          ageGroupId={event.shiftSlots[0]?.ageGroupRestrictions[0]?.ageGroupId ?? ""}
+          ageGroups={ageGroups}
           locations={locations}
         />
       </Card>

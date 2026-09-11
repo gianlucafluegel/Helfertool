@@ -264,7 +264,7 @@ export async function createExternalEvent(prevState: string | undefined, formDat
 }
 
 export async function updateEvent(eventId: string, formData: FormData) {
-  await assertCanEditEvent(eventId);
+  const session = await assertCanEditEvent(eventId);
 
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -278,10 +278,13 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
   const creditHours = Number(formData.get("creditHours"));
-  const status = String(formData.get("status") ?? "SCHEDULED") as
-    | "SCHEDULED"
-    | "CANCELLED"
-    | "POSTPONED";
+  // Kein Status-Feld mehr im Formular — bleibt beim Speichern unverändert,
+  // statt bei jeder Bearbeitung stillschweigend auf "Geplant" zurückgesetzt
+  // zu werden.
+  const statusRaw = formData.get("status");
+  const status = statusRaw
+    ? (String(statusRaw) as "SCHEDULED" | "CANCELLED" | "POSTPONED")
+    : undefined;
 
   if (!title || !description || !Number.isFinite(creditHours) || creditHours <= 0) {
     return;
@@ -308,6 +311,28 @@ export async function updateEvent(eventId: string, formData: FormData) {
     where: { eventId, deletedAt: null },
     data: { creditHours },
   });
+
+  // Die Stufe ist wie beim Erstellen nur ein Filter/Label, keine
+  // Zugriffsbeschränkung — gilt einheitlich für alle Rollen des Einsatzes.
+  // Nur Geschäftsstelle darf sie ändern (das Formularfeld selbst wird
+  // Stufenleitern gar nicht angezeigt, hier zusätzlich serverseitig
+  // durchgesetzt) und nur, wenn das Feld überhaupt gesendet wurde (bei
+  // externen Events gibt es es nicht).
+  if (session.user.role === "GESCHAEFTSSTELLE" && formData.has("ageGroupId")) {
+    const ageGroupId = String(formData.get("ageGroupId") ?? "").trim() || null;
+    const slots = await prisma.shiftSlot.findMany({
+      where: { eventId, deletedAt: null },
+      select: { id: true },
+    });
+    await prisma.shiftSlotAgeGroup.deleteMany({
+      where: { shiftSlotId: { in: slots.map((s) => s.id) } },
+    });
+    if (ageGroupId) {
+      await prisma.shiftSlotAgeGroup.createMany({
+        data: slots.map((s) => ({ shiftSlotId: s.id, ageGroupId })),
+      });
+    }
+  }
 
   revalidatePath(`/geschaeftsstelle/helfereinsaetze/${eventId}`);
   revalidatePath("/geschaeftsstelle/helfereinsaetze");

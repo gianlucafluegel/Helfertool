@@ -68,9 +68,11 @@ export default async function StufenleiterEventDetailPage({
           startDateTime={event.startDateTime}
           endDateTime={event.endDateTime}
           creditHours={Number(event.shiftSlots[0]?.creditHours ?? 0)}
-          status={event.status}
+          ageGroupId={event.shiftSlots[0]?.ageGroupRestrictions[0]?.ageGroupId ?? ""}
+          ageGroups={[]}
           locations={locations}
           canDelete={false}
+          canEditAgeGroup={false}
         />
       </Card>
 
