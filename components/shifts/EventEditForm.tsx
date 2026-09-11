@@ -86,6 +86,27 @@ export function EventEditForm({
         <FormField label="Ort" name="locationText" required defaultValue={locationText} />
       )}
 
+      {type === "GAME" && canEditAgeGroup && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-text" htmlFor="ageGroupId">
+            Stufe
+          </label>
+          <select
+            id="ageGroupId"
+            name="ageGroupId"
+            defaultValue={ageGroupId}
+            className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
+          >
+            <option value="">–</option>
+            {ageGroups.map((ag) => (
+              <option key={ag.id} value={ag.id}>
+                {ag.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-text" htmlFor="description">
           Einsatzbeschrieb
@@ -141,27 +162,6 @@ export function EventEditForm({
         required
         defaultValue={creditHours}
       />
-
-      {type === "GAME" && canEditAgeGroup && (
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text" htmlFor="ageGroupId">
-            Stufe
-          </label>
-          <select
-            id="ageGroupId"
-            name="ageGroupId"
-            defaultValue={ageGroupId}
-            className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
-          >
-            <option value="">–</option>
-            {ageGroups.map((ag) => (
-              <option key={ag.id} value={ag.id}>
-                {ag.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
 
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={pending}>
