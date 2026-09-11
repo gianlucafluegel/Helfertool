@@ -53,7 +53,7 @@ export function CreateGameEventForm({
           defaultValue=""
           className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
         >
-          <option value="">– (dient nur zum Filtern, keine Einschränkung)</option>
+          <option value="">–</option>
           {ageGroups.map((ag) => (
             <option key={ag.id} value={ag.id}>
               {ag.name}
