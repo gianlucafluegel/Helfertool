@@ -102,7 +102,7 @@ export function MemberEditForm({
         {isActive ? (
           confirmingDelete ? (
             <span className="inline-flex items-center gap-2 text-sm">
-              <span className="text-muted">Wirklich löschen?</span>
+              <span className="text-muted">Wirklich deaktivieren?</span>
               <Button
                 type="button"
                 variant="danger"
@@ -112,7 +112,7 @@ export function MemberEditForm({
                   startTransition(() => deactivateMember(memberId));
                 }}
               >
-                {pending ? "Wird gelöscht…" : "Ja, löschen"}
+                {pending ? "Wird deaktiviert…" : "Ja, deaktivieren"}
               </Button>
               <Button
                 type="button"
@@ -125,7 +125,7 @@ export function MemberEditForm({
             </span>
           ) : (
             <Button type="button" variant="danger" onClick={() => setConfirmingDelete(true)}>
-              Mitglied löschen
+              Mitglied deaktivieren
             </Button>
           )
         ) : (
