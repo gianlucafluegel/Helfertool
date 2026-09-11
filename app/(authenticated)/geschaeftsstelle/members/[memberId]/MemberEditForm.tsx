@@ -105,7 +105,7 @@ export function MemberEditForm({
               <span className="text-muted">Wirklich deaktivieren?</span>
               <Button
                 type="button"
-                variant="danger"
+                variant="dark-gray"
                 disabled={pending}
                 onClick={() => {
                   setConfirmingDelete(false);
@@ -124,8 +124,8 @@ export function MemberEditForm({
               </Button>
             </span>
           ) : (
-            <Button type="button" variant="danger" onClick={() => setConfirmingDelete(true)}>
-              Mitglied deaktivieren
+            <Button type="button" variant="dark-gray" onClick={() => setConfirmingDelete(true)}>
+              Benutzer deaktivieren
             </Button>
           )
         ) : (
@@ -165,7 +165,7 @@ export function MemberEditForm({
           </span>
         ) : (
           <Button type="button" variant="danger" onClick={() => setConfirmingHardDelete(true)}>
-            Mitglied komplett löschen
+            Benutzer löschen
           </Button>
         )}
       </div>
