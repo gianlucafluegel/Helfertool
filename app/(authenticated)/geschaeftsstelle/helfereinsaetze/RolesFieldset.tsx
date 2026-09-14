@@ -9,11 +9,13 @@ type RoleRow = { key: number };
 /**
  * Rollen-Abschnitt für die manuellen Erfassungsformulare (Spiel/Externes
  * Event) — dieselben Felder wie "Weitere Rolle hinzufügen" auf der
- * Einsatz-Detailseite (Tätigkeit/Anzahl Plätze/Notiz/optional Helfer), aber
- * mehrere davon gleich bei der Erstellung statt einzeln danach. Alle Zeilen
- * teilen sich je ein `name` (z.B. "roleActivityName") — der Server liest sie
- * per `formData.getAll(...)` in Zeilen-Reihenfolge aus. Die Tätigkeit ist ein
- * reines Freitextfeld (keine Tätigkeit ist exklusiv für Funktionäre).
+ * Einsatz-Detailseite (Tätigkeit/Anzahl Plätze/Beschrieb/optional Helfer),
+ * aber mehrere davon gleich bei der Erstellung statt einzeln danach. Alle
+ * Zeilen teilen sich je ein `name` (z.B. "roleActivityName") — der Server
+ * liest sie per `formData.getAll(...)` in Zeilen-Reihenfolge aus. Die
+ * Tätigkeit ist ein reines Freitextfeld (keine Tätigkeit ist exklusiv für
+ * Funktionäre). Der Beschrieb ist pro Rolle definiert statt geteilt über den
+ * ganzen Einsatz (der hat nur noch einen Titel).
  */
 export function RolesFieldset({
   members,
@@ -79,12 +81,14 @@ export function RolesFieldset({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-text" htmlFor={`roleNotes-${row.key}`}>
-              Notiz (optional)
+            <label className="text-sm font-medium text-text" htmlFor={`roleDescription-${row.key}`}>
+              Beschrieb
             </label>
             <input
-              id={`roleNotes-${row.key}`}
-              name="roleNotes"
+              id={`roleDescription-${row.key}`}
+              name="roleDescription"
+              required
+              placeholder="z.B. Betreuen der Strafbank"
               className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
             />
           </div>

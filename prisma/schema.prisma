@@ -239,7 +239,6 @@ model Event {
   seasonId      String
   type          EventType
   title         String
-  description   String
   locationId    String?
   // Freitext-Standort — nur für EXTERNAL genutzt. Der Location-Katalog
   // (locationId) deckt nur die beiden vereinseigenen Hallen ab; ein externes
@@ -276,7 +275,11 @@ model ShiftSlot {
   area        ShiftArea
   capacity    Int       @default(1)
   creditHours Decimal   @db.Decimal(4, 2)
-  notes       String?
+  // Ersetzt Event.description — der Einsatzbeschrieb ist pro Rolle definiert
+  // statt geteilt über den ganzen Einsatz, da verschiedene Rollen desselben
+  // Einsatzes unterschiedliche Aufgaben beschreiben (z.B. "Speaker im
+  // Speakerhäuschen" vs. "Betreuen der Strafbank").
+  description String
   deletedAt   DateTime?
 
   event                Event               @relation(fields: [eventId], references: [id])

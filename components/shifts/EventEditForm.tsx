@@ -19,7 +19,6 @@ export function EventEditForm({
   eventId,
   type,
   title,
-  description,
   locationId,
   locationText,
   requirements,
@@ -35,7 +34,6 @@ export function EventEditForm({
   eventId: string;
   type: "GAME" | "EXTERNAL";
   title: string;
-  description: string;
   locationId: string;
   locationText: string;
   requirements: string;
@@ -106,20 +104,6 @@ export function EventEditForm({
           </select>
         </div>
       )}
-
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-text" htmlFor="description">
-          Einsatzbeschrieb
-        </label>
-        <textarea
-          id="description"
-          name="description"
-          required
-          rows={3}
-          defaultValue={description}
-          className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
-        />
-      </div>
 
       {type === "EXTERNAL" && (
         <div className="flex flex-col gap-1.5">

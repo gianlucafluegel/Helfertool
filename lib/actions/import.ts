@@ -25,7 +25,6 @@ const DEFAULT_GAME_CREDIT_HOURS = 2.5;
 export type ImportPreviewRow = {
   spielNr: string;
   title: string;
-  description: string;
   startDateTimeIso: string;
   endDateTimeIso: string;
   creditHours: number;
@@ -100,7 +99,6 @@ export async function parseImportFile(
     return {
       spielNr: row.spielNr,
       title: row.title,
-      description: row.description,
       startDateTimeIso: shiftStart.toISOString(),
       endDateTimeIso: shiftEnd.toISOString(),
       creditHours: DEFAULT_GAME_CREDIT_HOURS,
@@ -119,11 +117,16 @@ export async function parseImportFile(
   };
 }
 
+// Standardbeschriebe der beiden MySIHF-Standardrollen — der Import weiss
+// nichts Rollenspezifisches aus der Spielplan-Datei, deshalb feste Texte
+// statt eine Ableitung wie beim externen Events-Import.
+const SPEAKER_DESCRIPTION = "Speaker im Speakerhäuschen";
+const STRAFBANK_DESCRIPTION = "Betreuen der Strafbank";
+
 export async function commitImport(
   rows: {
     spielNr: string;
     title: string;
-    description: string;
     startDateTimeIso: string;
     endDateTimeIso: string;
     creditHours: number;
@@ -172,7 +175,6 @@ export async function commitImport(
         where: { id: existingEvent.id },
         data: {
           title: row.title,
-          description: row.description,
           startDateTime: new Date(row.startDateTimeIso),
           endDateTime: new Date(row.endDateTimeIso),
           locationId: row.locationId,
@@ -187,7 +189,6 @@ export async function commitImport(
           seasonId: season.id,
           type: "GAME",
           title: row.title,
-          description: row.description,
           startDateTime: new Date(row.startDateTimeIso),
           endDateTime: new Date(row.endDateTimeIso),
           locationId: row.locationId,
@@ -201,6 +202,7 @@ export async function commitImport(
                 area: "HELFER",
                 capacity: 1,
                 creditHours: row.creditHours,
+                description: SPEAKER_DESCRIPTION,
                 ...(row.ageGroupId
                   ? { ageGroupRestrictions: { create: { ageGroupId: row.ageGroupId } } }
                   : {}),
@@ -210,6 +212,7 @@ export async function commitImport(
                 area: "HELFER",
                 capacity: 2,
                 creditHours: row.creditHours,
+                description: STRAFBANK_DESCRIPTION,
                 ...(row.ageGroupId
                   ? { ageGroupRestrictions: { create: { ageGroupId: row.ageGroupId } } }
                   : {}),

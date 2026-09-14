@@ -15,7 +15,12 @@ export function AddShiftSlotForm({ eventId }: { eventId: string }) {
     <form action={formAction} className="flex flex-col gap-3 rounded-lg border border-border p-3">
       <FormField label="Tätigkeit" name="activityName" required placeholder="Speaker" />
       <FormField label="Anzahl Plätze" name="capacity" type="number" min={1} placeholder="1" />
-      <FormField label="Notiz (optional)" name="notes" />
+      <FormField
+        label="Beschrieb"
+        name="description"
+        required
+        placeholder="z.B. Betreuen der Strafbank"
+      />
       {error && <p className="text-sm text-status-open-text">{error}</p>}
       <Button type="submit" disabled={pending} className="self-start">
         {pending ? "Wird hinzugefügt…" : "Rolle hinzufügen"}

@@ -202,7 +202,6 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
   const area = formData.get("area") as ShiftArea;
   const creditHoursRaw = formData.get("creditHours");
   const creditHours = Number(creditHoursRaw);
-  const notes = String(formData.get("notes") ?? "").trim() || null;
 
   if (
     !memberId ||
@@ -235,7 +234,6 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
       seasonId: season.id,
       type,
       title,
-      description,
       locationId,
       startDateTime: new Date(startDateTime),
       isManualEntry: true,
@@ -245,7 +243,7 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
           area,
           capacity: 1,
           creditHours,
-          notes,
+          description,
           signups: {
             create: {
               memberId,

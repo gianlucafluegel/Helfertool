@@ -129,7 +129,6 @@ export function ManualHoursForm({
         min={0}
         required
       />
-      <FormField label="Notiz (optional)" name="notes" />
       {error && <p className="text-sm text-status-open-text">{error}</p>}
       <Button type="submit" disabled={pending} className="self-start">
         {pending ? "Wird hinzugefügt…" : "Stunden hinzufügen"}

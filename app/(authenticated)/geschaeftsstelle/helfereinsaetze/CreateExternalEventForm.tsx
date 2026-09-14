@@ -18,19 +18,6 @@ export function CreateExternalEventForm({
       <FormField label="Titel" name="title" required placeholder="z.B. Vereinsfest 2027" />
       <FormField label="Ort" name="locationText" required placeholder="z.B. Schulhausplatz Thun" />
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-text" htmlFor="description">
-          Einsatzbeschrieb
-        </label>
-        <textarea
-          id="description"
-          name="description"
-          required
-          rows={3}
-          placeholder="z.B. Aufbau/Abbau Festwirtschaft"
-          className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
-        />
-      </div>
-      <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-text" htmlFor="requirements">
           Anforderungen
         </label>

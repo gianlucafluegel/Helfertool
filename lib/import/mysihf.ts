@@ -3,7 +3,6 @@ import ExcelJS from "exceljs";
 export type ParsedGameRow = {
   spielNr: string;
   title: string;
-  description: string;
   startDateTime: Date;
   cancelled: boolean;
   spielklasseHt: string | null;
@@ -68,11 +67,6 @@ export async function parseMysihfWorkbook(
     const heimteam = cellString(get(row, "Heimteam")).trim();
     const gastteam = cellString(get(row, "Gastteam")).trim();
     const spielklasseHt = cellString(get(row, "Spielklasse HT")).trim() || null;
-    const spieltyp = cellString(get(row, "Spieltyp")).trim();
-    const turnier = cellString(get(row, "Turnier")).trim();
-    const srHerkunft = cellString(get(row, "SR-Herkunft")).trim();
-    const srAufbietung = cellString(get(row, "SR-Aufbietungsstelle")).trim();
-    const resultat = cellString(get(row, "Resultat")).trim();
     const eisbahn = cellString(get(row, "Eisbahn")).trim();
     const ortEisbahn = cellString(get(row, "Ort Eisbahn")).trim();
     const spielstatus = cellString(get(row, "Spielstatus")).trim();
@@ -87,19 +81,9 @@ export async function parseMysihfWorkbook(
       ? `${stufeLabel} · ${heimteam} – ${gastteam}`
       : `${heimteam} – ${gastteam}`;
 
-    const descriptionParts = [
-      [spieltyp, turnier].filter(Boolean).join(", "),
-      srHerkunft || srAufbietung
-        ? `Schiedsrichter: ${[srHerkunft, srAufbietung].filter(Boolean).join(" / ")}`
-        : null,
-      resultat ? `Resultat: ${resultat}` : null,
-      `MySIHF-Spiel-Nr. ${spielNr}`,
-    ].filter(Boolean);
-
     rows.push({
       spielNr,
       title,
-      description: descriptionParts.join(" · "),
       startDateTime: dateValue,
       cancelled: spielstatus.toLowerCase() === "abgesagt",
       spielklasseHt,

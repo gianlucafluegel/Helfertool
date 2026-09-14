@@ -226,7 +226,6 @@ function ImportPreviewTable({
                 .map((r) => ({
                   spielNr: r.spielNr,
                   title: r.title,
-                  description: r.description,
                   startDateTimeIso: r.startDateTimeIso,
                   endDateTimeIso: r.endDateTimeIso,
                   creditHours: r.creditHours,

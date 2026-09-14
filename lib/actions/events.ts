@@ -17,7 +17,7 @@ async function requireGeschaeftsstelle() {
 
 /**
  * Geschäftsstelle can edit any event. Stufenleiter can correct an event's
- * info (title/description/date/location/status) only when it has at least
+ * info (title/date/location/status) only when it has at least
  * one ShiftSlot restricted to one of their assigned Stufen — they still
  * can't create, delete, or add/remove ShiftSlots (see the other actions
  * below, which stay Geschäftsstelle-only).
@@ -62,7 +62,12 @@ function hoursBetween(start: Date, end: Date): number {
   return Math.round(((end.getTime() - start.getTime()) / (60 * 60 * 1000)) * 100) / 100;
 }
 
-type RoleInput = { activityName: string; capacity: number; notes: string | null; memberId: string | null };
+type RoleInput = {
+  activityName: string;
+  capacity: number;
+  description: string;
+  memberId: string | null;
+};
 
 /**
  * Liest die Rollen aus dem RolesFieldset — jede Zeile teilt sich ein `name`
@@ -72,7 +77,7 @@ type RoleInput = { activityName: string; capacity: number; notes: string | null;
 function parseRoleInputs(formData: FormData): RoleInput[] | string {
   const activityNames = formData.getAll("roleActivityName").map((v) => String(v).trim());
   const capacities = formData.getAll("roleCapacity").map(String);
-  const notesList = formData.getAll("roleNotes").map(String);
+  const descriptions = formData.getAll("roleDescription").map((v) => String(v).trim());
   const memberIds = formData.getAll("roleMemberId").map(String);
 
   if (activityNames.length === 0) {
@@ -81,13 +86,16 @@ function parseRoleInputs(formData: FormData): RoleInput[] | string {
   if (activityNames.some((name) => !name)) {
     return "Bitte für jede Rolle eine Tätigkeit angeben.";
   }
+  if (descriptions.some((d) => !d)) {
+    return "Bitte für jede Rolle einen Beschrieb angeben.";
+  }
 
   return activityNames.map((activityName, i) => {
     const capacity = Number(capacities[i]);
     return {
       activityName,
       capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 1,
-      notes: notesList[i]?.trim() || null,
+      description: descriptions[i],
       memberId: memberIds[i]?.trim() || null,
     };
   });
@@ -124,7 +132,7 @@ async function createShiftSlotsForEvent(
         area: "HELFER",
         capacity: role.capacity,
         creditHours,
-        notes: role.notes,
+        description: role.description,
         ...(ageGroupId
           ? { ageGroupRestrictions: { create: { ageGroupId } } }
           : {}),
@@ -154,7 +162,6 @@ export async function createGameEvent(prevState: string | undefined, formData: F
 
   const title = String(formData.get("title") ?? "").trim();
   const locationId = String(formData.get("locationId") ?? "") || null;
-  const description = String(formData.get("description") ?? "").trim();
   const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
@@ -164,14 +171,13 @@ export async function createGameEvent(prevState: string | undefined, formData: F
   if (
     !title ||
     !locationId ||
-    !description ||
     !date ||
     !startTime ||
     !endTime ||
     !Number.isFinite(creditHours) ||
     creditHours <= 0
   ) {
-    return "Titel, Standort, Einsatzbeschrieb, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
+    return "Titel, Standort, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
   }
 
   const roles = parseRoleInputs(formData);
@@ -191,7 +197,6 @@ export async function createGameEvent(prevState: string | undefined, formData: F
       seasonId: season.id,
       type: "GAME",
       title,
-      description,
       locationId,
       startDateTime,
       endDateTime,
@@ -211,7 +216,6 @@ export async function createExternalEvent(prevState: string | undefined, formDat
 
   const title = String(formData.get("title") ?? "").trim();
   const locationText = String(formData.get("locationText") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
   const requirements = String(formData.get("requirements") ?? "").trim();
   const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
@@ -221,7 +225,6 @@ export async function createExternalEvent(prevState: string | undefined, formDat
   if (
     !title ||
     !locationText ||
-    !description ||
     !requirements ||
     !date ||
     !startTime ||
@@ -229,7 +232,7 @@ export async function createExternalEvent(prevState: string | undefined, formDat
     !Number.isFinite(creditHours) ||
     creditHours <= 0
   ) {
-    return "Titel, Ort, Einsatzbeschrieb, Anforderungen, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
+    return "Titel, Ort, Anforderungen, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
   }
 
   const roles = parseRoleInputs(formData);
@@ -249,7 +252,6 @@ export async function createExternalEvent(prevState: string | undefined, formDat
       seasonId: season.id,
       type: "EXTERNAL",
       title,
-      description,
       locationText,
       requirements,
       startDateTime,
@@ -269,7 +271,6 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const session = await assertCanEditEvent(eventId);
 
   const title = String(formData.get("title") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
   // GAME sendet locationId (Dropdown), EXTERNAL sendet locationText/
   // requirements (Freitext) — je nach Typ des Events fehlt das jeweils
   // andere Set im FormData und wird hier korrekt zu null.
@@ -288,7 +289,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
     ? (String(statusRaw) as "SCHEDULED" | "CANCELLED" | "POSTPONED")
     : undefined;
 
-  if (!title || !description || !Number.isFinite(creditHours) || creditHours <= 0) {
+  if (!title || !Number.isFinite(creditHours) || creditHours <= 0) {
     return;
   }
 
@@ -296,7 +297,6 @@ export async function updateEvent(eventId: string, formData: FormData) {
     where: { id: eventId },
     data: {
       title,
-      description,
       locationId,
       locationText,
       requirements,
@@ -353,10 +353,10 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
 
   const activityName = String(formData.get("activityName") ?? "").trim();
   const capacity = Number(formData.get("capacity") ?? 1);
-  const notes = String(formData.get("notes") ?? "").trim() || null;
+  const description = String(formData.get("description") ?? "").trim();
 
-  if (!activityName) {
-    return "Tätigkeit ist ein Pflichtfeld.";
+  if (!activityName || !description) {
+    return "Tätigkeit und Beschrieb sind Pflichtfelder.";
   }
 
   // Tätigkeit ist ein Freitextfeld statt einer festen Auswahl — beim
@@ -402,7 +402,7 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
       area,
       capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 1,
       creditHours,
-      notes,
+      description,
       ageGroupRestrictions: {
         create: existingRestrictions.map((r) => ({ ageGroupId: r.ageGroupId })),
       },

@@ -81,7 +81,11 @@ export default async function StufenleiterOverviewPage({
           ? {
               OR: [
                 { title: { contains: q, mode: "insensitive" } },
-                { description: { contains: q, mode: "insensitive" } },
+                {
+                  shiftSlots: {
+                    some: { deletedAt: null, description: { contains: q, mode: "insensitive" } },
+                  },
+                },
               ],
             }
           : {}),

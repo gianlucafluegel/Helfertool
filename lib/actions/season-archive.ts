@@ -101,7 +101,6 @@ export async function archiveSeason(prevState: string | undefined, formData: For
       id: e.id,
       type: e.type,
       title: e.title,
-      description: e.description,
       locationName: e.location?.name ?? e.locationText ?? null,
       startDateTime: e.startDateTime.toISOString(),
       status: e.status,
@@ -112,7 +111,7 @@ export async function archiveSeason(prevState: string | undefined, formData: For
         area: s.area,
         capacity: s.capacity,
         creditHours: Number(s.creditHours),
-        notes: s.notes,
+        description: s.description,
         ageGroupRestrictions: s.ageGroupRestrictions.map((r) => r.ageGroup.name),
         signups: s.signups.map((sg) => ({
           id: sg.id,

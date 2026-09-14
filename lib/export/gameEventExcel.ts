@@ -6,25 +6,26 @@ export type GameEventExportRow = {
   nachname: string;
   email: string;
   telefon: string;
+  beschrieb: string;
 };
 
 /**
  * Builds the Helferliste for a Spieleinsatz as a real .xlsx file: Titel gross
  * oben, Standort kleiner darunter, dann eine Tabelle mit einer Zeile pro
- * Helfer. Datum/Beginn/Ende/Dauer/Einsatzbeschrieb sind Event-Eigenschaften
- * (für den ganzen Einsatz identisch) und werden deshalb in jeder Zeile
- * wiederholt, statt nur einmal oben zu stehen — so bleibt jede Zeile für
- * sich lesbar, z.B. beim Ausdrucken oder Filtern.
+ * Helfer. Datum/Beginn/Ende/Dauer sind Event-Eigenschaften (für den ganzen
+ * Einsatz identisch) und werden deshalb in jeder Zeile wiederholt, statt nur
+ * einmal oben zu stehen — so bleibt jede Zeile für sich lesbar, z.B. beim
+ * Ausdrucken oder Filtern. Der Einsatzbeschrieb ist dagegen pro Rolle
+ * definiert (jede Zeile bringt ihren eigenen mit).
  */
 export async function buildGameEventExcel(params: {
   title: string;
   locationName: string | null;
-  description: string;
   startDateTime: Date;
   endDateTime: Date | null;
   rows: GameEventExportRow[];
 }): Promise<ExcelJS.Buffer> {
-  const { title, locationName, description, startDateTime, endDateTime, rows } = params;
+  const { title, locationName, startDateTime, endDateTime, rows } = params;
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Helferliste");
@@ -73,7 +74,7 @@ export async function buildGameEventExcel(params: {
       beginn,
       ende,
       dauer,
-      description,
+      row.beschrieb,
       row.vorname,
       row.nachname,
       row.email,

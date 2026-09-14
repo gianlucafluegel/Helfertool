@@ -61,7 +61,6 @@ export default async function StufenleiterEventDetailPage({
           eventId={event.id}
           type={event.type}
           title={event.title}
-          description={event.description}
           locationId={event.locationId ?? ""}
           locationText={event.locationText ?? ""}
           requirements={event.requirements ?? ""}
