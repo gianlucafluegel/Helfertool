@@ -12,9 +12,8 @@ export default async function MembersPage({
 }) {
   const { q } = await searchParams;
 
-  const [locations, activities, ageGroups] = await Promise.all([
+  const [locations, ageGroups] = await Promise.all([
     prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-    prisma.activity.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.ageGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
   ]);
 
@@ -60,7 +59,6 @@ export default async function MembersPage({
             lastName: m.lastName,
           }))}
           locations={locations}
-          activities={activities}
         />
       </Card>
 

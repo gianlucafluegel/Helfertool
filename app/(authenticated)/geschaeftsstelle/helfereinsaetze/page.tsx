@@ -7,10 +7,9 @@ import { ImportForm } from "./ImportForm";
 import { ExternalEventsImportForm } from "./ExternalEventsImportForm";
 
 export default async function HelfereinsaetzePage() {
-  const [season, locations, activities, members, ageGroups] = await Promise.all([
+  const [season, locations, members, ageGroups] = await Promise.all([
     getCurrentSeason(),
     prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-    prisma.activity.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.member.findMany({
       where: { isActive: true },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
@@ -26,12 +25,7 @@ export default async function HelfereinsaetzePage() {
           Helfereinsatz Spiel erfassen
         </h2>
         {season ? (
-          <CreateGameEventForm
-            locations={locations}
-            activities={activities}
-            members={members}
-            ageGroups={ageGroups}
-          />
+          <CreateGameEventForm locations={locations} members={members} ageGroups={ageGroups} />
         ) : (
           <p className="text-sm text-status-open-text">Keine aktive Saison konfiguriert.</p>
         )}
@@ -42,7 +36,7 @@ export default async function HelfereinsaetzePage() {
           Helfereinsatz externes Event erfassen
         </h2>
         {season ? (
-          <CreateExternalEventForm activities={activities} members={members} />
+          <CreateExternalEventForm members={members} />
         ) : (
           <p className="text-sm text-status-open-text">Keine aktive Saison konfiguriert.</p>
         )}

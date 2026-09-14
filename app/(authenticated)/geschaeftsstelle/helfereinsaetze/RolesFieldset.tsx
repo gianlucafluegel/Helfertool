@@ -13,15 +13,12 @@ type RoleRow = { key: number };
  * mehrere davon gleich bei der Erstellung statt einzeln danach. Alle Zeilen
  * teilen sich je ein `name` (z.B. "roleActivityName") — der Server liest sie
  * per `formData.getAll(...)` in Zeilen-Reihenfolge aus. Die Tätigkeit ist ein
- * Freitextfeld (keine Tätigkeit ist exklusiv für Funktionäre) — `activities`
- * dient nur noch als Vorschlagsliste (Datalist), nicht als feste Auswahl.
+ * reines Freitextfeld (keine Tätigkeit ist exklusiv für Funktionäre).
  */
 export function RolesFieldset({
-  activities,
   members,
   activityPlaceholder = "Speaker",
 }: {
-  activities: { id: string; name: string }[];
   members: { id: string; firstName: string; lastName: string }[];
   activityPlaceholder?: string;
 }) {
@@ -40,11 +37,6 @@ export function RolesFieldset({
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm font-medium text-text">Rollen</p>
-      <datalist id="activity-suggestions">
-        {activities.map((a) => (
-          <option key={a.id} value={a.name} />
-        ))}
-      </datalist>
       {rows.map((row, i) => (
         <div key={row.key} className="flex flex-col gap-3 rounded-lg border border-border p-3">
           <div className="flex items-center justify-between">
@@ -68,7 +60,6 @@ export function RolesFieldset({
             <input
               id={`roleActivityName-${row.key}`}
               name="roleActivityName"
-              list="activity-suggestions"
               required
               placeholder={activityPlaceholder}
               className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"

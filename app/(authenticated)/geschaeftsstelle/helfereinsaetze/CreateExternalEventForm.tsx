@@ -7,10 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { RolesFieldset } from "./RolesFieldset";
 
 export function CreateExternalEventForm({
-  activities,
   members,
 }: {
-  activities: { id: string; name: string }[];
   members: { id: string; firstName: string; lastName: string }[];
 }) {
   const [error, formAction, pending] = useActionState(createExternalEvent, undefined);
@@ -58,7 +56,7 @@ export function CreateExternalEventForm({
         min={0}
         required
       />
-      <RolesFieldset activities={activities} members={members} activityPlaceholder="Parkplatz" />
+      <RolesFieldset members={members} activityPlaceholder="Parkplatz" />
       {error && <p className="text-sm text-status-open-text">{error}</p>}
       <Button type="submit" disabled={pending}>
         {pending ? "Wird erstellt…" : "Helfereinsatz erstellen"}

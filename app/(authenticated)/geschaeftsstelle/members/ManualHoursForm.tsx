@@ -9,13 +9,11 @@ import { SearchableSelect } from "@/components/ui/SearchableSelect";
 export function ManualHoursForm({
   members,
   locations,
-  activities,
   memberLabel = "Mitglied",
   defaultArea = "HELFER",
 }: {
   members: { id: string; firstName: string; lastName: string }[];
   locations: { id: string; name: string }[];
-  activities: { id: string; name: string }[];
   /** Overrides the "Mitglied" wording, e.g. "Funktionär" on that section. */
   memberLabel?: string;
   defaultArea?: "HELFER" | "FUNKTIONAER";
@@ -103,16 +101,10 @@ export function ManualHoursForm({
           <input
             id="activityName"
             name="activityName"
-            list="manual-hours-activity-suggestions"
             required
             placeholder="Speaker"
             className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
           />
-          <datalist id="manual-hours-activity-suggestions">
-            {activities.map((a) => (
-              <option key={a.id} value={a.name} />
-            ))}
-          </datalist>
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-text" htmlFor="area">

@@ -13,9 +13,8 @@ export default async function FunktionaerePage({
 }) {
   const { q } = await searchParams;
 
-  const [locations, activities, allMembers] = await Promise.all([
+  const [locations, allMembers] = await Promise.all([
     prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-    prisma.activity.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.member.findMany({
       where: { user: { role: "FUNKTIONAER" } },
       orderBy: [{ isActive: "desc" }, { lastName: "asc" }, { firstName: "asc" }],
@@ -61,7 +60,6 @@ export default async function FunktionaerePage({
             lastName: m.lastName,
           }))}
           locations={locations}
-          activities={activities}
           memberLabel="Funktionär"
           defaultArea="FUNKTIONAER"
         />

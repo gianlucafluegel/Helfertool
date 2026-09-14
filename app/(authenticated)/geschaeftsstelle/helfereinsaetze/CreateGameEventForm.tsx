@@ -8,12 +8,10 @@ import { RolesFieldset } from "./RolesFieldset";
 
 export function CreateGameEventForm({
   locations,
-  activities,
   members,
   ageGroups,
 }: {
   locations: { id: string; name: string }[];
-  activities: { id: string; name: string }[];
   members: { id: string; firstName: string; lastName: string }[];
   ageGroups: { id: string; name: string }[];
 }) {
@@ -87,7 +85,7 @@ export function CreateGameEventForm({
         min={0}
         required
       />
-      <RolesFieldset activities={activities} members={members} />
+      <RolesFieldset members={members} />
       {error && <p className="text-sm text-status-open-text">{error}</p>}
       <Button type="submit" disabled={pending}>
         {pending ? "Wird erstellt…" : "Helfereinsatz erstellen"}
