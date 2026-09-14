@@ -97,21 +97,22 @@ export function ManualHoursForm({
       <FormField label="Datum/Zeit" name="startDateTime" type="datetime-local" required />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text" htmlFor="activityId">
+          <label className="text-sm font-medium text-text" htmlFor="activityName">
             Tätigkeit
           </label>
-          <select
-            id="activityId"
-            name="activityId"
+          <input
+            id="activityName"
+            name="activityName"
+            list="manual-hours-activity-suggestions"
             required
-            className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
-          >
+            placeholder="Speaker"
+            className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
+          />
+          <datalist id="manual-hours-activity-suggestions">
             {activities.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
+              <option key={a.id} value={a.name} />
             ))}
-          </select>
+          </datalist>
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-text" htmlFor="area">

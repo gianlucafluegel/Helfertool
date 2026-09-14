@@ -198,7 +198,7 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
   const locationId = String(formData.get("locationId") ?? "") || null;
   const description = String(formData.get("description") ?? "").trim();
   const startDateTime = String(formData.get("startDateTime") ?? "");
-  const activityId = String(formData.get("activityId") ?? "");
+  const activityName = String(formData.get("activityName") ?? "").trim();
   const area = formData.get("area") as ShiftArea;
   const creditHoursRaw = formData.get("creditHours");
   const creditHours = Number(creditHoursRaw);
@@ -209,7 +209,7 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
     !title ||
     !description ||
     !startDateTime ||
-    !activityId ||
+    !activityName ||
     !area ||
     creditHoursRaw === null ||
     creditHoursRaw === "" ||
@@ -218,9 +218,14 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
     return "Mitglied, Titel, Beschreibung, Datum/Zeit, Tätigkeit, Bereich und Stunden sind Pflichtfelder.";
   }
 
-  const [member, season] = await Promise.all([
+  const [member, season, activity] = await Promise.all([
     prisma.member.findUnique({ where: { id: memberId } }),
     getCurrentSeason(),
+    prisma.activity.upsert({
+      where: { name: activityName },
+      update: {},
+      create: { name: activityName },
+    }),
   ]);
   if (!member) return "Mitglied nicht gefunden.";
   if (!season) return "Keine aktive Saison konfiguriert.";
@@ -236,7 +241,7 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
       isManualEntry: true,
       shiftSlots: {
         create: {
-          activityId,
+          activityId: activity.id,
           area,
           capacity: 1,
           creditHours,
