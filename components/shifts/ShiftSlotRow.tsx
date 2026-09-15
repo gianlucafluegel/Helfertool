@@ -56,6 +56,11 @@ export function ShiftSlotRow({
           <div>
             <p className="text-sm font-medium text-text">{slot.activity.name}</p>
             <p className="text-sm text-muted">{slot.description}</p>
+            {slot.requirements && (
+              <p className="text-sm text-muted">
+                <span className="font-medium text-text">Anforderungen:</span> {slot.requirements}
+              </p>
+            )}
           </div>
         </div>
 
@@ -106,7 +111,6 @@ export function ShiftSlotRow({
 
       <p className="text-sm text-muted">
         {formatTime(slot.startDateTime)}–{formatTime(slot.endDateTime)} Uhr · {slot.creditHours} Std.
-        {slot.requirements && ` · ${slot.requirements}`}
       </p>
     </div>
   );
