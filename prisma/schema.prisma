@@ -245,8 +245,6 @@ model Event {
   // Event kann aber praktisch überall stattfinden, deshalb dort statt eines
   // Dropdowns ein frei definierbarer Ort.
   locationText   String?
-  // Nur für EXTERNAL: was vor Ort von den Helfer:innen verlangt wird.
-  requirements   String?
   startDateTime DateTime
   endDateTime   DateTime?
   status        EventStatus @default(SCHEDULED)
@@ -280,6 +278,11 @@ model ShiftSlot {
   // Einsatzes unterschiedliche Aufgaben beschreiben (z.B. "Speaker im
   // Speakerhäuschen" vs. "Betreuen der Strafbank").
   description String
+  // Ersetzt Event.requirements — die Anforderungen sind wie der Beschrieb
+  // pro Rolle definiert statt geteilt über den ganzen Einsatz. Nur für
+  // EXTERNAL-Einsätze genutzt und deshalb optional (im Gegensatz zu
+  // description, das für jede Rolle Pflicht ist).
+  requirements String?
   deletedAt   DateTime?
 
   event                Event               @relation(fields: [eventId], references: [id])

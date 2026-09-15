@@ -66,18 +66,22 @@ type RoleInput = {
   activityName: string;
   capacity: number;
   description: string;
+  requirements: string | null;
   memberId: string | null;
 };
 
 /**
  * Liest die Rollen aus dem RolesFieldset — jede Zeile teilt sich ein `name`
  * (z.B. "roleActivityName"), die Reihenfolge über formData.getAll() entspricht
- * der Zeilen-Reihenfolge im Formular.
+ * der Zeilen-Reihenfolge im Formular. Anforderungen gibt es nur bei externen
+ * Events (RolesFieldset blendet das Feld für Spiele aus) und bleibt deshalb
+ * optional, anders als der Beschrieb.
  */
 function parseRoleInputs(formData: FormData): RoleInput[] | string {
   const activityNames = formData.getAll("roleActivityName").map((v) => String(v).trim());
   const capacities = formData.getAll("roleCapacity").map(String);
   const descriptions = formData.getAll("roleDescription").map((v) => String(v).trim());
+  const requirements = formData.getAll("roleRequirements").map((v) => String(v).trim());
   const memberIds = formData.getAll("roleMemberId").map(String);
 
   if (activityNames.length === 0) {
@@ -96,6 +100,7 @@ function parseRoleInputs(formData: FormData): RoleInput[] | string {
       activityName,
       capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 1,
       description: descriptions[i],
+      requirements: requirements[i] || null,
       memberId: memberIds[i]?.trim() || null,
     };
   });
@@ -133,6 +138,7 @@ async function createShiftSlotsForEvent(
         capacity: role.capacity,
         creditHours,
         description: role.description,
+        requirements: role.requirements,
         ...(ageGroupId
           ? { ageGroupRestrictions: { create: { ageGroupId } } }
           : {}),
@@ -216,7 +222,6 @@ export async function createExternalEvent(prevState: string | undefined, formDat
 
   const title = String(formData.get("title") ?? "").trim();
   const locationText = String(formData.get("locationText") ?? "").trim();
-  const requirements = String(formData.get("requirements") ?? "").trim();
   const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
@@ -225,14 +230,13 @@ export async function createExternalEvent(prevState: string | undefined, formDat
   if (
     !title ||
     !locationText ||
-    !requirements ||
     !date ||
     !startTime ||
     !endTime ||
     !Number.isFinite(creditHours) ||
     creditHours <= 0
   ) {
-    return "Titel, Ort, Anforderungen, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
+    return "Titel, Ort, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
   }
 
   const roles = parseRoleInputs(formData);
@@ -253,7 +257,6 @@ export async function createExternalEvent(prevState: string | undefined, formDat
       type: "EXTERNAL",
       title,
       locationText,
-      requirements,
       startDateTime,
       endDateTime,
     },
@@ -271,12 +274,11 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const session = await assertCanEditEvent(eventId);
 
   const title = String(formData.get("title") ?? "").trim();
-  // GAME sendet locationId (Dropdown), EXTERNAL sendet locationText/
-  // requirements (Freitext) — je nach Typ des Events fehlt das jeweils
-  // andere Set im FormData und wird hier korrekt zu null.
+  // GAME sendet locationId (Dropdown), EXTERNAL sendet locationText
+  // (Freitext) — je nach Typ des Events fehlt das jeweils andere Feld im
+  // FormData und wird hier korrekt zu null.
   const locationId = String(formData.get("locationId") ?? "") || null;
   const locationText = String(formData.get("locationText") ?? "").trim() || null;
-  const requirements = String(formData.get("requirements") ?? "").trim() || null;
   const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
@@ -299,7 +301,6 @@ export async function updateEvent(eventId: string, formData: FormData) {
       title,
       locationId,
       locationText,
-      requirements,
       startDateTime: date && startTime ? combineDateTime(date, startTime) : undefined,
       endDateTime: date && endTime ? combineDateTime(date, endTime) : null,
       status,
@@ -354,6 +355,7 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
   const activityName = String(formData.get("activityName") ?? "").trim();
   const capacity = Number(formData.get("capacity") ?? 1);
   const description = String(formData.get("description") ?? "").trim();
+  const requirements = String(formData.get("requirements") ?? "").trim() || null;
 
   if (!activityName || !description) {
     return "Tätigkeit und Beschrieb sind Pflichtfelder.";
@@ -403,6 +405,7 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
       capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 1,
       creditHours,
       description,
+      requirements,
       ageGroupRestrictions: {
         create: existingRestrictions.map((r) => ({ ageGroupId: r.ageGroupId })),
       },

@@ -7,7 +7,6 @@ export function EventCard({
   startDateTime,
   endDateTime,
   locationName,
-  requirements,
   shiftSlots,
   showOccupant,
   activeMemberId,
@@ -19,7 +18,6 @@ export function EventCard({
   startDateTime: Date;
   endDateTime?: Date | null;
   locationName: string | null;
-  requirements?: string | null;
   shiftSlots: ShiftSlotRowData[];
   showOccupant: boolean;
   activeMemberId: string | null;
@@ -42,11 +40,6 @@ export function EventCard({
         {creditHours ? ` · ${creditHours} Std.` : ""}
         {locationName ? ` · ${locationName}` : ""}
       </p>
-      {requirements && (
-        <p className="mb-2 text-sm text-muted">
-          <span className="font-medium text-text">Anforderungen:</span> {requirements}
-        </p>
-      )}
       <div>
         {shiftSlots.map((slot) => (
           <ShiftSlotRow

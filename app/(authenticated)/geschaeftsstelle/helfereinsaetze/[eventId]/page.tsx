@@ -48,7 +48,6 @@ export default async function EventDetailPage({
           title={event.title}
           locationId={event.locationId ?? ""}
           locationText={event.locationText ?? ""}
-          requirements={event.requirements ?? ""}
           startDateTime={event.startDateTime}
           endDateTime={event.endDateTime}
           creditHours={Number(event.shiftSlots[0]?.creditHours ?? 0)}
@@ -76,7 +75,7 @@ export default async function EventDetailPage({
             <p className="text-sm text-muted">Noch keine Rollen für diesen Helfereinsatz.</p>
           )}
         </div>
-        <AddShiftSlotForm eventId={event.id} />
+        <AddShiftSlotForm eventId={event.id} eventType={event.type} />
       </Card>
     </div>
   );

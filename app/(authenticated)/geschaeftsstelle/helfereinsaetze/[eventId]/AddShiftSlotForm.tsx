@@ -5,7 +5,13 @@ import { addShiftSlot } from "@/lib/actions/events";
 import { FormField } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 
-export function AddShiftSlotForm({ eventId }: { eventId: string }) {
+export function AddShiftSlotForm({
+  eventId,
+  eventType,
+}: {
+  eventId: string;
+  eventType: "GAME" | "EXTERNAL";
+}) {
   const [error, formAction, pending] = useActionState(
     async (_prev: string | undefined, formData: FormData) => addShiftSlot(eventId, formData),
     undefined,
@@ -21,6 +27,9 @@ export function AddShiftSlotForm({ eventId }: { eventId: string }) {
         required
         placeholder="z.B. Betreuen der Strafbank"
       />
+      {eventType === "EXTERNAL" && (
+        <FormField label="Anforderungen (optional)" name="requirements" placeholder="z.B. Über 18" />
+      )}
       {error && <p className="text-sm text-status-open-text">{error}</p>}
       <Button type="submit" disabled={pending} className="self-start">
         {pending ? "Wird hinzugefügt…" : "Rolle hinzufügen"}

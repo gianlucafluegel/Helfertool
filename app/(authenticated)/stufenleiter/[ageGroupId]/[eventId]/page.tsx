@@ -63,7 +63,6 @@ export default async function StufenleiterEventDetailPage({
           title={event.title}
           locationId={event.locationId ?? ""}
           locationText={event.locationText ?? ""}
-          requirements={event.requirements ?? ""}
           startDateTime={event.startDateTime}
           endDateTime={event.endDateTime}
           creditHours={Number(event.shiftSlots[0]?.creditHours ?? 0)}

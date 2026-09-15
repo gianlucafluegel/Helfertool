@@ -15,14 +15,17 @@ type RoleRow = { key: number };
  * liest sie per `formData.getAll(...)` in Zeilen-Reihenfolge aus. Die
  * Tätigkeit ist ein reines Freitextfeld (keine Tätigkeit ist exklusiv für
  * Funktionäre). Der Beschrieb ist pro Rolle definiert statt geteilt über den
- * ganzen Einsatz (der hat nur noch einen Titel).
+ * ganzen Einsatz (der hat nur noch einen Titel). Anforderungen gibt es nur
+ * bei externen Events und bleibt optional (anders als der Beschrieb).
  */
 export function RolesFieldset({
   members,
   activityPlaceholder = "Speaker",
+  showRequirements = false,
 }: {
   members: { id: string; firstName: string; lastName: string }[];
   activityPlaceholder?: string;
+  showRequirements?: boolean;
 }) {
   const [rows, setRows] = useState<RoleRow[]>([{ key: 0 }]);
 
@@ -92,6 +95,22 @@ export function RolesFieldset({
               className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
             />
           </div>
+          {showRequirements && (
+            <div className="flex flex-col gap-1.5">
+              <label
+                className="text-sm font-medium text-text"
+                htmlFor={`roleRequirements-${row.key}`}
+              >
+                Anforderungen (optional)
+              </label>
+              <input
+                id={`roleRequirements-${row.key}`}
+                name="roleRequirements"
+                placeholder="z.B. Über 18"
+                className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
+              />
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-text" htmlFor={`roleMemberId-${row.key}-search`}>
               Helfer (optional)

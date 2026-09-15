@@ -95,10 +95,9 @@ export default async function ShiftSignupPage({
         </p>
         <p className="mb-2 text-sm font-medium text-text">{shiftSlot.activity.name}</p>
         <p className="mb-2 text-sm text-muted">{shiftSlot.description}</p>
-        {shiftSlot.event.requirements && (
+        {shiftSlot.requirements && (
           <p className="text-sm text-muted">
-            <span className="font-medium text-text">Anforderungen:</span>{" "}
-            {shiftSlot.event.requirements}
+            <span className="font-medium text-text">Anforderungen:</span> {shiftSlot.requirements}
           </p>
         )}
       </Card>

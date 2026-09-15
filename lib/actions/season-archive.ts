@@ -112,6 +112,7 @@ export async function archiveSeason(prevState: string | undefined, formData: For
         capacity: s.capacity,
         creditHours: Number(s.creditHours),
         description: s.description,
+        requirements: s.requirements,
         ageGroupRestrictions: s.ageGroupRestrictions.map((r) => r.ageGroup.name),
         signups: s.signups.map((sg) => ({
           id: sg.id,

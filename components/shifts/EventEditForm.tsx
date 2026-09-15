@@ -21,7 +21,6 @@ export function EventEditForm({
   title,
   locationId,
   locationText,
-  requirements,
   startDateTime,
   endDateTime,
   creditHours,
@@ -36,7 +35,6 @@ export function EventEditForm({
   title: string;
   locationId: string;
   locationText: string;
-  requirements: string;
   startDateTime: Date;
   endDateTime: Date | null;
   creditHours: number;
@@ -102,22 +100,6 @@ export function EventEditForm({
               </option>
             ))}
           </select>
-        </div>
-      )}
-
-      {type === "EXTERNAL" && (
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text" htmlFor="requirements">
-            Anforderungen
-          </label>
-          <textarea
-            id="requirements"
-            name="requirements"
-            required
-            rows={2}
-            defaultValue={requirements}
-            className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
-          />
         </div>
       )}
 
