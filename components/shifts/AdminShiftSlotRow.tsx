@@ -12,6 +12,7 @@ export type AdminShiftSlotRowData = {
   creditHours: number;
   startDateTime: Date;
   endDateTime: Date;
+  description: string;
   requirements: string | null;
   activity: { name: string };
   ageGroupRestrictions: { ageGroup: { name: string } }[];
@@ -49,6 +50,7 @@ export function AdminShiftSlotRow({
           </Badge>
           <div>
             <p className="text-sm font-medium text-text">{slot.activity.name}</p>
+            <p className="text-sm text-muted">{slot.description}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
