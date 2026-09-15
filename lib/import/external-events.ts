@@ -5,6 +5,7 @@ export type ParsedExternalEventRow = {
   beginn: Date;
   ende: Date;
   helferstunden: number;
+  taetigkeit: string;
   einsatzbeschrieb: string;
   anforderungen: string | null;
 };
@@ -20,6 +21,7 @@ const REQUIRED_HEADERS = [
   "Beginn",
   "Ende (ca.)",
   "Anzahl Helferstunden",
+  "Tätigkeit",
   "Einsatzbeschrieb",
 ] as const;
 
@@ -101,12 +103,15 @@ export async function parseExternalEventsWorkbook(
     const beginn = cellDate(get(row, "Beginn"));
     const ende = cellDate(get(row, "Ende (ca.)"));
     const helferstunden = cellNumber(get(row, "Anzahl Helferstunden"));
+    const taetigkeit = cellString(get(row, "Tätigkeit")).trim();
     const einsatzbeschrieb = cellString(get(row, "Einsatzbeschrieb")).trim();
-    if (!datum || !beginn || !ende || helferstunden === null || !einsatzbeschrieb) return;
+    if (!datum || !beginn || !ende || helferstunden === null || !taetigkeit || !einsatzbeschrieb) {
+      return;
+    }
 
     const anforderungen = cellString(get(row, "Anforderungen")).trim() || null;
 
-    rows.push({ datum, beginn, ende, helferstunden, einsatzbeschrieb, anforderungen });
+    rows.push({ datum, beginn, ende, helferstunden, taetigkeit, einsatzbeschrieb, anforderungen });
   });
 
   return { file: { title, locationText, rows } };

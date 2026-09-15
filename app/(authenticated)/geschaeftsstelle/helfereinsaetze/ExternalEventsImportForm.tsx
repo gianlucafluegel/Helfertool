@@ -80,6 +80,7 @@ function ExternalEventsPreviewTable({
               <th className="py-2 pr-2">Start</th>
               <th className="py-2 pr-2">Ende</th>
               <th className="py-2 pr-2">Std.</th>
+              <th className="py-2 pr-2">Tätigkeit</th>
               <th className="py-2 pr-2">Beschrieb</th>
               <th className="py-2 pr-2">Plätze</th>
             </tr>
@@ -108,6 +109,7 @@ function ExternalEventsPreviewTable({
                   {formatTime(new Date(row.endDateTimeIso))}
                 </td>
                 <td className="py-2 pr-2 whitespace-nowrap text-muted">{row.creditHours}</td>
+                <td className="py-2 pr-2">{row.activityName}</td>
                 <td className="py-2 pr-2">{row.description}</td>
                 <td className="py-2 pr-2 text-muted">{row.roleCount}</td>
               </tr>

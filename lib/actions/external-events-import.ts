@@ -5,7 +5,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
 import { parseExternalEventsWorkbook, combineDatumZeit } from "@/lib/import/external-events";
-import { formatDate } from "@/lib/format";
 
 /** Tag (lokale Zeit, Uhrzeit auf Mitternacht) eines Zeitpunkts — für Event.date. */
 function toDateOnly(date: Date): Date {
@@ -22,6 +21,7 @@ async function requireGeschaeftsstelle() {
 
 export type ExternalEventGroupPreview = {
   key: string;
+  activityName: string;
   description: string;
   requirements: string | null;
   startDateTimeIso: string;
@@ -55,16 +55,17 @@ export async function parseExternalEventsImportFile(
     return { status: "error", message: "Keine Rollen-Zeilen in der Datei gefunden." };
   }
 
-  // Zeilen mit identischem Start/Ende, Einsatzbeschrieb UND Anzahl
-  // Helferstunden bilden zusammen einen Helfereinsatz mit mehreren Rollen —
-  // unterschiedliche Einsatzbeschriebe (oder eine abweichende Std.-Zahl)
-  // bleiben auch bei gleicher Zeit getrennte Einsätze (z.B. "Brückli
-  // südlich" und "Einweiser" zur selben Zeit).
+  // Zeilen mit identischer Zeit, Tätigkeit UND Einsatzbeschrieb (und Anzahl
+  // Helferstunden) bilden zusammen eine Rolle mit mehreren Plätzen —
+  // unterschiedliche Tätigkeiten/Einsatzbeschriebe (oder eine abweichende
+  // Std.-Zahl) bleiben auch bei gleicher Zeit getrennte Rollen (z.B.
+  // "Aufbau" und "Bar" zur selben Zeit).
   const groups = new Map<
     string,
     {
       startDateTime: Date;
       endDateTime: Date;
+      taetigkeit: string;
       einsatzbeschrieb: string;
       anforderungen: string | null;
       helferstunden: number;
@@ -79,7 +80,7 @@ export async function parseExternalEventsImportFile(
       endDateTime = new Date(endDateTime.getTime() + 24 * 60 * 60 * 1000);
     }
 
-    const key = `${startDateTime.toISOString()}|${endDateTime.toISOString()}|${row.einsatzbeschrieb}|${row.helferstunden}`;
+    const key = `${startDateTime.toISOString()}|${endDateTime.toISOString()}|${row.taetigkeit}|${row.einsatzbeschrieb}|${row.helferstunden}`;
     const existing = groups.get(key);
     if (existing) {
       existing.roleCount += 1;
@@ -87,6 +88,7 @@ export async function parseExternalEventsImportFile(
       groups.set(key, {
         startDateTime,
         endDateTime,
+        taetigkeit: row.taetigkeit,
         einsatzbeschrieb: row.einsatzbeschrieb,
         anforderungen: row.anforderungen,
         helferstunden: row.helferstunden,
@@ -97,6 +99,7 @@ export async function parseExternalEventsImportFile(
 
   const previewGroups: ExternalEventGroupPreview[] = [...groups.entries()].map(([key, g]) => ({
     key,
+    activityName: g.taetigkeit,
     description: g.einsatzbeschrieb,
     requirements: g.anforderungen,
     startDateTimeIso: g.startDateTime.toISOString(),
@@ -113,15 +116,14 @@ export async function parseExternalEventsImportFile(
 /**
  * Erstellt ein Event pro Tag (Titel/Ort kommen aus Zeile 1/2 der Vorlage,
  * gelten für das ganze Dokument), mit je einer Rolle pro Gruppe dieses
- * Tages — statt wie ursprünglich einem Event pro Gruppe. So entstehen bei
- * einem grossen externen Event mit vielen unterschiedlich terminierten
- * Rollen (z.B. ein Festival) nicht dutzende separate Helfereinsätze,
- * sondern höchstens einer pro Tag. Ein Einsatz hat immer genau ein Datum
- * (Event.date), deshalb müssen Gruppen an unterschiedlichen Tagen auf
- * separate Events aufgeteilt werden — bei einem eintägigen Dokument
- * entsteht dadurch weiterhin nur ein einziges Event. Bei mehreren Tagen
- * bekommt der Titel das Datum angehängt, um die Events unterscheidbar zu
- * machen.
+ * Tages. Ein Einsatz hat immer genau ein Datum (Event.date), deshalb
+ * müssen Gruppen an unterschiedlichen Tagen auf separate Events aufgeteilt
+ * werden — bei einem eintägigen Dokument entsteht dadurch weiterhin nur
+ * ein einziges Event. Mehrere Events dürfen denselben Titel tragen
+ * (unterschieden durch ihr Datum), der Titel wird deshalb nicht verändert.
+ * Die Tätigkeit kommt pro Rolle aus der Excel-Spalte — wird per Namen eine
+ * bestehende Activity wiederverwendet oder neu angelegt, wie bei den
+ * manuellen Erfassungsformularen.
  */
 export async function commitExternalEventsImport(
   title: string,
@@ -139,14 +141,14 @@ export async function commitExternalEventsImport(
     return { error: "Keine aktive Saison konfiguriert." };
   }
 
-  const defaultActivity = await prisma.activity.findFirst({
-    where: { name: "Helfer (allgemein)" },
-  });
-  if (!defaultActivity) {
-    return {
-      error:
-        "Standard-Tätigkeit 'Helfer (allgemein)' nicht gefunden. Bitte Geschäftsstelle kontaktieren.",
-    };
+  const activityByName = new Map<string, string>();
+  for (const activityName of new Set(groups.map((g) => g.activityName))) {
+    const activity = await prisma.activity.upsert({
+      where: { name: activityName },
+      update: {},
+      create: { name: activityName },
+    });
+    activityByName.set(activityName, activity.id);
   }
 
   const byDay = new Map<string, { date: Date; groups: ExternalEventGroupPreview[] }>();
@@ -168,13 +170,13 @@ export async function commitExternalEventsImport(
       data: {
         seasonId: season.id,
         type: "EXTERNAL",
-        title: days.length > 1 ? `${title} · ${formatDate(day.date)}` : title,
+        title,
         locationText,
         date: day.date,
         importBatchId: batch.id,
         shiftSlots: {
           create: day.groups.map((group) => ({
-            activityId: defaultActivity.id,
+            activityId: activityByName.get(group.activityName)!,
             area: "HELFER" as const,
             capacity: group.roleCount,
             creditHours: group.creditHours,
