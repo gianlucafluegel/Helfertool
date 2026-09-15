@@ -48,9 +48,6 @@ export default async function EventDetailPage({
           title={event.title}
           locationId={event.locationId ?? ""}
           locationText={event.locationText ?? ""}
-          startDateTime={event.startDateTime}
-          endDateTime={event.endDateTime}
-          creditHours={Number(event.shiftSlots[0]?.creditHours ?? 0)}
           ageGroupId={event.shiftSlots[0]?.ageGroupRestrictions[0]?.ageGroupId ?? ""}
           ageGroups={ageGroups}
           locations={locations}
@@ -69,7 +66,12 @@ export default async function EventDetailPage({
         </div>
         <div className="mb-4">
           {event.shiftSlots.map((slot) => (
-            <AdminShiftSlotRow key={slot.id} slot={slot} eventId={event.id} members={members} />
+            <AdminShiftSlotRow
+              key={slot.id}
+              slot={{ ...slot, creditHours: Number(slot.creditHours) }}
+              eventId={event.id}
+              members={members}
+            />
           ))}
           {event.shiftSlots.length === 0 && (
             <p className="text-sm text-muted">Noch keine Rollen für diesen Helfereinsatz.</p>

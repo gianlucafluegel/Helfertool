@@ -19,7 +19,7 @@ export default async function MemberDetailPage({
     prisma.signup.findMany({
       where: { memberId, status: "CONFIRMED" },
       include: { shiftSlot: { include: { activity: true, event: true } } },
-      orderBy: { shiftSlot: { event: { startDateTime: "desc" } } },
+      orderBy: { shiftSlot: { startDateTime: "desc" } },
       take: 20,
     }),
   ]);
@@ -83,7 +83,7 @@ export default async function MemberDetailPage({
                 {s.shiftSlot.event.title} · {s.shiftSlot.activity.name}
               </span>
               <span className="flex items-center gap-2 text-muted">
-                {formatDate(s.shiftSlot.event.startDateTime)}
+                {formatDate(s.shiftSlot.startDateTime)}
                 {s.shiftSlot.event.isManualEntry && <Badge variant="neutral">manuell</Badge>}
                 <Badge variant={s.payoutType === "HELFERKONTINGENT" ? "filled" : "neutral"}>
                   {s.payoutType}

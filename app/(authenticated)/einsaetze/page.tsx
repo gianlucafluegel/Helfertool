@@ -58,29 +58,33 @@ export default async function EinsaetzePage({
   const vonDate = filters.von ? new Date(filters.von) : null;
   const bisDate = filters.bis ? new Date(filters.bis) : null;
 
-  const events = await prisma.event.findMany({
+  // ShiftSlot-rooted statt Event-rooted: die Zeit lebt jetzt auf der Rolle,
+  // Prisma kann orderBy/where nicht relations-aggregiert (_min/_max) auf
+  // einer to-many-Relation anwenden. Die bereits nach Zeit sortierte flache
+  // Liste wird unten per Map zu Event-Karten gruppiert — die
+  // Einfüge-Reihenfolge der Map entspricht automatisch der korrekten
+  // Event-Sortierung (erster angetroffener Slot pro Event = frühester).
+  const shiftSlots = await prisma.shiftSlot.findMany({
     where: {
-      seasonId: season.id,
       deletedAt: null,
-      isManualEntry: false,
-      status: { not: "CANCELLED" },
       startDateTime: {
         gte: vonDate && vonDate > now ? vonDate : now,
         ...(bisDate ? { lt: new Date(bisDate.getTime() + 24 * 60 * 60 * 1000) } : {}),
       },
-      ...(filters.standort ? { locationId: filters.standort } : {}),
-      ...(filters.typ === "GAME" || filters.typ === "EXTERNAL" ? { type: filters.typ } : {}),
+      event: {
+        seasonId: season.id,
+        deletedAt: null,
+        isManualEntry: false,
+        status: { not: "CANCELLED" },
+        ...(filters.standort ? { locationId: filters.standort } : {}),
+        ...(filters.typ === "GAME" || filters.typ === "EXTERNAL" ? { type: filters.typ } : {}),
+      },
     },
     include: {
-      location: true,
-      shiftSlots: {
-        where: { deletedAt: null },
-        include: {
-          activity: true,
-          ageGroupRestrictions: { include: { ageGroup: true } },
-          signups: { where: { status: "CONFIRMED" } },
-        },
-      },
+      event: { include: { location: true } },
+      activity: true,
+      ageGroupRestrictions: { include: { ageGroup: true } },
+      signups: { where: { status: "CONFIRMED" } },
     },
     orderBy: { startDateTime: "asc" },
   });
@@ -90,28 +94,34 @@ export default async function EinsaetzePage({
   // not via names shown inline in the list.
   const canViewOccupant = session.user.role !== "MITGLIED";
 
-  const eventCards = events
-    .map((event) => {
-      let slots = event.shiftSlots.filter((slot) => isShiftSlotVisible(slot, session.user.role));
+  let visibleSlots = shiftSlots.filter((slot) => isShiftSlotVisible(slot, session.user.role));
 
-      if (filters.stufe) {
-        slots = slots.filter((slot) =>
-          slot.ageGroupRestrictions.some((r) => r.ageGroupId === filters.stufe),
-        );
-      }
+  if (filters.stufe) {
+    visibleSlots = visibleSlots.filter((slot) =>
+      slot.ageGroupRestrictions.some((r) => r.ageGroupId === filters.stufe),
+    );
+  }
 
-      if (filters.nurMeine === "1" && activeMember) {
-        slots = slots.filter((slot) =>
-          slot.signups.some((s) => s.memberId === activeMember.id),
-        );
-      }
+  if (filters.nurMeine === "1" && activeMember) {
+    visibleSlots = visibleSlots.filter((slot) =>
+      slot.signups.some((s) => s.memberId === activeMember.id),
+    );
+  }
 
-      return {
-        event,
-        slots: slots.map((slot) => ({ ...slot, creditHours: Number(slot.creditHours) })),
-      };
-    })
-    .filter(({ slots }) => slots.length > 0);
+  const grouped = new Map<string, { event: (typeof shiftSlots)[number]["event"]; slots: typeof visibleSlots }>();
+  for (const slot of visibleSlots) {
+    const existing = grouped.get(slot.event.id);
+    if (existing) {
+      existing.slots.push(slot);
+    } else {
+      grouped.set(slot.event.id, { event: slot.event, slots: [slot] });
+    }
+  }
+
+  const eventCards = [...grouped.values()].map(({ event, slots }) => ({
+    event,
+    slots: slots.map((slot) => ({ ...slot, creditHours: Number(slot.creditHours) })),
+  }));
 
   return (
     <div className="flex flex-col gap-5">
@@ -218,8 +228,6 @@ export default async function EinsaetzePage({
         <EventCard
           key={event.id}
           title={event.title}
-          startDateTime={event.startDateTime}
-          endDateTime={event.endDateTime}
           locationName={event.location?.name ?? event.locationText ?? null}
           shiftSlots={slots}
           showOccupant={false}

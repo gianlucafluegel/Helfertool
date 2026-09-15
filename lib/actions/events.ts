@@ -57,17 +57,15 @@ function combineDateTime(date: string, time: string): Date {
   return new Date(`${date}T${time}`);
 }
 
-/** Anzahl Helferstunden wird immer aus Start/Ende berechnet, nie manuell erfasst. */
-function hoursBetween(start: Date, end: Date): number {
-  return Math.round(((end.getTime() - start.getTime()) / (60 * 60 * 1000)) * 100) / 100;
-}
-
 type RoleInput = {
   activityName: string;
   capacity: number;
   description: string;
   requirements: string | null;
   memberId: string | null;
+  startDateTime: Date;
+  endDateTime: Date;
+  creditHours: number;
 };
 
 /**
@@ -75,7 +73,9 @@ type RoleInput = {
  * (z.B. "roleActivityName"), die Reihenfolge über formData.getAll() entspricht
  * der Zeilen-Reihenfolge im Formular. Anforderungen gibt es nur bei externen
  * Events (RolesFieldset blendet das Feld für Spiele aus) und bleibt deshalb
- * optional, anders als der Beschrieb.
+ * optional, anders als der Beschrieb. Datum/Start/Ende/Anzahl Helferstunden
+ * sind für jede Rolle einzeln erfasst — verschiedene Rollen desselben
+ * Einsatzes können zu völlig unterschiedlichen Zeiten stattfinden.
  */
 function parseRoleInputs(formData: FormData): RoleInput[] | string {
   const activityNames = formData.getAll("roleActivityName").map((v) => String(v).trim());
@@ -83,6 +83,10 @@ function parseRoleInputs(formData: FormData): RoleInput[] | string {
   const descriptions = formData.getAll("roleDescription").map((v) => String(v).trim());
   const requirements = formData.getAll("roleRequirements").map((v) => String(v).trim());
   const memberIds = formData.getAll("roleMemberId").map(String);
+  const dates = formData.getAll("roleDate").map(String);
+  const startTimes = formData.getAll("roleStartTime").map(String);
+  const endTimes = formData.getAll("roleEndTime").map(String);
+  const creditHoursRaw = formData.getAll("roleCreditHours").map(String);
 
   if (activityNames.length === 0) {
     return "Mindestens eine Rolle ist erforderlich.";
@@ -93,17 +97,34 @@ function parseRoleInputs(formData: FormData): RoleInput[] | string {
   if (descriptions.some((d) => !d)) {
     return "Bitte für jede Rolle einen Beschrieb angeben.";
   }
+  if (dates.some((d) => !d) || startTimes.some((t) => !t) || endTimes.some((t) => !t)) {
+    return "Bitte für jede Rolle Datum, Start und Ende angeben.";
+  }
 
-  return activityNames.map((activityName, i) => {
+  const roles: RoleInput[] = [];
+  for (let i = 0; i < activityNames.length; i++) {
+    const creditHours = Number(creditHoursRaw[i]);
+    if (!Number.isFinite(creditHours) || creditHours <= 0) {
+      return `Rolle ${i + 1}: Anzahl Helferstunden ist ein Pflichtfeld.`;
+    }
+    const startDateTime = combineDateTime(dates[i], startTimes[i]);
+    const endDateTime = combineDateTime(dates[i], endTimes[i]);
+    if (endDateTime <= startDateTime) {
+      return `Rolle ${i + 1}: Ende muss nach Start liegen.`;
+    }
     const capacity = Number(capacities[i]);
-    return {
-      activityName,
+    roles.push({
+      activityName: activityNames[i],
       capacity: Number.isFinite(capacity) && capacity > 0 ? capacity : 1,
       description: descriptions[i],
       requirements: requirements[i] || null,
       memberId: memberIds[i]?.trim() || null,
-    };
-  });
+      startDateTime,
+      endDateTime,
+      creditHours,
+    });
+  }
+  return roles;
 }
 
 /**
@@ -115,7 +136,6 @@ function parseRoleInputs(formData: FormData): RoleInput[] | string {
  */
 async function createShiftSlotsForEvent(
   eventId: string,
-  creditHours: number,
   roles: RoleInput[],
   ageGroupId?: string | null,
 ): Promise<string | undefined> {
@@ -136,9 +156,11 @@ async function createShiftSlotsForEvent(
         activityId: activity.id,
         area: "HELFER",
         capacity: role.capacity,
-        creditHours,
+        creditHours: role.creditHours,
         description: role.description,
         requirements: role.requirements,
+        startDateTime: role.startDateTime,
+        endDateTime: role.endDateTime,
         ...(ageGroupId
           ? { ageGroupRestrictions: { create: { ageGroupId } } }
           : {}),
@@ -168,22 +190,10 @@ export async function createGameEvent(prevState: string | undefined, formData: F
 
   const title = String(formData.get("title") ?? "").trim();
   const locationId = String(formData.get("locationId") ?? "") || null;
-  const date = String(formData.get("date") ?? "");
-  const startTime = String(formData.get("startTime") ?? "");
-  const endTime = String(formData.get("endTime") ?? "");
-  const creditHours = Number(formData.get("creditHours"));
   const ageGroupId = String(formData.get("ageGroupId") ?? "").trim() || null;
 
-  if (
-    !title ||
-    !locationId ||
-    !date ||
-    !startTime ||
-    !endTime ||
-    !Number.isFinite(creditHours) ||
-    creditHours <= 0
-  ) {
-    return "Titel, Standort, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
+  if (!title || !locationId) {
+    return "Titel und Standort sind Pflichtfelder.";
   }
 
   const roles = parseRoleInputs(formData);
@@ -192,24 +202,16 @@ export async function createGameEvent(prevState: string | undefined, formData: F
   const season = await getCurrentSeason();
   if (!season) return "Keine aktive Saison konfiguriert.";
 
-  const startDateTime = combineDateTime(date, startTime);
-  const endDateTime = combineDateTime(date, endTime);
-  if (endDateTime <= startDateTime) {
-    return "Ende muss nach Start liegen.";
-  }
-
   const event = await prisma.event.create({
     data: {
       seasonId: season.id,
       type: "GAME",
       title,
       locationId,
-      startDateTime,
-      endDateTime,
     },
   });
 
-  const rolesError = await createShiftSlotsForEvent(event.id, creditHours, roles, ageGroupId);
+  const rolesError = await createShiftSlotsForEvent(event.id, roles, ageGroupId);
   if (rolesError) return rolesError;
 
   revalidatePath("/geschaeftsstelle/helfereinsaetze");
@@ -222,21 +224,9 @@ export async function createExternalEvent(prevState: string | undefined, formDat
 
   const title = String(formData.get("title") ?? "").trim();
   const locationText = String(formData.get("locationText") ?? "").trim();
-  const date = String(formData.get("date") ?? "");
-  const startTime = String(formData.get("startTime") ?? "");
-  const endTime = String(formData.get("endTime") ?? "");
-  const creditHours = Number(formData.get("creditHours"));
 
-  if (
-    !title ||
-    !locationText ||
-    !date ||
-    !startTime ||
-    !endTime ||
-    !Number.isFinite(creditHours) ||
-    creditHours <= 0
-  ) {
-    return "Titel, Ort, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
+  if (!title || !locationText) {
+    return "Titel und Ort sind Pflichtfelder.";
   }
 
   const roles = parseRoleInputs(formData);
@@ -245,24 +235,16 @@ export async function createExternalEvent(prevState: string | undefined, formDat
   const season = await getCurrentSeason();
   if (!season) return "Keine aktive Saison konfiguriert.";
 
-  const startDateTime = combineDateTime(date, startTime);
-  const endDateTime = combineDateTime(date, endTime);
-  if (endDateTime <= startDateTime) {
-    return "Ende muss nach Start liegen.";
-  }
-
   const event = await prisma.event.create({
     data: {
       seasonId: season.id,
       type: "EXTERNAL",
       title,
       locationText,
-      startDateTime,
-      endDateTime,
     },
   });
 
-  const rolesError = await createShiftSlotsForEvent(event.id, creditHours, roles);
+  const rolesError = await createShiftSlotsForEvent(event.id, roles);
   if (rolesError) return rolesError;
 
   revalidatePath("/geschaeftsstelle/helfereinsaetze");
@@ -279,10 +261,6 @@ export async function updateEvent(eventId: string, formData: FormData) {
   // FormData und wird hier korrekt zu null.
   const locationId = String(formData.get("locationId") ?? "") || null;
   const locationText = String(formData.get("locationText") ?? "").trim() || null;
-  const date = String(formData.get("date") ?? "");
-  const startTime = String(formData.get("startTime") ?? "");
-  const endTime = String(formData.get("endTime") ?? "");
-  const creditHours = Number(formData.get("creditHours"));
   // Kein Status-Feld mehr im Formular — bleibt beim Speichern unverändert,
   // statt bei jeder Bearbeitung stillschweigend auf "Geplant" zurückgesetzt
   // zu werden.
@@ -291,7 +269,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
     ? (String(statusRaw) as "SCHEDULED" | "CANCELLED" | "POSTPONED")
     : undefined;
 
-  if (!title || !Number.isFinite(creditHours) || creditHours <= 0) {
+  if (!title) {
     return;
   }
 
@@ -301,18 +279,8 @@ export async function updateEvent(eventId: string, formData: FormData) {
       title,
       locationId,
       locationText,
-      startDateTime: date && startTime ? combineDateTime(date, startTime) : undefined,
-      endDateTime: date && endTime ? combineDateTime(date, endTime) : null,
       status,
     },
-  });
-
-  // Die Anzahl Helferstunden gilt einheitlich für alle Rollen dieses
-  // Einsatzes — hier wird sie für alle (nicht gelöschten) Rollen zusammen
-  // aktualisiert, statt pro Rolle einzeln erfasst zu werden.
-  await prisma.shiftSlot.updateMany({
-    where: { eventId, deletedAt: null },
-    data: { creditHours },
   });
 
   // Die Stufe ist wie beim Erstellen nur ein Filter/Label, keine
@@ -356,9 +324,26 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
   const capacity = Number(formData.get("capacity") ?? 1);
   const description = String(formData.get("description") ?? "").trim();
   const requirements = String(formData.get("requirements") ?? "").trim() || null;
+  const date = String(formData.get("date") ?? "");
+  const startTime = String(formData.get("startTime") ?? "");
+  const endTime = String(formData.get("endTime") ?? "");
+  const creditHours = Number(formData.get("creditHours"));
 
-  if (!activityName || !description) {
-    return "Tätigkeit und Beschrieb sind Pflichtfelder.";
+  if (
+    !activityName ||
+    !description ||
+    !date ||
+    !startTime ||
+    !endTime ||
+    !Number.isFinite(creditHours) ||
+    creditHours <= 0
+  ) {
+    return "Tätigkeit, Beschrieb, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
+  }
+  const startDateTime = combineDateTime(date, startTime);
+  const endDateTime = combineDateTime(date, endTime);
+  if (endDateTime <= startDateTime) {
+    return "Ende muss nach Start liegen.";
   }
 
   // Tätigkeit ist ein Freitextfeld statt einer festen Auswahl — beim
@@ -372,19 +357,10 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
   });
   const area = "HELFER" as const;
 
-  // Anzahl Helferstunden ist ebenfalls keine eigene Eingabe mehr — sie
-  // ergibt sich aus Start/Ende des Einsatzes, den diese Rolle ergänzt.
-  const event = await prisma.event.findUnique({
-    where: { id: eventId },
-    select: { startDateTime: true, endDateTime: true },
-  });
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });
   if (!event) {
     return "Helfereinsatz nicht gefunden.";
   }
-  if (!event.endDateTime) {
-    return "Für diesen Helfereinsatz ist kein Ende hinterlegt — bitte zuerst unter 'Helfereinsatz bearbeiten' ein Ende setzen.";
-  }
-  const creditHours = hoursBetween(event.startDateTime, event.endDateTime);
 
   // Eine neue Rolle übernimmt automatisch dieselbe Team-Einschränkung wie
   // die bereits bestehenden Rollen dieses Einsatzes (z.B. "Nur U14" aus dem
@@ -406,6 +382,8 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
       creditHours,
       description,
       requirements,
+      startDateTime,
+      endDateTime,
       ageGroupRestrictions: {
         create: existingRestrictions.map((r) => ({ ageGroupId: r.ageGroupId })),
       },
@@ -413,6 +391,80 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
   });
 
   revalidatePath(`/geschaeftsstelle/helfereinsaetze/${eventId}`);
+}
+
+/**
+ * Erlaubt einer bestehenden Rolle nachträglich Datum/Start/Ende/Anzahl
+ * Helferstunden zu korrigieren (z.B. bei einer Spielverschiebung) — die
+ * einzige Bearbeitungsmöglichkeit für diese Felder, da sie nur noch beim
+ * Erstellen einer Rolle erfasst werden. Slot-scoped statt eventId-scoped
+ * wie assertCanEditEvent, gleiche Stufenleiter-Logik wie bei
+ * assignMemberToShiftSlot.
+ */
+async function assertCanEditShiftSlot(shiftSlotId: string) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Keine Berechtigung.");
+
+  const shiftSlot = await prisma.shiftSlot.findUnique({
+    where: { id: shiftSlotId },
+    include: { ageGroupRestrictions: true },
+  });
+  if (!shiftSlot || shiftSlot.deletedAt) throw new Error("Rolle nicht gefunden.");
+
+  if (session.user.role === "GESCHAEFTSSTELLE") return { session, shiftSlot };
+
+  if (session.user.role === "STUFENLEITER") {
+    const assignments = await prisma.stufenleiterAssignment.findMany({
+      where: { userId: session.user.id },
+      select: { ageGroupId: true },
+    });
+    const allowed = new Set(assignments.map((a) => a.ageGroupId));
+    if (
+      canManageShiftSlot(
+        "STUFENLEITER",
+        shiftSlot.ageGroupRestrictions.map((r) => r.ageGroupId),
+        allowed,
+      )
+    ) {
+      return { session, shiftSlot };
+    }
+  }
+
+  throw new Error("Keine Berechtigung.");
+}
+
+export async function updateShiftSlot(
+  shiftSlotId: string,
+  formData: FormData,
+): Promise<string | undefined> {
+  const { shiftSlot } = await assertCanEditShiftSlot(shiftSlotId);
+
+  const date = String(formData.get("date") ?? "");
+  const startTime = String(formData.get("startTime") ?? "");
+  const endTime = String(formData.get("endTime") ?? "");
+  const creditHours = Number(formData.get("creditHours"));
+
+  if (!date || !startTime || !endTime || !Number.isFinite(creditHours) || creditHours <= 0) {
+    return "Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
+  }
+
+  const startDateTime = combineDateTime(date, startTime);
+  const endDateTime = combineDateTime(date, endTime);
+  if (endDateTime <= startDateTime) {
+    return "Ende muss nach Start liegen.";
+  }
+
+  await prisma.shiftSlot.update({
+    where: { id: shiftSlotId },
+    data: { startDateTime, endDateTime, creditHours },
+  });
+
+  revalidatePath(`/geschaeftsstelle/helfereinsaetze/${shiftSlot.eventId}`);
+  revalidatePath("/geschaeftsstelle/helfereinsaetze");
+  revalidatePath("/geschaeftsstelle");
+  revalidatePath("/stufenleiter", "layout");
+  revalidatePath("/einsaetze");
+  return undefined;
 }
 
 export async function deleteShiftSlot(eventId: string, shiftSlotId: string) {

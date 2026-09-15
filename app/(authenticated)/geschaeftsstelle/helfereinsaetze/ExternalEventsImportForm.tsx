@@ -37,13 +37,26 @@ export function ExternalEventsImportForm() {
       )}
 
       {state.status === "preview" && (
-        <ExternalEventsPreviewTable key={state.groups.map((g) => g.key).join(",")} groups={state.groups} />
+        <ExternalEventsPreviewTable
+          key={state.groups.map((g) => g.key).join(",")}
+          title={state.title}
+          locationText={state.locationText}
+          groups={state.groups}
+        />
       )}
     </div>
   );
 }
 
-function ExternalEventsPreviewTable({ groups }: { groups: ExternalEventGroupPreview[] }) {
+function ExternalEventsPreviewTable({
+  title,
+  locationText,
+  groups,
+}: {
+  title: string;
+  locationText: string;
+  groups: ExternalEventGroupPreview[];
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<string | null>(null);
@@ -54,6 +67,10 @@ function ExternalEventsPreviewTable({ groups }: { groups: ExternalEventGroupPrev
 
   return (
     <div className="flex flex-col gap-3">
+      <p className="text-sm text-text">
+        <span className="font-medium">Titel:</span> {title} ·{" "}
+        <span className="font-medium">Ort:</span> {locationText}
+      </p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -63,8 +80,7 @@ function ExternalEventsPreviewTable({ groups }: { groups: ExternalEventGroupPrev
               <th className="py-2 pr-2">Start</th>
               <th className="py-2 pr-2">Ende</th>
               <th className="py-2 pr-2">Std.</th>
-              <th className="py-2 pr-2">Titel</th>
-              <th className="py-2 pr-2">Ort</th>
+              <th className="py-2 pr-2">Beschrieb</th>
               <th className="py-2 pr-2">Plätze</th>
             </tr>
           </thead>
@@ -92,8 +108,7 @@ function ExternalEventsPreviewTable({ groups }: { groups: ExternalEventGroupPrev
                   {formatTime(new Date(row.endDateTimeIso))}
                 </td>
                 <td className="py-2 pr-2 whitespace-nowrap text-muted">{row.creditHours}</td>
-                <td className="py-2 pr-2">{row.title}</td>
-                <td className="py-2 pr-2 text-muted">{row.locationText}</td>
+                <td className="py-2 pr-2">{row.description}</td>
                 <td className="py-2 pr-2 text-muted">{row.roleCount}</td>
               </tr>
             ))}
@@ -112,11 +127,15 @@ function ExternalEventsPreviewTable({ groups }: { groups: ExternalEventGroupPrev
           setError(null);
           setResult(null);
           startTransition(async () => {
-            const res = await commitExternalEventsImport(rowState.filter((r) => r.selected));
+            const res = await commitExternalEventsImport(
+              title,
+              locationText,
+              rowState.filter((r) => r.selected),
+            );
             if (res.error) {
               setError(res.error);
             } else {
-              setResult(`${res.created ?? 0} Helfereinsätze erstellt.`);
+              setResult(`1 Helfereinsatz mit ${res.roleCount ?? 0} Rollen erstellt.`);
               router.refresh();
             }
           });

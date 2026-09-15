@@ -32,13 +32,13 @@ export default async function MeinKontoPage() {
           include: { activity: true, event: { include: { location: true } } },
         },
       },
-      orderBy: { shiftSlot: { event: { startDateTime: "asc" } } },
+      orderBy: { shiftSlot: { startDateTime: "asc" } },
     }),
   ]);
 
   const now = new Date();
-  const upcoming = signups.filter((s) => s.shiftSlot.event.startDateTime >= now);
-  const past = signups.filter((s) => s.shiftSlot.event.startDateTime < now);
+  const upcoming = signups.filter((s) => s.shiftSlot.startDateTime >= now);
+  const past = signups.filter((s) => s.shiftSlot.startDateTime < now);
 
   const targetHours = member ? Number(member.targetHours) : 0;
   const completedHours = past
@@ -82,9 +82,7 @@ export default async function MeinKontoPage() {
               <div>
                 <p className="text-sm font-medium text-text">{s.shiftSlot.event.title}</p>
                 <p className="text-xs text-muted">
-                  {formatDateTime(s.shiftSlot.event.startDateTime)}
-                  {s.shiftSlot.event.endDateTime &&
-                    ` – ${formatTime(s.shiftSlot.event.endDateTime)}`}{" "}
+                  {formatDateTime(s.shiftSlot.startDateTime)} – {formatTime(s.shiftSlot.endDateTime)}{" "}
                   Uhr · {Number(s.shiftSlot.creditHours)} Std. · {s.shiftSlot.activity.name}
                 </p>
               </div>
@@ -105,11 +103,8 @@ export default async function MeinKontoPage() {
               <div>
                 <p className="text-sm font-medium text-text">{s.shiftSlot.event.title}</p>
                 <p className="text-xs text-muted">
-                  {formatDate(s.shiftSlot.event.startDateTime)},{" "}
-                  {formatTime(s.shiftSlot.event.startDateTime)}
-                  {s.shiftSlot.event.endDateTime &&
-                    ` – ${formatTime(s.shiftSlot.event.endDateTime)}`}{" "}
-                  Uhr · {s.shiftSlot.activity.name}
+                  {formatDate(s.shiftSlot.startDateTime)}, {formatTime(s.shiftSlot.startDateTime)} –{" "}
+                  {formatTime(s.shiftSlot.endDateTime)} Uhr · {s.shiftSlot.activity.name}
                 </p>
               </div>
               <Badge variant={s.payoutType === "HELFERKONTINGENT" ? "filled" : "neutral"}>

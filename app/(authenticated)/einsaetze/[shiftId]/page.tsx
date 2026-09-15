@@ -86,10 +86,7 @@ export default async function ShiftSignupPage({
       <Card>
         <h1 className="text-base font-semibold text-text">{shiftSlot.event.title}</h1>
         <p className="mb-1 text-sm text-muted">
-          {formatDateTime(shiftSlot.event.startDateTime)}
-          {shiftSlot.event.endDateTime &&
-            ` – ${formatTime(shiftSlot.event.endDateTime)}`}{" "}
-          Uhr
+          {formatDateTime(shiftSlot.startDateTime)} – {formatTime(shiftSlot.endDateTime)} Uhr
           {(shiftSlot.event.location?.name ?? shiftSlot.event.locationText) &&
             ` · ${shiftSlot.event.location?.name ?? shiftSlot.event.locationText}`}
         </p>

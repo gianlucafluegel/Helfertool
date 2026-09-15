@@ -56,7 +56,7 @@ export default async function GeschaeftsstelleOverviewPage({
     },
   };
 
-  const [statsEvents, listEvents] = await Promise.all([
+  const [statsEvents, listShiftSlots] = await Promise.all([
     prisma.event.findMany({
       where: { seasonId: season.id, deletedAt: null, isManualEntry: false },
       include: {
@@ -66,32 +66,32 @@ export default async function GeschaeftsstelleOverviewPage({
         },
       },
     }),
-    prisma.event.findMany({
+    // ShiftSlot-rooted statt Event-rooted, da die Zeit jetzt auf der Rolle
+    // lebt — Prisma kann orderBy/where nicht relations-aggregiert auf einer
+    // to-many-Relation anwenden. Wird unten per Event-ID gruppiert.
+    prisma.shiftSlot.findMany({
       where: {
-        seasonId: season.id,
         deletedAt: null,
-        isManualEntry: false,
         ...dateFilter,
-        ...(q
-          ? {
-              OR: [
-                { title: { contains: q, mode: "insensitive" } },
-                {
-                  shiftSlots: {
-                    some: { deletedAt: null, description: { contains: q, mode: "insensitive" } },
+        event: {
+          seasonId: season.id,
+          deletedAt: null,
+          isManualEntry: false,
+          ...(q
+            ? {
+                OR: [
+                  { title: { contains: q, mode: "insensitive" } },
+                  {
+                    shiftSlots: {
+                      some: { deletedAt: null, description: { contains: q, mode: "insensitive" } },
+                    },
                   },
-                },
-              ],
-            }
-          : {}),
-      },
-      include: {
-        location: true,
-        shiftSlots: {
-          where: { deletedAt: null },
-          include: { signups: { where: { status: "CONFIRMED" } } },
+                ],
+              }
+            : {}),
         },
       },
+      include: { event: { include: { location: true } } },
       orderBy: { startDateTime: "asc" },
     }),
   ]);
@@ -106,6 +106,31 @@ export default async function GeschaeftsstelleOverviewPage({
       else open += 1;
     }
   }
+
+  // "offen" pro Event kommt bewusst aus dem bereits geladenen, nicht
+  // datums-gefilterten statsEvents (Map von eventId -> Event) statt aus der
+  // datums-gefilterten Slot-Liste — das entspricht dem bisherigen Verhalten:
+  // "offen" zählte schon immer über alle Rollen des Events, unabhängig vom
+  // Datumsfilter.
+  const statsByEventId = new Map(statsEvents.map((e) => [e.id, e]));
+
+  const listEvents = new Map<
+    string,
+    { id: string; title: string; status: string; location: { name: string } | null; locationText: string | null; startDateTime: Date }
+  >();
+  for (const slot of listShiftSlots) {
+    if (!listEvents.has(slot.event.id)) {
+      listEvents.set(slot.event.id, {
+        id: slot.event.id,
+        title: slot.event.title,
+        status: slot.event.status,
+        location: slot.event.location,
+        locationText: slot.event.locationText,
+        startDateTime: slot.startDateTime,
+      });
+    }
+  }
+  const listEventRows = [...listEvents.values()];
 
   return (
     <div className="flex flex-col gap-5">
@@ -219,10 +244,10 @@ export default async function GeschaeftsstelleOverviewPage({
               </tr>
             </thead>
             <tbody>
-              {listEvents.map((event) => {
-                const eventOpen = event.shiftSlots.filter(
-                  (s) => s.signups.length < s.capacity,
-                ).length;
+              {listEventRows.map((event) => {
+                const stats = statsByEventId.get(event.id);
+                const eventOpen =
+                  stats?.shiftSlots.filter((s) => s.signups.length < s.capacity).length ?? 0;
                 return (
                   <tr key={event.id} className="border-b border-border last:border-b-0">
                     <td className="py-2 pr-3 whitespace-nowrap">
@@ -249,7 +274,7 @@ export default async function GeschaeftsstelleOverviewPage({
                   </tr>
                 );
               })}
-              {listEvents.length === 0 && (
+              {listEventRows.length === 0 && (
                 <tr>
                   <td colSpan={4} className="py-4 text-center text-muted">
                     Keine Helfereinsätze gefunden.

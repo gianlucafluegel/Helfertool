@@ -19,6 +19,8 @@ type ArchivedShiftSlot = {
   area: string;
   capacity: number;
   creditHours: number;
+  startDateTime: string;
+  endDateTime: string;
   ageGroupRestrictions: string[];
   signups: ArchivedSignup[];
 };
@@ -27,7 +29,6 @@ type ArchivedEvent = {
   id: string;
   title: string;
   locationName: string | null;
-  startDateTime: string;
   isManualEntry: boolean;
   shiftSlots: ArchivedShiftSlot[];
 };
@@ -121,10 +122,7 @@ export default async function SeasonArchiveDetailPage({
           {realEvents.map((e) => (
             <div key={e.id} className="border-b border-border pb-4 last:border-b-0">
               <p className="font-medium text-text">{e.title}</p>
-              <p className="mb-2 text-xs text-muted">
-                {formatDate(new Date(e.startDateTime))}
-                {e.locationName ? ` · ${e.locationName}` : ""}
-              </p>
+              {e.locationName && <p className="mb-2 text-xs text-muted">{e.locationName}</p>}
               <div className="flex flex-col gap-1.5 pl-3">
                 {e.shiftSlots.map((s) => (
                   <div
@@ -141,7 +139,9 @@ export default async function SeasonArchiveDetailPage({
                           Nur {s.ageGroupRestrictions.join(", ")}
                         </span>
                       )}
-                      <span className="text-xs text-muted">{s.creditHours} Std.</span>
+                      <span className="text-xs text-muted">
+                        {formatDate(new Date(s.startDateTime))} · {s.creditHours} Std.
+                      </span>
                     </span>
                     <span className="text-muted">
                       {s.signups.length > 0

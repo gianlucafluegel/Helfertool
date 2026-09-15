@@ -58,8 +58,6 @@ export async function GET(
     const buffer = await buildGameEventExcel({
       title: event.title,
       locationName: event.location?.name ?? event.locationText,
-      startDateTime: event.startDateTime,
-      endDateTime: event.endDateTime,
       rows: visibleSlots.flatMap((slot) =>
         slot.signups.map((s) => ({
           vorname: s.helperFirstName,
@@ -67,6 +65,8 @@ export async function GET(
           email: s.helperEmail,
           telefon: s.helperPhone ?? "",
           beschrieb: slot.description,
+          startDateTime: slot.startDateTime,
+          endDateTime: slot.endDateTime,
         })),
       ),
     });

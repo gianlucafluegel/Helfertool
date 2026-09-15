@@ -120,7 +120,7 @@ export async function createSignup(
     vorname: helperFirstName,
     nachname: helperLastName,
     event: shiftSlot.event.title,
-    datum: formatDateTime(shiftSlot.event.startDateTime),
+    datum: formatDateTime(shiftSlot.startDateTime),
     taetigkeit: shiftSlot.activity.name,
     standort: shiftSlot.event.location?.name ?? shiftSlot.event.locationText ?? "",
   });
@@ -137,7 +137,7 @@ export async function cancelSignup(signupId: string): Promise<{ error?: string }
   const signup = await prisma.signup.findUnique({
     where: { id: signupId },
     include: {
-      shiftSlot: { include: { event: true, ageGroupRestrictions: true } },
+      shiftSlot: { include: { ageGroupRestrictions: true } },
     },
   });
   if (!signup || signup.status === "CANCELLED") {
@@ -151,7 +151,7 @@ export async function cancelSignup(signupId: string): Promise<{ error?: string }
     return { error: "Du kannst diese Anmeldung nicht bearbeiten." };
   }
 
-  if (!isAdmin && !canCancelSignup(signup.shiftSlot.event.startDateTime)) {
+  if (!isAdmin && !canCancelSignup(signup.shiftSlot.startDateTime)) {
     return {
       error:
         "Eine Abmeldung ist nur bis 4 Tage vor dem Einsatz möglich. Bitte kontaktiere die Geschäftsstelle.",

@@ -59,19 +59,6 @@ export function CreateGameEventForm({
           ))}
         </select>
       </div>
-      <FormField label="Datum" name="date" type="date" required />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <FormField label="Start" name="startTime" type="time" required />
-        <FormField label="Ende" name="endTime" type="time" required />
-      </div>
-      <FormField
-        label="Anzahl Helferstunden"
-        name="creditHours"
-        type="number"
-        step="0.5"
-        min={0}
-        required
-      />
       <RolesFieldset members={members} />
       {error && <p className="text-sm text-status-open-text">{error}</p>}
       <Button type="submit" disabled={pending}>

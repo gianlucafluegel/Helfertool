@@ -2,11 +2,17 @@ import { Badge } from "@/components/ui/Badge";
 import { AdminSignupRow } from "@/components/shifts/AdminSignupRow";
 import { DeleteShiftSlotButton } from "@/components/shifts/DeleteShiftSlotButton";
 import { AssignMemberForm } from "@/components/shifts/AssignMemberForm";
+import { EditShiftSlotTimeForm } from "@/components/shifts/EditShiftSlotTimeForm";
+import { formatDate, formatTime } from "@/lib/format";
 
 export type AdminShiftSlotRowData = {
   id: string;
   area: "HELFER" | "FUNKTIONAER";
   capacity: number;
+  creditHours: number;
+  startDateTime: Date;
+  endDateTime: Date;
+  requirements: string | null;
   activity: { name: string };
   ageGroupRestrictions: { ageGroup: { name: string } }[];
   signups: {
@@ -51,6 +57,21 @@ export function AdminShiftSlotRow({
           </Badge>
           {eventId && <DeleteShiftSlotButton eventId={eventId} shiftSlotId={slot.id} />}
         </div>
+      </div>
+
+      <p className="text-sm text-muted">
+        {formatDate(slot.startDateTime)}, {formatTime(slot.startDateTime)}–
+        {formatTime(slot.endDateTime)} Uhr · {slot.creditHours} Std.
+        {slot.requirements && ` · ${slot.requirements}`}
+      </p>
+
+      <div className="pl-1">
+        <EditShiftSlotTimeForm
+          shiftSlotId={slot.id}
+          startDateTime={slot.startDateTime}
+          endDateTime={slot.endDateTime}
+          creditHours={slot.creditHours}
+        />
       </div>
 
       {slot.signups.length > 0 && (

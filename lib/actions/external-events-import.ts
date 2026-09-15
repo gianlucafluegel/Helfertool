@@ -16,8 +16,6 @@ async function requireGeschaeftsstelle() {
 
 export type ExternalEventGroupPreview = {
   key: string;
-  title: string;
-  locationText: string;
   description: string;
   requirements: string | null;
   startDateTimeIso: string;
@@ -29,7 +27,7 @@ export type ExternalEventGroupPreview = {
 export type ExternalEventsImportPreviewState =
   | { status: "idle" }
   | { status: "error"; message: string }
-  | { status: "preview"; groups: ExternalEventGroupPreview[] };
+  | { status: "preview"; title: string; locationText: string; groups: ExternalEventGroupPreview[] };
 
 export async function parseExternalEventsImportFile(
   prevState: ExternalEventsImportPreviewState,
@@ -93,8 +91,6 @@ export async function parseExternalEventsImportFile(
 
   const previewGroups: ExternalEventGroupPreview[] = [...groups.entries()].map(([key, g]) => ({
     key,
-    title: `${parsed.title} · ${g.einsatzbeschrieb}`,
-    locationText: parsed.locationText,
     description: g.einsatzbeschrieb,
     requirements: g.anforderungen,
     startDateTimeIso: g.startDateTime.toISOString(),
@@ -105,16 +101,26 @@ export async function parseExternalEventsImportFile(
 
   previewGroups.sort((a, b) => a.startDateTimeIso.localeCompare(b.startDateTimeIso));
 
-  return { status: "preview", groups: previewGroups };
+  return { status: "preview", title: parsed.title, locationText: parsed.locationText, groups: previewGroups };
 }
 
+/**
+ * Erstellt EIN Event für die ganze Datei (Titel/Ort kommen aus Zeile 1/2 der
+ * Vorlage, gelten für das ganze Dokument) mit einer Rolle pro Gruppe — statt
+ * wie früher einem Event pro Gruppe. So entstehen bei einem grossen externen
+ * Event mit vielen unterschiedlich terminierten Rollen (z.B. ein Festival)
+ * nicht dutzende separate Helfereinsätze, sondern einer mit entsprechend
+ * vielen Rollen.
+ */
 export async function commitExternalEventsImport(
+  title: string,
+  locationText: string,
   groups: ExternalEventGroupPreview[],
-): Promise<{ error?: string; created?: number }> {
+): Promise<{ error?: string; roleCount?: number }> {
   const session = await requireGeschaeftsstelle();
 
   if (groups.length === 0) {
-    return { error: "Keine Einsätze ausgewählt." };
+    return { error: "Keine Rollen ausgewählt." };
   }
 
   const season = await getCurrentSeason();
@@ -136,34 +142,29 @@ export async function commitExternalEventsImport(
     data: { source: "Externe-Events Excel-Import", importedByUserId: session.user.id },
   });
 
-  let created = 0;
-
-  for (const group of groups) {
-    await prisma.event.create({
-      data: {
-        seasonId: season.id,
-        type: "EXTERNAL",
-        title: group.title,
-        locationText: group.locationText,
-        startDateTime: new Date(group.startDateTimeIso),
-        endDateTime: new Date(group.endDateTimeIso),
-        importBatchId: batch.id,
-        shiftSlots: {
-          create: {
-            activityId: defaultActivity.id,
-            area: "HELFER" as const,
-            capacity: group.roleCount,
-            creditHours: group.creditHours,
-            description: group.description,
-            requirements: group.requirements,
-          },
-        },
+  await prisma.event.create({
+    data: {
+      seasonId: season.id,
+      type: "EXTERNAL",
+      title,
+      locationText,
+      importBatchId: batch.id,
+      shiftSlots: {
+        create: groups.map((group) => ({
+          activityId: defaultActivity.id,
+          area: "HELFER" as const,
+          capacity: group.roleCount,
+          creditHours: group.creditHours,
+          description: group.description,
+          requirements: group.requirements,
+          startDateTime: new Date(group.startDateTimeIso),
+          endDateTime: new Date(group.endDateTimeIso),
+        })),
       },
-    });
-    created += 1;
-  }
+    },
+  });
 
   revalidatePath("/geschaeftsstelle/helfereinsaetze");
   revalidatePath("/geschaeftsstelle");
-  return { created };
+  return { roleCount: groups.length };
 }

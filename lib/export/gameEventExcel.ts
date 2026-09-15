@@ -7,25 +7,24 @@ export type GameEventExportRow = {
   email: string;
   telefon: string;
   beschrieb: string;
+  startDateTime: Date;
+  endDateTime: Date;
 };
 
 /**
  * Builds the Helferliste for a Spieleinsatz as a real .xlsx file: Titel gross
  * oben, Standort kleiner darunter, dann eine Tabelle mit einer Zeile pro
- * Helfer. Datum/Beginn/Ende/Dauer sind Event-Eigenschaften (für den ganzen
- * Einsatz identisch) und werden deshalb in jeder Zeile wiederholt, statt nur
- * einmal oben zu stehen — so bleibt jede Zeile für sich lesbar, z.B. beim
- * Ausdrucken oder Filtern. Der Einsatzbeschrieb ist dagegen pro Rolle
- * definiert (jede Zeile bringt ihren eigenen mit).
+ * Helfer. Datum/Beginn/Ende/Dauer sind pro Rolle definiert (jede Zeile bringt
+ * ihre eigene mit) statt für den ganzen Einsatz geteilt zu sein, da
+ * unterschiedliche Rollen zu unterschiedlichen Zeiten stattfinden können —
+ * genau wie der Einsatzbeschrieb.
  */
 export async function buildGameEventExcel(params: {
   title: string;
   locationName: string | null;
-  startDateTime: Date;
-  endDateTime: Date | null;
   rows: GameEventExportRow[];
 }): Promise<ExcelJS.Buffer> {
-  const { title, locationName, startDateTime, endDateTime, rows } = params;
+  const { title, locationName, rows } = params;
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Helferliste");
@@ -61,18 +60,14 @@ export async function buildGameEventExcel(params: {
     cell.border = { bottom: { style: "thin" } };
   });
 
-  const datum = formatDate(startDateTime);
-  const beginn = formatTime(startDateTime);
-  const ende = endDateTime ? formatTime(endDateTime) : "";
-  const dauer = endDateTime
-    ? Math.round(((endDateTime.getTime() - startDateTime.getTime()) / (60 * 60 * 1000)) * 100) / 100
-    : "";
-
   for (const row of rows) {
+    const dauer =
+      Math.round(((row.endDateTime.getTime() - row.startDateTime.getTime()) / (60 * 60 * 1000)) * 100) /
+      100;
     sheet.addRow([
-      datum,
-      beginn,
-      ende,
+      formatDate(row.startDateTime),
+      formatTime(row.startDateTime),
+      formatTime(row.endDateTime),
       dauer,
       row.beschrieb,
       row.vorname,

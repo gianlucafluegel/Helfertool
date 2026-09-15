@@ -63,9 +63,6 @@ export default async function StufenleiterEventDetailPage({
           title={event.title}
           locationId={event.locationId ?? ""}
           locationText={event.locationText ?? ""}
-          startDateTime={event.startDateTime}
-          endDateTime={event.endDateTime}
-          creditHours={Number(event.shiftSlots[0]?.creditHours ?? 0)}
           ageGroupId={event.shiftSlots[0]?.ageGroupRestrictions[0]?.ageGroupId ?? ""}
           ageGroups={[]}
           locations={locations}
@@ -85,7 +82,11 @@ export default async function StufenleiterEventDetailPage({
           </a>
         </div>
         {event.shiftSlots.map((slot) => (
-          <AdminShiftSlotRow key={slot.id} slot={slot} members={members} />
+          <AdminShiftSlotRow
+            key={slot.id}
+            slot={{ ...slot, creditHours: Number(slot.creditHours) }}
+            members={members}
+          />
         ))}
       </Card>
     </div>

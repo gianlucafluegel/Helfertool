@@ -53,7 +53,7 @@ export async function archiveSeason(prevState: string | undefined, formData: For
     prisma.member.findMany({
       include: {
         ageGroup: true,
-        signups: { include: { shiftSlot: { include: { event: true } } } },
+        signups: { include: { shiftSlot: true } },
       },
     }),
     prisma.event.findMany({
@@ -93,7 +93,7 @@ export async function archiveSeason(prevState: string | undefined, formData: For
           (s) =>
             s.status === "CONFIRMED" &&
             s.payoutType === "HELFERKONTINGENT" &&
-            s.shiftSlot.event.startDateTime < now,
+            s.shiftSlot.startDateTime < now,
         )
         .reduce((sum, s) => sum + Number(s.shiftSlot.creditHours), 0),
     })),
@@ -102,7 +102,6 @@ export async function archiveSeason(prevState: string | undefined, formData: For
       type: e.type,
       title: e.title,
       locationName: e.location?.name ?? e.locationText ?? null,
-      startDateTime: e.startDateTime.toISOString(),
       status: e.status,
       isManualEntry: e.isManualEntry,
       shiftSlots: e.shiftSlots.map((s) => ({
@@ -113,6 +112,8 @@ export async function archiveSeason(prevState: string | undefined, formData: For
         creditHours: Number(s.creditHours),
         description: s.description,
         requirements: s.requirements,
+        startDateTime: s.startDateTime.toISOString(),
+        endDateTime: s.endDateTime.toISOString(),
         ageGroupRestrictions: s.ageGroupRestrictions.map((r) => r.ageGroup.name),
         signups: s.signups.map((sg) => ({
           id: sg.id,

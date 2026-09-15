@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     include: {
       signups: {
         where: { status: "CONFIRMED" },
-        include: { shiftSlot: { include: { event: true } } },
+        include: { shiftSlot: true },
       },
     },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
   const now = new Date();
   const lines = members.map((member) => {
     const completedHours = member.signups
-      .filter((s) => s.payoutType === "HELFERKONTINGENT" && s.shiftSlot.event.startDateTime < now)
+      .filter((s) => s.payoutType === "HELFERKONTINGENT" && s.shiftSlot.startDateTime < now)
       .reduce((sum, s) => sum + Number(s.shiftSlot.creditHours), 0);
     return `${member.externalContactId ?? ""};${completedHours}`;
   });

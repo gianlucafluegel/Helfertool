@@ -245,8 +245,6 @@ model Event {
   // Event kann aber praktisch überall stattfinden, deshalb dort statt eines
   // Dropdowns ein frei definierbarer Ort.
   locationText   String?
-  startDateTime DateTime
-  endDateTime   DateTime?
   status        EventStatus @default(SCHEDULED)
   externalRef   String?
   importBatchId String?
@@ -262,8 +260,6 @@ model Event {
   season     Season      @relation(fields: [seasonId], references: [id])
   location   Location?   @relation(fields: [locationId], references: [id])
   shiftSlots ShiftSlot[]
-
-  @@index([seasonId, startDateTime])
 }
 
 model ShiftSlot {
@@ -283,6 +279,13 @@ model ShiftSlot {
   // EXTERNAL-Einsätze genutzt und deshalb optional (im Gegensatz zu
   // description, das für jede Rolle Pflicht ist).
   requirements String?
+  // Ersetzt Event.startDateTime/endDateTime — die Zeit ist wie Beschrieb und
+  // Anforderungen pro Rolle definiert statt geteilt über den ganzen Einsatz,
+  // da z.B. bei einem grossen externen Event verschiedene Rollen zu völlig
+  // unterschiedlichen Zeiten stattfinden können. Gilt für alle Event-Typen
+  // (auch GAME), kein Sonderfall.
+  startDateTime DateTime
+  endDateTime   DateTime
   deletedAt   DateTime?
 
   event                Event               @relation(fields: [eventId], references: [id])
@@ -291,6 +294,7 @@ model ShiftSlot {
   signups              Signup[]
 
   @@index([eventId])
+  @@index([startDateTime])
 }
 
 model ShiftSlotAgeGroup {

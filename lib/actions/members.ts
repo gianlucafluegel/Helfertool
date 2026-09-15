@@ -229,13 +229,20 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
   if (!member) return "Mitglied nicht gefunden.";
   if (!season) return "Keine aktive Saison konfiguriert.";
 
+  const manualStartDateTime = new Date(startDateTime);
+  // Kein eigenes Ende-Feld im Formular — ein manueller Stunden-Eintrag ist
+  // reine Buchhaltung, kein echter Einsatz zum Browsen/Anmelden (überall per
+  // isManualEntry: false ausgeschlossen). Das synthetisierte Ende wird
+  // nirgends angezeigt oder bearbeitet, dient nur dazu, dass ShiftSlot.
+  // endDateTime (Pflichtfeld) einen plausiblen Wert hat.
+  const manualEndDateTime = new Date(manualStartDateTime.getTime() + creditHours * 60 * 60 * 1000);
+
   await prisma.event.create({
     data: {
       seasonId: season.id,
       type,
       title,
       locationId,
-      startDateTime: new Date(startDateTime),
       isManualEntry: true,
       shiftSlots: {
         create: {
@@ -244,6 +251,8 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
           capacity: 1,
           creditHours,
           description,
+          startDateTime: manualStartDateTime,
+          endDateTime: manualEndDateTime,
           signups: {
             create: {
               memberId,

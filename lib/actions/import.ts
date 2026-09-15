@@ -175,11 +175,22 @@ export async function commitImport(
         where: { id: existingEvent.id },
         data: {
           title: row.title,
-          startDateTime: new Date(row.startDateTimeIso),
-          endDateTime: new Date(row.endDateTimeIso),
           locationId: row.locationId,
           status: row.cancelled ? "CANCELLED" : "SCHEDULED",
           importBatchId: batch.id,
+        },
+      });
+      // Datum/Zeit/Std. sind pro Rolle erfasst — bei einer Verschiebung
+      // (Re-Import mit geänderter Anspielzeit) werden deshalb beide
+      // Standardrollen zusammen aktualisiert, statt wie sonst nur beim
+      // Erstellen einer Rolle erfasst zu werden. MySIHF liefert ohnehin nur
+      // ein Zeitfenster für das ganze Spiel, das für beide Rollen gilt.
+      await prisma.shiftSlot.updateMany({
+        where: { eventId: existingEvent.id, deletedAt: null },
+        data: {
+          startDateTime: new Date(row.startDateTimeIso),
+          endDateTime: new Date(row.endDateTimeIso),
+          creditHours: row.creditHours,
         },
       });
       updated += 1;
@@ -189,8 +200,6 @@ export async function commitImport(
           seasonId: season.id,
           type: "GAME",
           title: row.title,
-          startDateTime: new Date(row.startDateTimeIso),
-          endDateTime: new Date(row.endDateTimeIso),
           locationId: row.locationId,
           status: row.cancelled ? "CANCELLED" : "SCHEDULED",
           externalRef: row.spielNr,
@@ -203,6 +212,8 @@ export async function commitImport(
                 capacity: 1,
                 creditHours: row.creditHours,
                 description: SPEAKER_DESCRIPTION,
+                startDateTime: new Date(row.startDateTimeIso),
+                endDateTime: new Date(row.endDateTimeIso),
                 ...(row.ageGroupId
                   ? { ageGroupRestrictions: { create: { ageGroupId: row.ageGroupId } } }
                   : {}),
@@ -213,6 +224,8 @@ export async function commitImport(
                 capacity: 2,
                 creditHours: row.creditHours,
                 description: STRAFBANK_DESCRIPTION,
+                startDateTime: new Date(row.startDateTimeIso),
+                endDateTime: new Date(row.endDateTimeIso),
                 ...(row.ageGroupId
                   ? { ageGroupRestrictions: { create: { ageGroupId: row.ageGroupId } } }
                   : {}),
