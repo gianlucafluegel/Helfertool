@@ -135,7 +135,10 @@ function ExternalEventsPreviewTable({
             if (res.error) {
               setError(res.error);
             } else {
-              setResult(`1 Helfereinsatz mit ${res.roleCount ?? 0} Rollen erstellt.`);
+              const eventCount = res.eventCount ?? 0;
+              setResult(
+                `${eventCount} Helfereinsatz${eventCount === 1 ? "" : "e"} mit insgesamt ${res.roleCount ?? 0} Rollen erstellt.`,
+              );
               router.refresh();
             }
           });

@@ -63,6 +63,7 @@ export default async function StufenleiterEventDetailPage({
           title={event.title}
           locationId={event.locationId ?? ""}
           locationText={event.locationText ?? ""}
+          date={event.date}
           ageGroupId={event.shiftSlots[0]?.ageGroupRestrictions[0]?.ageGroupId ?? ""}
           ageGroups={[]}
           locations={locations}

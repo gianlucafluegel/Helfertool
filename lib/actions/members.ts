@@ -236,6 +236,11 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
   // nirgends angezeigt oder bearbeitet, dient nur dazu, dass ShiftSlot.
   // endDateTime (Pflichtfeld) einen plausiblen Wert hat.
   const manualEndDateTime = new Date(manualStartDateTime.getTime() + creditHours * 60 * 60 * 1000);
+  const manualDate = new Date(
+    manualStartDateTime.getFullYear(),
+    manualStartDateTime.getMonth(),
+    manualStartDateTime.getDate(),
+  );
 
   await prisma.event.create({
     data: {
@@ -243,6 +248,7 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
       type,
       title,
       locationId,
+      date: manualDate,
       isManualEntry: true,
       shiftSlots: {
         create: {

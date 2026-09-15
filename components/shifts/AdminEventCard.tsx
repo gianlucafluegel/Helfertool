@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { AdminShiftSlotRow, type AdminShiftSlotRowData } from "@/components/shifts/AdminShiftSlotRow";
+import { formatDate } from "@/lib/format";
 
 export function AdminEventCard({
   eventId,
   title,
+  date,
   locationName,
   shiftSlots,
   allowDeleteSlots = false,
@@ -12,6 +14,7 @@ export function AdminEventCard({
 }: {
   eventId: string;
   title: string;
+  date: Date;
   locationName: string | null;
   shiftSlots: AdminShiftSlotRowData[];
   allowDeleteSlots?: boolean;
@@ -37,7 +40,10 @@ export function AdminEventCard({
           Liste herunterladen
         </a>
       </div>
-      {locationName && <p className="mb-2 text-sm text-muted">{locationName}</p>}
+      <p className="mb-2 text-sm text-muted">
+        {formatDate(date)}
+        {locationName ? ` · ${locationName}` : ""}
+      </p>
       <div>
         {shiftSlots.map((slot) => (
           <AdminShiftSlotRow

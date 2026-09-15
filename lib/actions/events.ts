@@ -57,6 +57,19 @@ function combineDateTime(date: string, time: string): Date {
   return new Date(`${date}T${time}`);
 }
 
+/** Übernimmt die Uhrzeit eines bestehenden Date auf ein neues Datum (String). */
+function withDate(date: string, existing: Date): Date {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const time = `${pad(existing.getHours())}:${pad(existing.getMinutes())}`;
+  return combineDateTime(date, time);
+}
+
+/** Formatiert ein Date als "YYYY-MM-DD"-String (lokale Zeit, wie combineDateTime sie erwartet). */
+function toDateString(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 type RoleInput = {
   activityName: string;
   capacity: number;
@@ -73,17 +86,17 @@ type RoleInput = {
  * (z.B. "roleActivityName"), die Reihenfolge über formData.getAll() entspricht
  * der Zeilen-Reihenfolge im Formular. Anforderungen gibt es nur bei externen
  * Events (RolesFieldset blendet das Feld für Spiele aus) und bleibt deshalb
- * optional, anders als der Beschrieb. Datum/Start/Ende/Anzahl Helferstunden
- * sind für jede Rolle einzeln erfasst — verschiedene Rollen desselben
- * Einsatzes können zu völlig unterschiedlichen Zeiten stattfinden.
+ * optional, anders als der Beschrieb. Start/Ende/Anzahl Helferstunden sind
+ * für jede Rolle einzeln erfasst — verschiedene Rollen desselben Einsatzes
+ * können zu unterschiedlichen Uhrzeiten stattfinden. Das Datum gilt dagegen
+ * für den ganzen Einsatz (einmalig, nicht pro Rolle).
  */
-function parseRoleInputs(formData: FormData): RoleInput[] | string {
+function parseRoleInputs(date: string, formData: FormData): RoleInput[] | string {
   const activityNames = formData.getAll("roleActivityName").map((v) => String(v).trim());
   const capacities = formData.getAll("roleCapacity").map(String);
   const descriptions = formData.getAll("roleDescription").map((v) => String(v).trim());
   const requirements = formData.getAll("roleRequirements").map((v) => String(v).trim());
   const memberIds = formData.getAll("roleMemberId").map(String);
-  const dates = formData.getAll("roleDate").map(String);
   const startTimes = formData.getAll("roleStartTime").map(String);
   const endTimes = formData.getAll("roleEndTime").map(String);
   const creditHoursRaw = formData.getAll("roleCreditHours").map(String);
@@ -97,8 +110,8 @@ function parseRoleInputs(formData: FormData): RoleInput[] | string {
   if (descriptions.some((d) => !d)) {
     return "Bitte für jede Rolle einen Beschrieb angeben.";
   }
-  if (dates.some((d) => !d) || startTimes.some((t) => !t) || endTimes.some((t) => !t)) {
-    return "Bitte für jede Rolle Datum, Start und Ende angeben.";
+  if (startTimes.some((t) => !t) || endTimes.some((t) => !t)) {
+    return "Bitte für jede Rolle Start und Ende angeben.";
   }
 
   const roles: RoleInput[] = [];
@@ -107,8 +120,8 @@ function parseRoleInputs(formData: FormData): RoleInput[] | string {
     if (!Number.isFinite(creditHours) || creditHours <= 0) {
       return `Rolle ${i + 1}: Anzahl Helferstunden ist ein Pflichtfeld.`;
     }
-    const startDateTime = combineDateTime(dates[i], startTimes[i]);
-    const endDateTime = combineDateTime(dates[i], endTimes[i]);
+    const startDateTime = combineDateTime(date, startTimes[i]);
+    const endDateTime = combineDateTime(date, endTimes[i]);
     if (endDateTime <= startDateTime) {
       return `Rolle ${i + 1}: Ende muss nach Start liegen.`;
     }
@@ -191,12 +204,13 @@ export async function createGameEvent(prevState: string | undefined, formData: F
   const title = String(formData.get("title") ?? "").trim();
   const locationId = String(formData.get("locationId") ?? "") || null;
   const ageGroupId = String(formData.get("ageGroupId") ?? "").trim() || null;
+  const date = String(formData.get("date") ?? "");
 
-  if (!title || !locationId) {
-    return "Titel und Standort sind Pflichtfelder.";
+  if (!title || !locationId || !date) {
+    return "Titel, Standort und Datum sind Pflichtfelder.";
   }
 
-  const roles = parseRoleInputs(formData);
+  const roles = parseRoleInputs(date, formData);
   if (typeof roles === "string") return roles;
 
   const season = await getCurrentSeason();
@@ -208,6 +222,7 @@ export async function createGameEvent(prevState: string | undefined, formData: F
       type: "GAME",
       title,
       locationId,
+      date: combineDateTime(date, "00:00"),
     },
   });
 
@@ -224,12 +239,13 @@ export async function createExternalEvent(prevState: string | undefined, formDat
 
   const title = String(formData.get("title") ?? "").trim();
   const locationText = String(formData.get("locationText") ?? "").trim();
+  const date = String(formData.get("date") ?? "");
 
-  if (!title || !locationText) {
-    return "Titel und Ort sind Pflichtfelder.";
+  if (!title || !locationText || !date) {
+    return "Titel, Ort und Datum sind Pflichtfelder.";
   }
 
-  const roles = parseRoleInputs(formData);
+  const roles = parseRoleInputs(date, formData);
   if (typeof roles === "string") return roles;
 
   const season = await getCurrentSeason();
@@ -241,6 +257,7 @@ export async function createExternalEvent(prevState: string | undefined, formDat
       type: "EXTERNAL",
       title,
       locationText,
+      date: combineDateTime(date, "00:00"),
     },
   });
 
@@ -261,6 +278,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
   // FormData und wird hier korrekt zu null.
   const locationId = String(formData.get("locationId") ?? "") || null;
   const locationText = String(formData.get("locationText") ?? "").trim() || null;
+  const date = String(formData.get("date") ?? "");
   // Kein Status-Feld mehr im Formular — bleibt beim Speichern unverändert,
   // statt bei jeder Bearbeitung stillschweigend auf "Geplant" zurückgesetzt
   // zu werden.
@@ -269,7 +287,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
     ? (String(statusRaw) as "SCHEDULED" | "CANCELLED" | "POSTPONED")
     : undefined;
 
-  if (!title) {
+  if (!title || !date) {
     return;
   }
 
@@ -279,9 +297,29 @@ export async function updateEvent(eventId: string, formData: FormData) {
       title,
       locationId,
       locationText,
+      date: combineDateTime(date, "00:00"),
       status,
     },
   });
+
+  // Das Datum gilt für den ganzen Einsatz — beim Ändern wird es auf alle
+  // Rollen übertragen, deren eigene Uhrzeit dabei erhalten bleibt (nur der
+  // Tag verschiebt sich, z.B. bei einer Spielverschiebung).
+  const slotsToRedate = await prisma.shiftSlot.findMany({
+    where: { eventId, deletedAt: null },
+    select: { id: true, startDateTime: true, endDateTime: true },
+  });
+  await Promise.all(
+    slotsToRedate.map((slot) =>
+      prisma.shiftSlot.update({
+        where: { id: slot.id },
+        data: {
+          startDateTime: withDate(date, slot.startDateTime),
+          endDateTime: withDate(date, slot.endDateTime),
+        },
+      }),
+    ),
+  );
 
   // Die Stufe ist wie beim Erstellen nur ein Filter/Label, keine
   // Zugriffsbeschränkung — gilt einheitlich für alle Rollen des Einsatzes.
@@ -324,7 +362,6 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
   const capacity = Number(formData.get("capacity") ?? 1);
   const description = String(formData.get("description") ?? "").trim();
   const requirements = String(formData.get("requirements") ?? "").trim() || null;
-  const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
   const creditHours = Number(formData.get("creditHours"));
@@ -332,18 +369,12 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
   if (
     !activityName ||
     !description ||
-    !date ||
     !startTime ||
     !endTime ||
     !Number.isFinite(creditHours) ||
     creditHours <= 0
   ) {
-    return "Tätigkeit, Beschrieb, Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
-  }
-  const startDateTime = combineDateTime(date, startTime);
-  const endDateTime = combineDateTime(date, endTime);
-  if (endDateTime <= startDateTime) {
-    return "Ende muss nach Start liegen.";
+    return "Tätigkeit, Beschrieb, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
   }
 
   // Tätigkeit ist ein Freitextfeld statt einer festen Auswahl — beim
@@ -357,9 +388,18 @@ export async function addShiftSlot(eventId: string, formData: FormData) {
   });
   const area = "HELFER" as const;
 
-  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });
+  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { date: true } });
   if (!event) {
     return "Helfereinsatz nicht gefunden.";
+  }
+
+  // Das Datum ist eine Einsatz-Eigenschaft, nicht pro Rolle erfasst — eine
+  // neue Rolle übernimmt automatisch den Tag des Einsatzes.
+  const dateStr = toDateString(event.date);
+  const startDateTime = combineDateTime(dateStr, startTime);
+  const endDateTime = combineDateTime(dateStr, endTime);
+  if (endDateTime <= startDateTime) {
+    return "Ende muss nach Start liegen.";
   }
 
   // Eine neue Rolle übernimmt automatisch dieselbe Team-Einschränkung wie
@@ -407,7 +447,7 @@ async function assertCanEditShiftSlot(shiftSlotId: string) {
 
   const shiftSlot = await prisma.shiftSlot.findUnique({
     where: { id: shiftSlotId },
-    include: { ageGroupRestrictions: true },
+    include: { ageGroupRestrictions: true, event: { select: { date: true } } },
   });
   if (!shiftSlot || shiftSlot.deletedAt) throw new Error("Rolle nicht gefunden.");
 
@@ -439,17 +479,20 @@ export async function updateShiftSlot(
 ): Promise<string | undefined> {
   const { shiftSlot } = await assertCanEditShiftSlot(shiftSlotId);
 
-  const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
   const endTime = String(formData.get("endTime") ?? "");
   const creditHours = Number(formData.get("creditHours"));
 
-  if (!date || !startTime || !endTime || !Number.isFinite(creditHours) || creditHours <= 0) {
-    return "Datum, Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
+  if (!startTime || !endTime || !Number.isFinite(creditHours) || creditHours <= 0) {
+    return "Start, Ende und Anzahl Helferstunden sind Pflichtfelder.";
   }
 
-  const startDateTime = combineDateTime(date, startTime);
-  const endDateTime = combineDateTime(date, endTime);
+  // Das Datum ist eine Einsatz-Eigenschaft und wird hier nicht geändert —
+  // nur die Uhrzeit dieser einen Rolle. Um das Datum zu ändern, muss der
+  // ganze Einsatz bearbeitet werden (wirkt sich dann auf alle Rollen aus).
+  const dateStr = toDateString(shiftSlot.event.date);
+  const startDateTime = combineDateTime(dateStr, startTime);
+  const endDateTime = combineDateTime(dateStr, endTime);
   if (endDateTime <= startDateTime) {
     return "Ende muss nach Start liegen.";
   }

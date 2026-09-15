@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { formatDateTime } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 
 type Zeitraum = "zukunft" | "vergangen" | "alle";
 
@@ -35,8 +35,9 @@ export default async function GeschaeftsstelleOverviewPage({
   }
 
   const now = new Date();
-  let gte = zeitraum === "zukunft" ? now : undefined;
-  let lt = zeitraum === "vergangen" ? now : undefined;
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let gte = zeitraum === "zukunft" ? todayStart : undefined;
+  let lt = zeitraum === "vergangen" ? todayStart : undefined;
 
   // "Von"/"Bis" verfeinern den Zeitraum-Toggle zusätzlich, statt ihn zu
   // ersetzen — es gilt jeweils die restriktivere (spätere/frühere) Grenze.
@@ -50,13 +51,13 @@ export default async function GeschaeftsstelleOverviewPage({
   }
 
   const dateFilter = {
-    startDateTime: {
+    date: {
       ...(gte ? { gte } : {}),
       ...(lt ? { lt } : {}),
     },
   };
 
-  const [statsEvents, listShiftSlots] = await Promise.all([
+  const [statsEvents, listEvents] = await Promise.all([
     prisma.event.findMany({
       where: { seasonId: season.id, deletedAt: null, isManualEntry: false },
       include: {
@@ -66,33 +67,33 @@ export default async function GeschaeftsstelleOverviewPage({
         },
       },
     }),
-    // ShiftSlot-rooted statt Event-rooted, da die Zeit jetzt auf der Rolle
-    // lebt — Prisma kann orderBy/where nicht relations-aggregiert auf einer
-    // to-many-Relation anwenden. Wird unten per Event-ID gruppiert.
-    prisma.shiftSlot.findMany({
+    prisma.event.findMany({
       where: {
+        seasonId: season.id,
         deletedAt: null,
+        isManualEntry: false,
         ...dateFilter,
-        event: {
-          seasonId: season.id,
-          deletedAt: null,
-          isManualEntry: false,
-          ...(q
-            ? {
-                OR: [
-                  { title: { contains: q, mode: "insensitive" } },
-                  {
-                    shiftSlots: {
-                      some: { deletedAt: null, description: { contains: q, mode: "insensitive" } },
-                    },
+        ...(q
+          ? {
+              OR: [
+                { title: { contains: q, mode: "insensitive" } },
+                {
+                  shiftSlots: {
+                    some: { deletedAt: null, description: { contains: q, mode: "insensitive" } },
                   },
-                ],
-              }
-            : {}),
+                },
+              ],
+            }
+          : {}),
+      },
+      include: {
+        location: true,
+        shiftSlots: {
+          where: { deletedAt: null },
+          include: { signups: { where: { status: "CONFIRMED" } } },
         },
       },
-      include: { event: { include: { location: true } } },
-      orderBy: { startDateTime: "asc" },
+      orderBy: { date: "asc" },
     }),
   ]);
 
@@ -106,31 +107,6 @@ export default async function GeschaeftsstelleOverviewPage({
       else open += 1;
     }
   }
-
-  // "offen" pro Event kommt bewusst aus dem bereits geladenen, nicht
-  // datums-gefilterten statsEvents (Map von eventId -> Event) statt aus der
-  // datums-gefilterten Slot-Liste — das entspricht dem bisherigen Verhalten:
-  // "offen" zählte schon immer über alle Rollen des Events, unabhängig vom
-  // Datumsfilter.
-  const statsByEventId = new Map(statsEvents.map((e) => [e.id, e]));
-
-  const listEvents = new Map<
-    string,
-    { id: string; title: string; status: string; location: { name: string } | null; locationText: string | null; startDateTime: Date }
-  >();
-  for (const slot of listShiftSlots) {
-    if (!listEvents.has(slot.event.id)) {
-      listEvents.set(slot.event.id, {
-        id: slot.event.id,
-        title: slot.event.title,
-        status: slot.event.status,
-        location: slot.event.location,
-        locationText: slot.event.locationText,
-        startDateTime: slot.startDateTime,
-      });
-    }
-  }
-  const listEventRows = [...listEvents.values()];
 
   return (
     <div className="flex flex-col gap-5">
@@ -244,15 +220,13 @@ export default async function GeschaeftsstelleOverviewPage({
               </tr>
             </thead>
             <tbody>
-              {listEventRows.map((event) => {
-                const stats = statsByEventId.get(event.id);
-                const eventOpen =
-                  stats?.shiftSlots.filter((s) => s.signups.length < s.capacity).length ?? 0;
+              {listEvents.map((event) => {
+                const eventOpen = event.shiftSlots.filter(
+                  (s) => s.signups.length < s.capacity,
+                ).length;
                 return (
                   <tr key={event.id} className="border-b border-border last:border-b-0">
-                    <td className="py-2 pr-3 whitespace-nowrap">
-                      {formatDateTime(event.startDateTime)}
-                    </td>
+                    <td className="py-2 pr-3 whitespace-nowrap">{formatDate(event.date)}</td>
                     <td className="py-2 pr-3">
                       <Link
                         href={`/geschaeftsstelle/helfereinsaetze/${event.id}`}
@@ -274,7 +248,7 @@ export default async function GeschaeftsstelleOverviewPage({
                   </tr>
                 );
               })}
-              {listEventRows.length === 0 && (
+              {listEvents.length === 0 && (
                 <tr>
                   <td colSpan={4} className="py-4 text-center text-muted">
                     Keine Helfereinsätze gefunden.

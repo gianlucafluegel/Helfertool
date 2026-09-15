@@ -53,72 +53,63 @@ export default async function EinsaetzePage({
 
   // Man kann sich für einen bereits stattgefundenen Einsatz ohnehin nicht
   // mehr anmelden — vergangene Einsätze werden hier deshalb immer
-  // ausgeblendet, auch wenn "Von" in der Vergangenheit liegt.
+  // ausgeblendet, auch wenn "Von" in der Vergangenheit liegt. Der
+  // Datumsfilter läuft auf Event.date (ganzer Tag); ob eine einzelne Rolle
+  // innerhalb eines heutigen Events schon begonnen hat, wird weiter unten
+  // pro Rolle anhand der genauen Uhrzeit geprüft.
   const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const vonDate = filters.von ? new Date(filters.von) : null;
   const bisDate = filters.bis ? new Date(filters.bis) : null;
+  const gte = vonDate && vonDate > todayStart ? vonDate : todayStart;
 
-  // ShiftSlot-rooted statt Event-rooted: die Zeit lebt jetzt auf der Rolle,
-  // Prisma kann orderBy/where nicht relations-aggregiert (_min/_max) auf
-  // einer to-many-Relation anwenden. Die bereits nach Zeit sortierte flache
-  // Liste wird unten per Map zu Event-Karten gruppiert — die
-  // Einfüge-Reihenfolge der Map entspricht automatisch der korrekten
-  // Event-Sortierung (erster angetroffener Slot pro Event = frühester).
-  const shiftSlots = await prisma.shiftSlot.findMany({
+  const events = await prisma.event.findMany({
     where: {
+      seasonId: season.id,
       deletedAt: null,
-      startDateTime: {
-        gte: vonDate && vonDate > now ? vonDate : now,
+      isManualEntry: false,
+      status: { not: "CANCELLED" },
+      date: {
+        gte,
         ...(bisDate ? { lt: new Date(bisDate.getTime() + 24 * 60 * 60 * 1000) } : {}),
       },
-      event: {
-        seasonId: season.id,
-        deletedAt: null,
-        isManualEntry: false,
-        status: { not: "CANCELLED" },
-        ...(filters.standort ? { locationId: filters.standort } : {}),
-        ...(filters.typ === "GAME" || filters.typ === "EXTERNAL" ? { type: filters.typ } : {}),
-      },
+      ...(filters.standort ? { locationId: filters.standort } : {}),
+      ...(filters.typ === "GAME" || filters.typ === "EXTERNAL" ? { type: filters.typ } : {}),
     },
     include: {
-      event: { include: { location: true } },
-      activity: true,
-      ageGroupRestrictions: { include: { ageGroup: true } },
-      signups: { where: { status: "CONFIRMED" } },
+      location: true,
+      shiftSlots: {
+        where: { deletedAt: null },
+        include: {
+          activity: true,
+          ageGroupRestrictions: { include: { ageGroup: true } },
+          signups: { where: { status: "CONFIRMED" } },
+        },
+      },
     },
-    orderBy: { startDateTime: "asc" },
+    orderBy: { date: "asc" },
   });
 
-  let visibleSlots = shiftSlots.filter((slot) => isShiftSlotVisible(slot, session.user.role));
+  const eventCards = events
+    .map((event) => {
+      let slots = event.shiftSlots.filter(
+        (slot) => isShiftSlotVisible(slot, session.user.role) && slot.startDateTime >= now,
+      );
 
-  if (filters.stufe) {
-    visibleSlots = visibleSlots.filter((slot) =>
-      slot.ageGroupRestrictions.some((r) => r.ageGroupId === filters.stufe),
-    );
-  }
+      if (filters.stufe) {
+        slots = slots.filter((slot) =>
+          slot.ageGroupRestrictions.some((r) => r.ageGroupId === filters.stufe),
+        );
+      }
 
-  if (filters.nurMeine === "1" && activeMember) {
-    visibleSlots = visibleSlots.filter((slot) =>
-      slot.signups.some((s) => s.memberId === activeMember.id),
-    );
-  }
+      if (filters.nurMeine === "1" && activeMember) {
+        slots = slots.filter((slot) => slot.signups.some((s) => s.memberId === activeMember.id));
+      }
 
-  const grouped = new Map<string, { event: (typeof shiftSlots)[number]["event"]; slots: typeof visibleSlots }>();
-  for (const slot of visibleSlots) {
-    const existing = grouped.get(slot.event.id);
-    if (existing) {
-      existing.slots.push(slot);
-    } else {
-      grouped.set(slot.event.id, { event: slot.event, slots: [slot] });
-    }
-  }
-
-  // Nur der früheste sichtbare Slot wird für das Datum gebraucht — die
-  // Liste ist bereits nach Zeit sortiert, also ist slots[0] der früheste.
-  const eventCards = [...grouped.values()].map(({ event, slots }) => ({
-    event,
-    earliestStartDateTime: slots[0].startDateTime,
-  }));
+      return { event, hasVisibleSlots: slots.length > 0 };
+    })
+    .filter(({ hasVisibleSlots }) => hasVisibleSlots)
+    .map(({ event }) => event);
 
   return (
     <div className="flex flex-col gap-5">
@@ -221,13 +212,13 @@ export default async function EinsaetzePage({
         <p className="text-sm text-muted">Keine Einsätze für diese Filter gefunden.</p>
       )}
 
-      {eventCards.map(({ event, earliestStartDateTime }) => (
+      {eventCards.map((event) => (
         <EventSummaryCard
           key={event.id}
           eventId={event.id}
           title={event.title}
           locationName={event.location?.name ?? event.locationText ?? null}
-          earliestStartDateTime={earliestStartDateTime}
+          date={event.date}
         />
       ))}
     </div>

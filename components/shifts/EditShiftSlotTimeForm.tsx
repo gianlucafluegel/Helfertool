@@ -5,21 +5,17 @@ import { updateShiftSlot } from "@/lib/actions/events";
 import { FormField } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 
-function toDateInputValue(date: Date) {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
 function toTimeInputValue(date: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 /**
- * Erlaubt das nachträgliche Korrigieren von Datum/Start/Ende/Anzahl
- * Helferstunden einer bestehenden Rolle (z.B. bei einer Spielverschiebung) —
- * diese Felder werden sonst nur beim Erstellen einer Rolle erfasst. Die
- * Berechtigung wird serverseitig durch updateShiftSlot erzwungen, nicht
+ * Erlaubt das nachträgliche Korrigieren von Start/Ende/Anzahl Helferstunden
+ * einer bestehenden Rolle (z.B. bei einer Spielverschiebung) — diese Felder
+ * werden sonst nur beim Erstellen einer Rolle erfasst. Das Datum ist eine
+ * Einsatz-Eigenschaft (siehe EventEditForm) und deshalb hier nicht editierbar.
+ * Die Berechtigung wird serverseitig durch updateShiftSlot erzwungen, nicht
  * durch eine Prop.
  */
 export function EditShiftSlotTimeForm({
@@ -63,14 +59,7 @@ export function EditShiftSlotTimeForm({
         })
       }
     >
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <FormField
-          label="Datum"
-          name="date"
-          type="date"
-          defaultValue={toDateInputValue(startDateTime)}
-          required
-        />
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <FormField
           label="Start"
           name="startTime"

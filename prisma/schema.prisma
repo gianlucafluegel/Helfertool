@@ -245,6 +245,11 @@ model Event {
   // Event kann aber praktisch überall stattfinden, deshalb dort statt eines
   // Dropdowns ein frei definierbarer Ort.
   locationText   String?
+  // Der Tag des Einsatzes — geteilt über alle Rollen (ein Helfereinsatz
+  // findet an genau einem Tag statt). Start/Ende sind dagegen pro Rolle
+  // definiert, da verschiedene Rollen desselben Einsatzes zu
+  // unterschiedlichen Uhrzeiten stattfinden können.
+  date          DateTime
   status        EventStatus @default(SCHEDULED)
   externalRef   String?
   importBatchId String?
@@ -260,6 +265,8 @@ model Event {
   season     Season      @relation(fields: [seasonId], references: [id])
   location   Location?   @relation(fields: [locationId], references: [id])
   shiftSlots ShiftSlot[]
+
+  @@index([seasonId, date])
 }
 
 model ShiftSlot {
@@ -279,11 +286,12 @@ model ShiftSlot {
   // EXTERNAL-Einsätze genutzt und deshalb optional (im Gegensatz zu
   // description, das für jede Rolle Pflicht ist).
   requirements String?
-  // Ersetzt Event.startDateTime/endDateTime — die Zeit ist wie Beschrieb und
-  // Anforderungen pro Rolle definiert statt geteilt über den ganzen Einsatz,
-  // da z.B. bei einem grossen externen Event verschiedene Rollen zu völlig
-  // unterschiedlichen Zeiten stattfinden können. Gilt für alle Event-Typen
-  // (auch GAME), kein Sonderfall.
+  // Start/Ende (Uhrzeit) sind wie Beschrieb und Anforderungen pro Rolle
+  // definiert statt geteilt über den ganzen Einsatz, da verschiedene Rollen
+  // desselben Einsatzes zu unterschiedlichen Uhrzeiten stattfinden können.
+  // Der Tag selbst kommt von Event.date (identisch für alle Rollen eines
+  // Einsatzes) — beide Felder enthalten trotzdem volle DateTimes (Tag +
+  // Uhrzeit kombiniert), damit Sortierung/Export unverändert funktionieren.
   startDateTime DateTime
   endDateTime   DateTime
   deletedAt   DateTime?

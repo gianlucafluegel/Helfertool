@@ -59,6 +59,7 @@ export function CreateGameEventForm({
           ))}
         </select>
       </div>
+      <FormField label="Datum" name="date" type="date" required />
       <RolesFieldset members={members} />
       {error && <p className="text-sm text-status-open-text">{error}</p>}
       <Button type="submit" disabled={pending}>

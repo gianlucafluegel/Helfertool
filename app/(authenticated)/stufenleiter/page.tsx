@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
 import { canManageShiftSlot } from "@/lib/visibility";
-import { formatDateTime } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 
@@ -59,7 +59,7 @@ export default async function StufenleiterOverviewPage({
       .filter(({ slots }) => slots.length > 0);
   }
 
-  const [statsEventsRaw, listShiftSlotsRaw] = await Promise.all([
+  const [statsEventsRaw, listEventsRaw] = await Promise.all([
     prisma.event.findMany({
       where: { seasonId: season.id, deletedAt: null, isManualEntry: false },
       include: {
@@ -72,58 +72,40 @@ export default async function StufenleiterOverviewPage({
         },
       },
     }),
-    // ShiftSlot-rooted statt Event-rooted, da die Zeit jetzt auf der Rolle
-    // lebt — Prisma kann orderBy nicht relations-aggregiert auf einer
-    // to-many-Relation anwenden.
-    prisma.shiftSlot.findMany({
+    prisma.event.findMany({
       where: {
+        seasonId: season.id,
         deletedAt: null,
-        event: {
-          seasonId: season.id,
-          deletedAt: null,
-          isManualEntry: false,
-          ...(q
-            ? {
-                OR: [
-                  { title: { contains: q, mode: "insensitive" } },
-                  {
-                    shiftSlots: {
-                      some: { deletedAt: null, description: { contains: q, mode: "insensitive" } },
-                    },
+        isManualEntry: false,
+        ...(q
+          ? {
+              OR: [
+                { title: { contains: q, mode: "insensitive" } },
+                {
+                  shiftSlots: {
+                    some: { deletedAt: null, description: { contains: q, mode: "insensitive" } },
                   },
-                ],
-              }
-            : {}),
-        },
+                },
+              ],
+            }
+          : {}),
       },
       include: {
-        event: { include: { location: true } },
-        ageGroupRestrictions: true,
-        signups: { where: { status: "CONFIRMED" } },
+        location: true,
+        shiftSlots: {
+          where: { deletedAt: null },
+          include: {
+            ageGroupRestrictions: true,
+            signups: { where: { status: "CONFIRMED" } },
+          },
+        },
       },
-      orderBy: { startDateTime: "asc" },
+      orderBy: { date: "asc" },
     }),
   ]);
 
   const statsScoped = scopeToAssigned(statsEventsRaw);
-
-  const listScopedSlots = listShiftSlotsRaw.filter((slot) =>
-    canManageShiftSlot(
-      "STUFENLEITER",
-      slot.ageGroupRestrictions.map((r) => r.ageGroupId),
-      assignedIds,
-    ),
-  );
-  const listScopedMap = new Map<
-    string,
-    { event: (typeof listScopedSlots)[number]["event"]; slots: typeof listScopedSlots }
-  >();
-  for (const slot of listScopedSlots) {
-    const existing = listScopedMap.get(slot.event.id);
-    if (existing) existing.slots.push(slot);
-    else listScopedMap.set(slot.event.id, { event: slot.event, slots: [slot] });
-  }
-  const listScoped = [...listScopedMap.values()];
+  const listScoped = scopeToAssigned(listEventsRaw);
 
   const gameCount = statsScoped.filter(({ event }) => event.type === "GAME").length;
   const externalCount = statsScoped.filter(({ event }) => event.type === "EXTERNAL").length;
@@ -208,9 +190,7 @@ export default async function StufenleiterOverviewPage({
                   .find((id) => assignedIds.has(id));
                 return (
                   <tr key={event.id} className="border-b border-border last:border-b-0">
-                    <td className="py-2 pr-3 whitespace-nowrap">
-                      {formatDateTime(slots[0].startDateTime)}
-                    </td>
+                    <td className="py-2 pr-3 whitespace-nowrap">{formatDate(event.date)}</td>
                     <td className="py-2 pr-3">
                       <Link
                         href={`/stufenleiter/${ownAgeGroupId}/${event.id}`}

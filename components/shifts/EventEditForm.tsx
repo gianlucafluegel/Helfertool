@@ -5,12 +5,18 @@ import { updateEvent, deleteEvent } from "@/lib/actions/events";
 import { FormField } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 
+function toDateInputValue(date: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 export function EventEditForm({
   eventId,
   type,
   title,
   locationId,
   locationText,
+  date,
   ageGroupId,
   ageGroups,
   locations,
@@ -22,6 +28,7 @@ export function EventEditForm({
   title: string;
   locationId: string;
   locationText: string;
+  date: Date;
   ageGroupId: string;
   ageGroups: { id: string; name: string }[];
   locations: { id: string; name: string }[];
@@ -86,6 +93,8 @@ export function EventEditForm({
           </select>
         </div>
       )}
+
+      <FormField label="Datum" name="date" type="date" defaultValue={toDateInputValue(date)} required />
 
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={pending}>

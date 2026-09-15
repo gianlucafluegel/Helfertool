@@ -22,6 +22,11 @@ async function requireGeschaeftsstelle() {
 const SETUP_MINUTES_BEFORE_KICKOFF = 15;
 const DEFAULT_GAME_CREDIT_HOURS = 2.5;
 
+/** Tag (lokale Zeit, Uhrzeit auf Mitternacht) des Einsatz-Starts — für Event.date. */
+function toDateOnly(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
 export type ImportPreviewRow = {
   spielNr: string;
   title: string;
@@ -176,6 +181,7 @@ export async function commitImport(
         data: {
           title: row.title,
           locationId: row.locationId,
+          date: toDateOnly(new Date(row.startDateTimeIso)),
           status: row.cancelled ? "CANCELLED" : "SCHEDULED",
           importBatchId: batch.id,
         },
@@ -201,6 +207,7 @@ export async function commitImport(
           type: "GAME",
           title: row.title,
           locationId: row.locationId,
+          date: toDateOnly(new Date(row.startDateTimeIso)),
           status: row.cancelled ? "CANCELLED" : "SCHEDULED",
           externalRef: row.spielNr,
           importBatchId: batch.id,

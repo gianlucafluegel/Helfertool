@@ -30,7 +30,6 @@ export function AddShiftSlotForm({
       {eventType === "EXTERNAL" && (
         <FormField label="Anforderungen (optional)" name="requirements" placeholder="z.B. Über 18" />
       )}
-      <FormField label="Datum" name="date" type="date" required />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField label="Start" name="startTime" type="time" required />
         <FormField label="Ende" name="endTime" type="time" required />

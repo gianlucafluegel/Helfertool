@@ -26,34 +26,25 @@ export default async function StufenleiterStufePage({
     return <p className="text-sm text-muted">Keine aktive Saison konfiguriert.</p>;
   }
 
-  // ShiftSlot-rooted statt Event-rooted, da die Zeit jetzt auf der Rolle
-  // lebt — Prisma kann orderBy nicht relations-aggregiert auf einer
-  // to-many-Relation anwenden. Wird unten per Event-ID gruppiert.
-  const shiftSlots = await prisma.shiftSlot.findMany({
+  const events = await prisma.event.findMany({
     where: {
+      seasonId: season.id,
       deletedAt: null,
-      ageGroupRestrictions: { some: { ageGroupId } },
-      event: { seasonId: season.id, deletedAt: null },
+      shiftSlots: { some: { deletedAt: null, ageGroupRestrictions: { some: { ageGroupId } } } },
     },
     include: {
-      event: { include: { location: true } },
-      activity: true,
-      ageGroupRestrictions: { include: { ageGroup: true } },
-      signups: { where: { status: "CONFIRMED" } },
+      location: true,
+      shiftSlots: {
+        where: { deletedAt: null, ageGroupRestrictions: { some: { ageGroupId } } },
+        include: {
+          activity: true,
+          ageGroupRestrictions: { include: { ageGroup: true } },
+          signups: { where: { status: "CONFIRMED" } },
+        },
+      },
     },
-    orderBy: { startDateTime: "asc" },
+    orderBy: { date: "asc" },
   });
-
-  const grouped = new Map<
-    string,
-    { event: (typeof shiftSlots)[number]["event"]; slots: typeof shiftSlots }
-  >();
-  for (const slot of shiftSlots) {
-    const existing = grouped.get(slot.event.id);
-    if (existing) existing.slots.push(slot);
-    else grouped.set(slot.event.id, { event: slot.event, slots: [slot] });
-  }
-  const events = [...grouped.values()];
 
   return (
     <div className="flex flex-col gap-5">
@@ -76,13 +67,14 @@ export default async function StufenleiterStufePage({
         <p className="text-sm text-muted">Keine Helfereinsätze für dieses Team gefunden.</p>
       )}
 
-      {events.map(({ event, slots }) => (
+      {events.map((event) => (
         <AdminEventCard
           key={event.id}
           eventId={event.id}
           title={event.title}
+          date={event.date}
           locationName={event.location?.name ?? event.locationText ?? null}
-          shiftSlots={slots.map((s) => ({ ...s, creditHours: Number(s.creditHours) }))}
+          shiftSlots={event.shiftSlots.map((s) => ({ ...s, creditHours: Number(s.creditHours) }))}
           detailHrefBase={`/stufenleiter/${ageGroupId}`}
         />
       ))}

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatTime } from "@/lib/format";
 
 type ArchivedSignup = {
   id: string;
@@ -29,6 +29,7 @@ type ArchivedEvent = {
   id: string;
   title: string;
   locationName: string | null;
+  date: string;
   isManualEntry: boolean;
   shiftSlots: ArchivedShiftSlot[];
 };
@@ -122,7 +123,10 @@ export default async function SeasonArchiveDetailPage({
           {realEvents.map((e) => (
             <div key={e.id} className="border-b border-border pb-4 last:border-b-0">
               <p className="font-medium text-text">{e.title}</p>
-              {e.locationName && <p className="mb-2 text-xs text-muted">{e.locationName}</p>}
+              <p className="mb-2 text-xs text-muted">
+                {formatDate(new Date(e.date))}
+                {e.locationName ? ` · ${e.locationName}` : ""}
+              </p>
               <div className="flex flex-col gap-1.5 pl-3">
                 {e.shiftSlots.map((s) => (
                   <div
@@ -140,7 +144,8 @@ export default async function SeasonArchiveDetailPage({
                         </span>
                       )}
                       <span className="text-xs text-muted">
-                        {formatDate(new Date(s.startDateTime))} · {s.creditHours} Std.
+                        {formatTime(new Date(s.startDateTime))}–{formatTime(new Date(s.endDateTime))}{" "}
+                        Uhr · {s.creditHours} Std.
                       </span>
                     </span>
                     <span className="text-muted">

@@ -17,6 +17,7 @@ export function CreateExternalEventForm({
     <form action={formAction} className="flex flex-col gap-4">
       <FormField label="Titel" name="title" required placeholder="z.B. Vereinsfest 2027" />
       <FormField label="Ort" name="locationText" required placeholder="z.B. Schulhausplatz Thun" />
+      <FormField label="Datum" name="date" type="date" required />
       <RolesFieldset members={members} activityPlaceholder="Parkplatz" showRequirements />
       {error && <p className="text-sm text-status-open-text">{error}</p>}
       <Button type="submit" disabled={pending}>

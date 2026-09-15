@@ -16,10 +16,11 @@ type RoleRow = { key: number };
  * Tätigkeit ist ein reines Freitextfeld (keine Tätigkeit ist exklusiv für
  * Funktionäre). Der Beschrieb ist pro Rolle definiert statt geteilt über den
  * ganzen Einsatz (der hat nur noch einen Titel). Anforderungen gibt es nur
- * bei externen Events und bleibt optional (anders als der Beschrieb). Datum/
- * Start/Ende/Anzahl Helferstunden sind für jede Rolle einzeln erfasst — bei
- * allen Event-Typen, da verschiedene Rollen desselben Einsatzes zu völlig
- * unterschiedlichen Zeiten stattfinden können.
+ * bei externen Events und bleibt optional (anders als der Beschrieb). Start/
+ * Ende/Anzahl Helferstunden sind für jede Rolle einzeln erfasst — bei allen
+ * Event-Typen, da verschiedene Rollen desselben Einsatzes zu unterschiedlichen
+ * Uhrzeiten stattfinden können. Das Datum gilt dagegen für den ganzen Einsatz
+ * und wird einmalig ausserhalb dieses Fieldsets erfasst.
  */
 export function RolesFieldset({
   members,
@@ -114,18 +115,6 @@ export function RolesFieldset({
               />
             </div>
           )}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-text" htmlFor={`roleDate-${row.key}`}>
-              Datum
-            </label>
-            <input
-              id={`roleDate-${row.key}`}
-              name="roleDate"
-              type="date"
-              required
-              className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
-            />
-          </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-text" htmlFor={`roleStartTime-${row.key}`}>

@@ -1,8 +1,10 @@
 import { Card } from "@/components/ui/Card";
 import { ShiftSlotRow, type ShiftSlotRowData } from "@/components/shifts/ShiftSlotRow";
+import { formatDate } from "@/lib/format";
 
 export function EventCard({
   title,
+  date,
   locationName,
   shiftSlots,
   showOccupant,
@@ -12,6 +14,7 @@ export function EventCard({
   canViewOccupant = false,
 }: {
   title: string;
+  date: Date;
   locationName: string | null;
   shiftSlots: ShiftSlotRowData[];
   showOccupant: boolean;
@@ -23,7 +26,10 @@ export function EventCard({
   return (
     <Card>
       <h3 className="text-base font-semibold text-text">{title}</h3>
-      {locationName && <p className="mb-2 text-sm text-muted">{locationName}</p>}
+      <p className="mb-2 text-sm text-muted">
+        {formatDate(date)}
+        {locationName ? ` · ${locationName}` : ""}
+      </p>
       <div>
         {shiftSlots.map((slot) => (
           <ShiftSlotRow

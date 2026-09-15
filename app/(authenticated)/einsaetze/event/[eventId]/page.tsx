@@ -52,6 +52,7 @@ export default async function EinsaetzeEventDetailPage({
 
       <EventCard
         title={event.title}
+        date={event.date}
         locationName={event.location?.name ?? event.locationText ?? null}
         shiftSlots={visibleSlots}
         showOccupant={false}

@@ -102,6 +102,7 @@ export async function archiveSeason(prevState: string | undefined, formData: For
       type: e.type,
       title: e.title,
       locationName: e.location?.name ?? e.locationText ?? null,
+      date: e.date.toISOString(),
       status: e.status,
       isManualEntry: e.isManualEntry,
       shiftSlots: e.shiftSlots.map((s) => ({

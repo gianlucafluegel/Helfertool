@@ -3,7 +3,7 @@ import { AdminSignupRow } from "@/components/shifts/AdminSignupRow";
 import { DeleteShiftSlotButton } from "@/components/shifts/DeleteShiftSlotButton";
 import { AssignMemberForm } from "@/components/shifts/AssignMemberForm";
 import { EditShiftSlotTimeForm } from "@/components/shifts/EditShiftSlotTimeForm";
-import { formatDate, formatTime } from "@/lib/format";
+import { formatTime } from "@/lib/format";
 
 export type AdminShiftSlotRowData = {
   id: string;
@@ -60,8 +60,7 @@ export function AdminShiftSlotRow({
       </div>
 
       <p className="text-sm text-muted">
-        {formatDate(slot.startDateTime)}, {formatTime(slot.startDateTime)}–
-        {formatTime(slot.endDateTime)} Uhr · {slot.creditHours} Std.
+        {formatTime(slot.startDateTime)}–{formatTime(slot.endDateTime)} Uhr · {slot.creditHours} Std.
         {slot.requirements && ` · ${slot.requirements}`}
       </p>
 

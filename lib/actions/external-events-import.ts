@@ -5,6 +5,12 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
 import { parseExternalEventsWorkbook, combineDatumZeit } from "@/lib/import/external-events";
+import { formatDate } from "@/lib/format";
+
+/** Tag (lokale Zeit, Uhrzeit auf Mitternacht) eines Zeitpunkts — für Event.date. */
+function toDateOnly(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
 
 async function requireGeschaeftsstelle() {
   const session = await auth();
@@ -105,18 +111,23 @@ export async function parseExternalEventsImportFile(
 }
 
 /**
- * Erstellt EIN Event für die ganze Datei (Titel/Ort kommen aus Zeile 1/2 der
- * Vorlage, gelten für das ganze Dokument) mit einer Rolle pro Gruppe — statt
- * wie früher einem Event pro Gruppe. So entstehen bei einem grossen externen
- * Event mit vielen unterschiedlich terminierten Rollen (z.B. ein Festival)
- * nicht dutzende separate Helfereinsätze, sondern einer mit entsprechend
- * vielen Rollen.
+ * Erstellt ein Event pro Tag (Titel/Ort kommen aus Zeile 1/2 der Vorlage,
+ * gelten für das ganze Dokument), mit je einer Rolle pro Gruppe dieses
+ * Tages — statt wie ursprünglich einem Event pro Gruppe. So entstehen bei
+ * einem grossen externen Event mit vielen unterschiedlich terminierten
+ * Rollen (z.B. ein Festival) nicht dutzende separate Helfereinsätze,
+ * sondern höchstens einer pro Tag. Ein Einsatz hat immer genau ein Datum
+ * (Event.date), deshalb müssen Gruppen an unterschiedlichen Tagen auf
+ * separate Events aufgeteilt werden — bei einem eintägigen Dokument
+ * entsteht dadurch weiterhin nur ein einziges Event. Bei mehreren Tagen
+ * bekommt der Titel das Datum angehängt, um die Events unterscheidbar zu
+ * machen.
  */
 export async function commitExternalEventsImport(
   title: string,
   locationText: string,
   groups: ExternalEventGroupPreview[],
-): Promise<{ error?: string; roleCount?: number }> {
+): Promise<{ error?: string; eventCount?: number; roleCount?: number }> {
   const session = await requireGeschaeftsstelle();
 
   if (groups.length === 0) {
@@ -138,33 +149,46 @@ export async function commitExternalEventsImport(
     };
   }
 
+  const byDay = new Map<string, { date: Date; groups: ExternalEventGroupPreview[] }>();
+  for (const group of groups) {
+    const date = toDateOnly(new Date(group.startDateTimeIso));
+    const dayKey = date.toISOString();
+    const existing = byDay.get(dayKey);
+    if (existing) existing.groups.push(group);
+    else byDay.set(dayKey, { date, groups: [group] });
+  }
+  const days = [...byDay.values()].sort((a, b) => a.date.getTime() - b.date.getTime());
+
   const batch = await prisma.importBatch.create({
     data: { source: "Externe-Events Excel-Import", importedByUserId: session.user.id },
   });
 
-  await prisma.event.create({
-    data: {
-      seasonId: season.id,
-      type: "EXTERNAL",
-      title,
-      locationText,
-      importBatchId: batch.id,
-      shiftSlots: {
-        create: groups.map((group) => ({
-          activityId: defaultActivity.id,
-          area: "HELFER" as const,
-          capacity: group.roleCount,
-          creditHours: group.creditHours,
-          description: group.description,
-          requirements: group.requirements,
-          startDateTime: new Date(group.startDateTimeIso),
-          endDateTime: new Date(group.endDateTimeIso),
-        })),
+  for (const day of days) {
+    await prisma.event.create({
+      data: {
+        seasonId: season.id,
+        type: "EXTERNAL",
+        title: days.length > 1 ? `${title} · ${formatDate(day.date)}` : title,
+        locationText,
+        date: day.date,
+        importBatchId: batch.id,
+        shiftSlots: {
+          create: day.groups.map((group) => ({
+            activityId: defaultActivity.id,
+            area: "HELFER" as const,
+            capacity: group.roleCount,
+            creditHours: group.creditHours,
+            description: group.description,
+            requirements: group.requirements,
+            startDateTime: new Date(group.startDateTimeIso),
+            endDateTime: new Date(group.endDateTimeIso),
+          })),
+        },
       },
-    },
-  });
+    });
+  }
 
   revalidatePath("/geschaeftsstelle/helfereinsaetze");
   revalidatePath("/geschaeftsstelle");
-  return { roleCount: groups.length };
+  return { eventCount: days.length, roleCount: groups.length };
 }

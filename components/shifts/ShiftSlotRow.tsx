@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { CancelSignupButton } from "@/components/shifts/CancelSignupButton";
-import { formatDate, formatTime } from "@/lib/format";
+import { formatTime } from "@/lib/format";
 
 export type ShiftSlotRowData = {
   id: string;
@@ -103,8 +103,7 @@ export function ShiftSlotRow({
       </div>
 
       <p className="text-sm text-muted">
-        {formatDate(slot.startDateTime)}, {formatTime(slot.startDateTime)}–
-        {formatTime(slot.endDateTime)} Uhr · {slot.creditHours} Std.
+        {formatTime(slot.startDateTime)}–{formatTime(slot.endDateTime)} Uhr · {slot.creditHours} Std.
         {slot.requirements && ` · ${slot.requirements}`}
       </p>
     </div>
