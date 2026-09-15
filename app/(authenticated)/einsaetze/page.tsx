@@ -4,7 +4,7 @@ import { getCurrentSeason } from "@/lib/season";
 import { isShiftSlotVisible } from "@/lib/visibility";
 import { FilterChipLink } from "@/components/ui/FilterChipLink";
 import { LocationPinIcon } from "@/components/ui/LocationPinIcon";
-import { EventCard } from "@/components/shifts/EventCard";
+import { EventSummaryCard } from "@/components/shifts/EventSummaryCard";
 import { TeamFilterSelect } from "@/components/shifts/TeamFilterSelect";
 import { MemberTabs } from "@/components/layout/MemberTabs";
 
@@ -89,11 +89,6 @@ export default async function EinsaetzePage({
     orderBy: { startDateTime: "asc" },
   });
 
-  // Structure matches the Mitglied page exactly — Funktionär (and above) see
-  // who's doing an already-filled Einsatz by clicking into it ("Ansehen"),
-  // not via names shown inline in the list.
-  const canViewOccupant = session.user.role !== "MITGLIED";
-
   let visibleSlots = shiftSlots.filter((slot) => isShiftSlotVisible(slot, session.user.role));
 
   if (filters.stufe) {
@@ -118,9 +113,11 @@ export default async function EinsaetzePage({
     }
   }
 
+  // Nur der früheste sichtbare Slot wird für das Datum gebraucht — die
+  // Liste ist bereits nach Zeit sortiert, also ist slots[0] der früheste.
   const eventCards = [...grouped.values()].map(({ event, slots }) => ({
     event,
-    slots: slots.map((slot) => ({ ...slot, creditHours: Number(slot.creditHours) })),
+    earliestStartDateTime: slots[0].startDateTime,
   }));
 
   return (
@@ -224,16 +221,13 @@ export default async function EinsaetzePage({
         <p className="text-sm text-muted">Keine Einsätze für diese Filter gefunden.</p>
       )}
 
-      {eventCards.map(({ event, slots }) => (
-        <EventCard
+      {eventCards.map(({ event, earliestStartDateTime }) => (
+        <EventSummaryCard
           key={event.id}
+          eventId={event.id}
           title={event.title}
           locationName={event.location?.name ?? event.locationText ?? null}
-          shiftSlots={slots}
-          showOccupant={false}
-          activeMemberId={activeMember?.id ?? null}
-          allowSelfCancel
-          canViewOccupant={canViewOccupant}
+          earliestStartDateTime={earliestStartDateTime}
         />
       ))}
     </div>
