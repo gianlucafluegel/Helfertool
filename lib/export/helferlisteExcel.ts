@@ -1,7 +1,7 @@
 import ExcelJS from "exceljs";
 import { formatDate, formatTime } from "@/lib/format";
 
-export type GameEventExportRow = {
+export type HelferlisteExportRow = {
   vorname: string;
   nachname: string;
   email: string;
@@ -9,22 +9,27 @@ export type GameEventExportRow = {
   beschrieb: string;
   startDateTime: Date;
   endDateTime: Date;
+  /** Nur für Trucker-Festival-Einsätze gesetzt (siehe requiresWristbandPickupChoice). */
+  armbandAbholen?: string | null;
 };
 
 /**
- * Builds the Helferliste for a Spieleinsatz as a real .xlsx file: Titel gross
- * oben, Standort kleiner darunter, dann eine Tabelle mit einer Zeile pro
- * Helfer. Datum/Beginn/Ende/Dauer sind pro Rolle definiert (jede Zeile bringt
- * ihre eigene mit) statt für den ganzen Einsatz geteilt zu sein, da
+ * Builds the Helferliste für einen Helfereinsatz (Spiel oder externes Event
+ * — beide teilen sich dasselbe Format) als .xlsx: Titel gross oben,
+ * Standort kleiner darunter, dann eine Tabelle mit einer Zeile pro Helfer.
+ * Datum/Beginn/Ende/Dauer sind pro Rolle definiert (jede Zeile bringt ihre
+ * eigene mit) statt für den ganzen Einsatz geteilt zu sein, da
  * unterschiedliche Rollen zu unterschiedlichen Zeiten stattfinden können —
- * genau wie der Einsatzbeschrieb.
+ * genau wie der Einsatzbeschrieb. Die "Armband abholen"-Spalte erscheint
+ * nur bei Einsätzen, die das erfordern (Sonderfall Truckerfestival).
  */
-export async function buildGameEventExcel(params: {
+export async function buildHelferlisteExcel(params: {
   title: string;
   locationName: string | null;
-  rows: GameEventExportRow[];
+  includeWristbandColumn: boolean;
+  rows: HelferlisteExportRow[];
 }): Promise<ExcelJS.Buffer> {
-  const { title, locationName, rows } = params;
+  const { title, locationName, includeWristbandColumn, rows } = params;
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Helferliste");
@@ -39,6 +44,7 @@ export async function buildGameEventExcel(params: {
     "Nachname",
     "Email",
     "Telefonnummer",
+    ...(includeWristbandColumn ? ["Armband abholen"] : []),
   ];
   const lastCol = String.fromCharCode("A".charCodeAt(0) + columns.length - 1);
 
@@ -74,6 +80,7 @@ export async function buildGameEventExcel(params: {
       row.nachname,
       row.email,
       row.telefon,
+      ...(includeWristbandColumn ? [row.armbandAbholen ?? ""] : []),
     ]);
   }
 
@@ -87,6 +94,7 @@ export async function buildGameEventExcel(params: {
     { width: 16 },
     { width: 28 },
     { width: 16 },
+    ...(includeWristbandColumn ? [{ width: 20 }] : []),
   ];
 
   return workbook.xlsx.writeBuffer();

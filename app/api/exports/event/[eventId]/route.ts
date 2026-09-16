@@ -2,8 +2,13 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageShiftSlot } from "@/lib/visibility";
-import { toCsv } from "@/lib/export/csv";
-import { buildGameEventExcel } from "@/lib/export/gameEventExcel";
+import { requiresWristbandPickupChoice } from "@/lib/rules/signup-rules";
+import { buildHelferlisteExcel } from "@/lib/export/helferlisteExcel";
+
+const WRISTBAND_LABELS: Record<string, string> = {
+  GESCHAEFTSSTELLE: "Geschäftsstelle",
+  TRAINING: "Training",
+};
 
 export async function GET(
   _request: Request,
@@ -53,49 +58,30 @@ export async function GET(
   );
 
   const filenameBase = event.title.replace(/[^\w.-]+/g, "_");
+  const includeWristbandColumn = requiresWristbandPickupChoice(event.title);
 
-  if (event.type === "GAME") {
-    const buffer = await buildGameEventExcel({
-      title: event.title,
-      locationName: event.location?.name ?? event.locationText,
-      rows: visibleSlots.flatMap((slot) =>
-        slot.signups.map((s) => ({
-          vorname: s.helperFirstName,
-          nachname: s.helperLastName,
-          email: s.helperEmail,
-          telefon: s.helperPhone ?? "",
-          beschrieb: slot.description,
-          startDateTime: slot.startDateTime,
-          endDateTime: slot.endDateTime,
-        })),
-      ),
-    });
+  const buffer = await buildHelferlisteExcel({
+    title: event.title,
+    locationName: event.location?.name ?? event.locationText,
+    includeWristbandColumn,
+    rows: visibleSlots.flatMap((slot) =>
+      slot.signups.map((s) => ({
+        vorname: s.helperFirstName,
+        nachname: s.helperLastName,
+        email: s.helperEmail,
+        telefon: s.helperPhone ?? "",
+        beschrieb: slot.description,
+        startDateTime: slot.startDateTime,
+        endDateTime: slot.endDateTime,
+        armbandAbholen: s.wristbandPickup ? WRISTBAND_LABELS[s.wristbandPickup] : null,
+      })),
+    ),
+  });
 
-    return new NextResponse(buffer, {
-      headers: {
-        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": `attachment; filename="${filenameBase}.xlsx"`,
-      },
-    });
-  }
-
-  const rows = visibleSlots.flatMap((slot) =>
-    slot.signups.map((s) => [
-      slot.activity.name,
-      s.helperFirstName,
-      s.helperLastName,
-      s.helperEmail,
-      s.helperPhone ?? "",
-      s.payoutType,
-    ]),
-  );
-
-  const csv = toCsv(["Tätigkeit", "Vorname", "Name", "E-Mail", "Telefon", "Entschädigung"], rows);
-
-  return new NextResponse(csv, {
+  return new NextResponse(buffer, {
     headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filenameBase}.csv"`,
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename="${filenameBase}.xlsx"`,
     },
   });
 }
