@@ -16,6 +16,9 @@ export function ManualHoursForm({
   locations: { id: string; name: string }[];
   /** Overrides the "Mitglied" wording, e.g. "Funktionär" on that section. */
   memberLabel?: string;
+  /** Bereich ist hier kein Formularfeld — er ergibt sich aus dem Kontext der
+   * aufrufenden Seite (Mitglieder → HELFER, Funktionäre → FUNKTIONAER) und
+   * wird als verstecktes Feld mitgeschickt. */
   defaultArea?: "HELFER" | "FUNKTIONAER";
 }) {
   const [error, formAction, pending] = useActionState(addManualHours, undefined);
@@ -34,6 +37,7 @@ export function ManualHoursForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
+      <input type="hidden" name="area" value={defaultArea} />
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-text" htmlFor="memberId-search">
           {memberLabel}
@@ -79,47 +83,19 @@ export function ManualHoursForm({
           </select>
         </div>
       </div>
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-text" htmlFor="description">
-          Beschreibung
-        </label>
-        <textarea
-          id="description"
+      <FormField label="Datum" name="date" type="date" required />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <FormField label="Start" name="startTime" type="time" required />
+        <FormField label="Ende" name="endTime" type="time" required />
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <FormField label="Tätigkeit" name="activityName" required placeholder="Speaker" />
+        <FormField
+          label="Einsatzbeschrieb"
           name="description"
           required
-          rows={2}
           placeholder="z.B. Aufbau/Abbau Festwirtschaft"
-          className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
         />
-      </div>
-      <FormField label="Datum/Zeit" name="startDateTime" type="datetime-local" required />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text" htmlFor="activityName">
-            Tätigkeit
-          </label>
-          <input
-            id="activityName"
-            name="activityName"
-            required
-            placeholder="Speaker"
-            className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text" htmlFor="area">
-            Bereich
-          </label>
-          <select
-            id="area"
-            name="area"
-            defaultValue={defaultArea}
-            className="rounded-lg border border-border bg-white px-3 py-2 text-sm"
-          >
-            <option value="HELFER">Helfer</option>
-            <option value="FUNKTIONAER">Funktionär</option>
-          </select>
-        </div>
       </div>
       <FormField
         label="Stunden (Gutschrift)"

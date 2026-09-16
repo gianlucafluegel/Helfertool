@@ -180,14 +180,20 @@ export async function deleteMemberPermanently(memberId: string) {
   redirect("/geschaeftsstelle/members");
 }
 
+function combineDateTime(date: string, time: string): Date {
+  return new Date(`${date}T${time}`);
+}
+
 /**
  * Credits a member with hours for an Einsatz that was never tracked in the
  * tool (e.g. done before go-live, or corrected after the fact). Asks for the
- * same info as creating a real Helfereinsatz (Titel/Typ/Standort/
- * Beschreibung/Datum + Tätigkeit/Bereich/Stunden), because that's exactly
+ * same info as creating a real Helfereinsatz (Titel/Typ/Standort/Datum/
+ * Start/Ende + Tätigkeit/Einsatzbeschrieb/Stunden), because that's exactly
  * what it creates under the hood — a one-slot Event+ShiftSlot with a
  * CONFIRMED Signup for this member — just flagged isManualEntry so it never
- * shows up in the normal Einsätze browsing/overview lists.
+ * shows up in the normal Einsätze browsing/overview lists. Bereich kommt
+ * nicht vom Formular, sondern vom `defaultArea`-Kontext der aufrufenden
+ * Seite (Mitglieder → HELFER, Funktionäre → FUNKTIONAER).
  */
 export async function addManualHours(prevState: string | undefined, formData: FormData) {
   await requireGeschaeftsstelle();
@@ -196,9 +202,11 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
   const title = String(formData.get("title") ?? "").trim();
   const type = formData.get("type") as EventType;
   const locationId = String(formData.get("locationId") ?? "") || null;
-  const description = String(formData.get("description") ?? "").trim();
-  const startDateTime = String(formData.get("startDateTime") ?? "");
   const activityName = String(formData.get("activityName") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const date = String(formData.get("date") ?? "");
+  const startTime = String(formData.get("startTime") ?? "");
+  const endTime = String(formData.get("endTime") ?? "");
   const area = formData.get("area") as ShiftArea;
   const creditHoursRaw = formData.get("creditHours");
   const creditHours = Number(creditHoursRaw);
@@ -206,15 +214,23 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
   if (
     !memberId ||
     !title ||
-    !description ||
-    !startDateTime ||
     !activityName ||
+    !description ||
+    !date ||
+    !startTime ||
+    !endTime ||
     !area ||
     creditHoursRaw === null ||
     creditHoursRaw === "" ||
     !Number.isFinite(creditHours)
   ) {
-    return "Mitglied, Titel, Beschreibung, Datum/Zeit, Tätigkeit, Bereich und Stunden sind Pflichtfelder.";
+    return "Mitglied, Titel, Tätigkeit, Einsatzbeschrieb, Datum, Start, Ende und Stunden sind Pflichtfelder.";
+  }
+
+  const manualStartDateTime = combineDateTime(date, startTime);
+  const manualEndDateTime = combineDateTime(date, endTime);
+  if (manualEndDateTime <= manualStartDateTime) {
+    return "Ende muss nach Start liegen.";
   }
 
   const [member, season, activity] = await Promise.all([
@@ -229,13 +245,6 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
   if (!member) return "Mitglied nicht gefunden.";
   if (!season) return "Keine aktive Saison konfiguriert.";
 
-  const manualStartDateTime = new Date(startDateTime);
-  // Kein eigenes Ende-Feld im Formular — ein manueller Stunden-Eintrag ist
-  // reine Buchhaltung, kein echter Einsatz zum Browsen/Anmelden (überall per
-  // isManualEntry: false ausgeschlossen). Das synthetisierte Ende wird
-  // nirgends angezeigt oder bearbeitet, dient nur dazu, dass ShiftSlot.
-  // endDateTime (Pflichtfeld) einen plausiblen Wert hat.
-  const manualEndDateTime = new Date(manualStartDateTime.getTime() + creditHours * 60 * 60 * 1000);
   const manualDate = new Date(
     manualStartDateTime.getFullYear(),
     manualStartDateTime.getMonth(),
