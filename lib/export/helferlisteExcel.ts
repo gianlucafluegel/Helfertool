@@ -6,7 +6,9 @@ export type HelferlisteExportRow = {
   nachname: string;
   email: string;
   telefon: string;
-  beschrieb: string;
+  taetigkeit: string;
+  stufe: string;
+  creditHours: number;
   startDateTime: Date;
   endDateTime: Date;
   /** Nur für Trucker-Festival-Einsätze gesetzt (siehe requiresWristbandPickupChoice). */
@@ -17,11 +19,11 @@ export type HelferlisteExportRow = {
  * Builds the Helferliste für einen Helfereinsatz (Spiel oder externes Event
  * — beide teilen sich dasselbe Format) als .xlsx: Titel gross oben,
  * Standort kleiner darunter, dann eine Tabelle mit einer Zeile pro Helfer.
- * Datum/Beginn/Ende/Dauer sind pro Rolle definiert (jede Zeile bringt ihre
- * eigene mit) statt für den ganzen Einsatz geteilt zu sein, da
- * unterschiedliche Rollen zu unterschiedlichen Zeiten stattfinden können —
- * genau wie der Einsatzbeschrieb. Die "Armband abholen"-Spalte erscheint
- * nur bei Einsätzen, die das erfordern (Sonderfall Truckerfestival).
+ * Datum/Beginn/Ende/Anzahl Helferstunden/Tätigkeit sind pro Rolle definiert
+ * (jede Zeile bringt ihre eigene mit) statt für den ganzen Einsatz geteilt
+ * zu sein, da unterschiedliche Rollen zu unterschiedlichen Zeiten
+ * stattfinden können. Die "Armband abholen"-Spalte erscheint nur bei
+ * Einsätzen, die das erfordern (Sonderfall Truckerfestival).
  */
 export async function buildHelferlisteExcel(params: {
   title: string;
@@ -38,8 +40,9 @@ export async function buildHelferlisteExcel(params: {
     "Datum",
     "Beginn",
     "Ende",
-    "Dauer",
-    "Einsatzbeschrieb",
+    "Anzahl Helferstunden",
+    "Tätigkeit",
+    "Stufe",
     "Vorname",
     "Nachname",
     "Email",
@@ -67,15 +70,13 @@ export async function buildHelferlisteExcel(params: {
   });
 
   for (const row of rows) {
-    const dauer =
-      Math.round(((row.endDateTime.getTime() - row.startDateTime.getTime()) / (60 * 60 * 1000)) * 100) /
-      100;
     sheet.addRow([
       formatDate(row.startDateTime),
       formatTime(row.startDateTime),
       formatTime(row.endDateTime),
-      dauer,
-      row.beschrieb,
+      row.creditHours,
+      row.taetigkeit,
+      row.stufe,
       row.vorname,
       row.nachname,
       row.email,
@@ -88,8 +89,9 @@ export async function buildHelferlisteExcel(params: {
     { width: 12 },
     { width: 8 },
     { width: 8 },
-    { width: 8 },
-    { width: 40 },
+    { width: 12 },
+    { width: 28 },
+    { width: 14 },
     { width: 16 },
     { width: 16 },
     { width: 28 },
