@@ -4,6 +4,7 @@ import { getCurrentSeason } from "@/lib/season";
 import { Card } from "@/components/ui/Card";
 import { MemberImportForm } from "./MemberImportForm";
 import { ArchiveSeasonForm } from "./ArchiveSeasonForm";
+import { SeasonLabelHeader } from "./SeasonLabelHeader";
 import { formatDate } from "@/lib/format";
 
 export default async function DatenbankPage({
@@ -24,6 +25,8 @@ export default async function DatenbankPage({
 
   return (
     <div className="flex flex-col gap-5">
+      {season && <SeasonLabelHeader seasonId={season.id} label={season.label} />}
+
       <Card>
         <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted">
           Mitglieder importieren

@@ -14,6 +14,25 @@ async function requireGeschaeftsstelle() {
   return session;
 }
 
+export async function updateSeasonLabel(
+  seasonId: string,
+  formData: FormData,
+): Promise<string | undefined> {
+  await requireGeschaeftsstelle();
+
+  const label = String(formData.get("label") ?? "").trim();
+  if (!label) return "Saisonbezeichnung ist ein Pflichtfeld.";
+
+  try {
+    await prisma.season.update({ where: { id: seasonId }, data: { label } });
+  } catch {
+    return "Diese Bezeichnung ist bereits vergeben.";
+  }
+
+  revalidatePath("/geschaeftsstelle", "layout");
+  return undefined;
+}
+
 /**
  * Snapshots the current season's Helfereinsätze (Events/ShiftSlots/Signups)
  * plus each Member's stats at that moment into a self-contained JSON

@@ -27,7 +27,7 @@ export function ArchiveSeasonForm({ currentSeasonLabel }: { currentSeasonLabel: 
       />
 
       <FormField
-        label={`Zur Bestätigung "${currentSeasonLabel}" eingeben`}
+        label="Zur Bestätigung Saisonname eingeben"
         name="confirmLabel"
         required
         placeholder={currentSeasonLabel}
