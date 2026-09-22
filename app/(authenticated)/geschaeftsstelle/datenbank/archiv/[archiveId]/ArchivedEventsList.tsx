@@ -88,6 +88,19 @@ export function ArchivedEventsList({ events }: { events: ArchivedEvent[] }) {
             className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
           />
         </div>
+        {(query || von || bis) && (
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              setVon("");
+              setBis("");
+            }}
+            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-text hover:border-navy/40"
+          >
+            Zurücksetzen
+          </button>
+        )}
       </div>
       <div className="flex flex-col gap-4">
         {filtered.map((e) => (
