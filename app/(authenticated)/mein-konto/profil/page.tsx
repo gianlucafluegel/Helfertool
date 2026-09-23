@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
@@ -17,6 +18,9 @@ export default async function ProfilPage() {
 
   return (
     <div className="flex flex-col gap-5">
+      <Link href="/mein-konto" className="text-sm font-medium text-muted hover:text-navy">
+        ← Zurück zu Mein Stundenkonto
+      </Link>
       <h1 className="text-base font-semibold text-text">
         Kontaktangaben {member.firstName} {member.lastName}
       </h1>
