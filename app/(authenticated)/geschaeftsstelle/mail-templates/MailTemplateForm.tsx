@@ -19,7 +19,7 @@ const LABELS: Record<MailTemplateKey, string> = {
 // stehen bleiben, statt ersetzt zu werden.
 const PLACEHOLDERS: Record<MailTemplateKey, string[]> = {
   SIGNUP_CONFIRMATION: ["vorname", "nachname", "event", "datum", "taetigkeit", "standort"],
-  REMINDER_UNFILLED: ["vorname", "nachname", "event", "datum", "standort"],
+  REMINDER_UNFILLED: ["vorname", "nachname", "einsaetze", "link"],
   ACCOUNT_SETUP: ["vorname", "nachname", "link"],
   PASSWORD_RESET: ["vorname", "nachname", "link"],
 };

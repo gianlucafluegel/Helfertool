@@ -96,8 +96,10 @@ async function main() {
       subject: "Erinnerung: Noch offene Helfereinsätze",
       bodyText:
         "Hallo {{vorname}} {{nachname}}\n\n" +
-        "Für {{event}} am {{datum}} in {{standort}} sind noch nicht alle Helfereinsätze besetzt. " +
-        "Bitte prüft, ob ihr unterstützen könnt, damit der Spielbetrieb gewährleistet ist.\n\n" +
+        "Folgende Helfereinsätze sind noch nicht besetzt:\n\n" +
+        "{{einsaetze}}\n\n" +
+        "Bitte prüft, ob ihr unterstützen könnt, damit der Spielbetrieb gewährleistet ist. " +
+        "Anmelden könnt ihr euch hier: {{link}}\n\n" +
         "Sportliche Grüsse\nHC Dragon Thun",
     },
     {
