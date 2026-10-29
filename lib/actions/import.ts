@@ -14,12 +14,13 @@ async function requireGeschaeftsstelle() {
   return session;
 }
 
-// Der MySIHF-Export enthält nur die Anspielzeit, keinen eigenen
-// Einsatz-Zeitraum. Der Helfereinsatz beginnt deshalb standardmässig
-// SETUP_MINUTES_BEFORE_KICKOFF vor Anspielzeit (Vorbereitung) und dauert
-// dann DEFAULT_GAME_CREDIT_HOURS — Ende und Dauer werden daraus abgeleitet,
-// nicht separat erfasst.
-const SETUP_MINUTES_BEFORE_KICKOFF = 15;
+// Der MySIHF-Export enthält nur die Anspielzeit, weder Einsatz-Zeitraum noch
+// Spielende. Der Helfereinsatz beginnt deshalb standardmässig
+// SETUP_MINUTES_BEFORE_KICKOFF vor Anspielzeit (Vorbereitung) und dauert bis
+// zum Spielende (Anspielzeit + GAME_DURATION_MINUTES); die Helfergutschrift
+// ist unabhängig davon fix DEFAULT_GAME_CREDIT_HOURS.
+const SETUP_MINUTES_BEFORE_KICKOFF = 30;
+const GAME_DURATION_MINUTES = 120;
 const DEFAULT_GAME_CREDIT_HOURS = 2.5;
 
 /** Tag (lokale Zeit, Uhrzeit auf Mitternacht) des Einsatz-Starts — für Event.date. */
@@ -99,7 +100,7 @@ export async function parseImportFile(
     const shiftStart = new Date(
       row.startDateTime.getTime() - SETUP_MINUTES_BEFORE_KICKOFF * 60 * 1000,
     );
-    const shiftEnd = new Date(shiftStart.getTime() + DEFAULT_GAME_CREDIT_HOURS * 60 * 60 * 1000);
+    const shiftEnd = new Date(row.startDateTime.getTime() + GAME_DURATION_MINUTES * 60 * 1000);
 
     return {
       spielNr: row.spielNr,
