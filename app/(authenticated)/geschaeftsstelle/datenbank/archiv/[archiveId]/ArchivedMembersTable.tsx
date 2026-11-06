@@ -58,8 +58,8 @@ export function ArchivedMembersTable({
   events: ArchivedEvent[];
 }) {
   const [query, setQuery] = useState("");
-  // Standardmässig sind die Einsätze bei einer Suche aufgeklappt und sonst
-  // zugeklappt; ein Klick auf den Namen kehrt das für dieses Mitglied um.
+  // Die Einsätze eines Mitglieds sind immer zugeklappt und öffnen sich erst
+  // per Klick auf die Zeile.
   const [toggled, setToggled] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
 
@@ -105,7 +105,6 @@ export function ArchivedMembersTable({
     return result;
   }, [members, events]);
 
-  const searching = query.trim() !== "";
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pageMembers = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -124,8 +123,8 @@ export function ArchivedMembersTable({
         className="mb-1 w-full max-w-xs rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
       />
       <p className="mb-3 text-xs text-muted">
-        Nach Namen suchen — die geleisteten Einsätze des Mitglieds werden darunter angezeigt. Ohne
-        Suche lassen sie sich per Klick auf die Zeile aufklappen.
+        Nach Namen suchen und auf die Zeile klicken, um die geleisteten Einsätze des Mitglieds
+        anzuzeigen.
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -141,7 +140,7 @@ export function ArchivedMembersTable({
           </thead>
           <tbody>
             {pageMembers.map((m) => {
-              const open = searching !== toggled.has(m.id);
+              const open = toggled.has(m.id);
               const einsaetze = einsaetzeByMember.get(m.id) ?? [];
               return (
                 <Fragment key={m.id}>
