@@ -66,6 +66,7 @@ export async function notifyRescheduledSlots(before: Map<string, SlotTimes>) {
   for (const slot of changed) {
     const old = before.get(slot.id)!;
     for (const signup of slot.signups) {
+      if (!signup.helperEmail) continue;
       await sendMail("EVENT_RESCHEDULED", signup.helperEmail, {
         vorname: signup.helperFirstName,
         nachname: signup.helperLastName,

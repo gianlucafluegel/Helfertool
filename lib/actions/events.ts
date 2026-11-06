@@ -579,7 +579,9 @@ export async function assignMemberToShiftSlot(
   if (shiftSlot.signups.length >= shiftSlot.capacity) {
     return { error: "Diese Rolle ist bereits vollständig besetzt." };
   }
-  if (shiftSlot.signups.some((s) => s.memberId === memberId)) {
+  // Der "Externe Helfer" steht für mehrere verschiedene Personen und darf
+  // deshalb mehrfach in derselben Rolle eingetragen werden.
+  if (!member.isExternalHelper && shiftSlot.signups.some((s) => s.memberId === memberId)) {
     return { error: "Dieses Mitglied ist für diese Rolle bereits eingetragen." };
   }
 

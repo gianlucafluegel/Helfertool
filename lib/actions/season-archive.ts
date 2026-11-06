@@ -70,6 +70,7 @@ export async function archiveSeason(prevState: string | undefined, formData: For
 
   const [members, events] = await Promise.all([
     prisma.member.findMany({
+      where: { isExternalHelper: false },
       include: {
         ageGroup: true,
         signups: { include: { shiftSlot: true } },

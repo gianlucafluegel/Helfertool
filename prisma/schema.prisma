@@ -180,6 +180,10 @@ model Member {
   importBatchId     String?
   notes             String?
   isActive          Boolean         @default(true)
+  // Sammelperson "Externer Helfer": kann Rollen zugeordnet werden (auch
+  // mehrfach pro Rolle), ist aber kein echtes Mitglied — ohne Login/E-Mail,
+  // ohne Stunden-Auswertung und nicht in der Mitgliederliste.
+  isExternalHelper  Boolean         @default(false)
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 

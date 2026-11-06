@@ -22,6 +22,7 @@ export default async function MembersPage({
   // sollen hier nicht doppelt auftauchen.
   const allMembers = await prisma.member.findMany({
     where: {
+      isExternalHelper: false,
       OR: [{ user: null }, { user: { role: { notIn: ["FUNKTIONAER", "STUFENLEITER"] } } }],
     },
     include: { user: true, ageGroup: true },
