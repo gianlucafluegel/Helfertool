@@ -97,12 +97,12 @@ async function main() {
     },
     {
       key: "REMINDER_UNFILLED",
-      subject: "Erinnerung: Noch offene Helfereinsätze",
+      subject: "Erinnerung: Helfer gesucht – {{event}}",
       bodyText:
         "Hallo {{vorname}} {{nachname}}\n\n" +
-        "Folgende Helfereinsätze sind noch nicht besetzt:\n\n" +
+        "Für folgenden Helfereinsatz werden noch Helfer gesucht:\n\n" +
         "{{einsaetze}}\n\n" +
-        "Bitte prüft, ob ihr unterstützen könnt, damit der Spielbetrieb gewährleistet ist. " +
+        "Bitte prüft, ob ihr unterstützen könnt. " +
         "Anmelden könnt ihr euch hier: {{link}}\n\n" +
         "Sportliche Grüsse\nHC Dragon Thun",
     },

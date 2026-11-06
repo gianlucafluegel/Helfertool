@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { AdminShiftSlotRow } from "@/components/shifts/AdminShiftSlotRow";
 import { EventEditForm } from "@/components/shifts/EventEditForm";
+import { EventReminderCard } from "@/components/shifts/EventReminderCard";
 import { AddShiftSlotForm } from "./AddShiftSlotForm";
 
 export default async function EventDetailPage({
@@ -54,6 +55,12 @@ export default async function EventDetailPage({
           locations={locations}
         />
       </Card>
+
+      <EventReminderCard
+        eventId={event.id}
+        stufeName={event.shiftSlots[0]?.ageGroupRestrictions[0]?.ageGroup.name ?? null}
+        canChooseScope
+      />
 
       <Card>
         <div className="mb-2 flex items-center justify-between">

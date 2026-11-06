@@ -3,93 +3,23 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendMail } from "@/lib/mail/send";
-import { getCurrentSeason } from "@/lib/season";
 import { formatDate, formatTime } from "@/lib/format";
-import { DEFAULT_REMINDER_BODY, LEGACY_REMINDER_BODY } from "@/lib/mail/reminder-template";
 
-type OpenSlot = {
-  eventId: string;
-  eventTitle: string;
-  locationName: string | null;
-  area: "HELFER" | "FUNKTIONAER";
-  ageGroupIds: string[];
-  activityName: string;
-  startDateTime: Date;
-  endDateTime: Date;
-  openCount: number;
-  capacity: number;
-};
-
-/** Zukünftige, noch nicht volle Rollen der aktuellen Saison (ohne abgesagte Einsätze). */
-async function loadOpenSlots(seasonId: string): Promise<OpenSlot[]> {
-  const slots = await prisma.shiftSlot.findMany({
-    where: {
-      deletedAt: null,
-      startDateTime: { gte: new Date() },
-      event: { seasonId, deletedAt: null, isManualEntry: false, status: { not: "CANCELLED" } },
-    },
-    include: {
-      activity: true,
-      ageGroupRestrictions: true,
-      event: { include: { location: true } },
-      signups: { where: { status: "CONFIRMED" } },
-    },
-    orderBy: { startDateTime: "asc" },
-  });
-
-  return slots
-    .filter((s) => s.signups.length < s.capacity)
-    .map((s) => ({
-      eventId: s.eventId,
-      eventTitle: s.event.title,
-      locationName: s.event.location?.name ?? s.event.locationText ?? null,
-      area: s.area,
-      ageGroupIds: s.ageGroupRestrictions.map((r) => r.ageGroupId),
-      activityName: s.activity.name,
-      startDateTime: s.startDateTime,
-      endDateTime: s.endDateTime,
-      openCount: s.capacity - s.signups.length,
-      capacity: s.capacity,
-    }));
-}
-
-/** Gruppiert nach Einsatz (in Reihenfolge des frühesten Slots) als Klartext-Liste für die Mail. */
-function formatSlotList(slots: OpenSlot[]): string {
-  const byEvent = new Map<string, OpenSlot[]>();
-  for (const slot of slots) {
-    const list = byEvent.get(slot.eventId) ?? [];
-    list.push(slot);
-    byEvent.set(slot.eventId, list);
-  }
-
-  return [...byEvent.values()]
-    .map((eventSlots) => {
-      const first = eventSlots[0];
-      const header = `${first.eventTitle} – ${formatDate(first.startDateTime)}${
-        first.locationName ? `, ${first.locationName}` : ""
-      }`;
-      const lines = eventSlots.map(
-        (s) =>
-          `  • ${s.activityName} (${formatTime(s.startDateTime)}–${formatTime(s.endDateTime)} Uhr): ${
-            s.openCount
-          } von ${s.capacity} ${s.capacity === 1 ? "Platz" : "Plätzen"} offen`,
-      );
-      return [header, ...lines].join("\n");
-    })
-    .join("\n\n");
-}
+export type ReminderScope = "ALL" | "STUFE";
 
 /**
- * Sends one reminder mail per recipient, listing all still-unfilled upcoming
- * Einsätze relevant to them (never one mail per Einsatz). Members in the
- * given Stufe(n) see open Helfer-Rollen restricted to one of those Stufen or
- * unrestricted. Funktionäre are never reminded (they can't sign up). A
- * Stufenleiter is force-scoped to their own assigned Stufe(n) and only their
- * own restricted Rollen. If nothing is open, no mail goes out at all.
+ * Sends a reminder for one single Einsatz (Event), listing its still-open,
+ * upcoming Rollen. Geschäftsstelle chooses between all Mitglieder and only
+ * the Mitglieder of the Stufe the Einsatz is assigned to; a Stufenleiter can
+ * only ever remind the Mitglieder of that Stufe (within their own assigned
+ * Stufen). An Einsatz without a Stufe (e.g. every externes Event) always
+ * goes to all Mitglieder, ignoring `scope`. Funktionäre, Stufenleiter and
+ * the "Externer Helfer" are never recipients.
  */
-export async function sendReminders(input: {
-  ageGroupIds: string[];
-}): Promise<{ error?: string; sent?: number }> {
+export async function sendEventReminder(
+  eventId: string,
+  scope: ReminderScope,
+): Promise<{ error?: string; sent?: number }> {
   const session = await auth();
   if (!session?.user) return { error: "Bitte melde dich an." };
 
@@ -98,77 +28,90 @@ export async function sendReminders(input: {
     return { error: "Keine Berechtigung." };
   }
 
-  let ageGroupIds = input.ageGroupIds;
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: {
+      location: true,
+      shiftSlots: {
+        where: { deletedAt: null },
+        include: {
+          activity: true,
+          ageGroupRestrictions: true,
+          signups: { where: { status: "CONFIRMED" } },
+        },
+        orderBy: { startDateTime: "asc" },
+      },
+    },
+  });
+  if (!event || event.deletedAt || event.isManualEntry) return { error: "Einsatz nicht gefunden." };
+  if (event.status === "CANCELLED") return { error: "Dieser Einsatz ist abgesagt." };
 
+  const eventAgeGroupIds = [...new Set(event.shiftSlots.flatMap((s) => s.ageGroupRestrictions.map((r) => r.ageGroupId)))];
+
+  // null = alle Mitglieder, sonst nur diese Stufe(n)
+  let recipientAgeGroupIds: string[] | null = null;
   if (role === "STUFENLEITER") {
     const assignments = await prisma.stufenleiterAssignment.findMany({
       where: { userId: session.user.id },
       select: { ageGroupId: true },
     });
     const allowed = new Set(assignments.map((a) => a.ageGroupId));
-    ageGroupIds = ageGroupIds.filter((id) => allowed.has(id));
-    if (ageGroupIds.length === 0) ageGroupIds = [...allowed];
+    recipientAgeGroupIds = eventAgeGroupIds.filter((id) => allowed.has(id));
+    if (recipientAgeGroupIds.length === 0) return { error: "Keine Berechtigung." };
+  } else if (eventAgeGroupIds.length > 0 && scope === "STUFE") {
+    recipientAgeGroupIds = eventAgeGroupIds;
   }
 
-  const season = await getCurrentSeason();
-  if (!season) return { error: "Keine aktive Saison konfiguriert." };
+  const now = new Date();
+  const openSlots = event.shiftSlots.filter(
+    (s) => s.area === "HELFER" && s.startDateTime >= now && s.signups.length < s.capacity,
+  );
+  if (openSlots.length === 0) {
+    return { error: "Keine offenen Rollen — es wurde keine Erinnerung gesendet." };
+  }
 
   const template = await prisma.mailTemplate.findUnique({ where: { key: "REMINDER_UNFILLED" } });
   if (!template) return { error: "Mail-Vorlage für Reminder nicht gefunden." };
-  if (template.bodyText === LEGACY_REMINDER_BODY) {
-    await prisma.mailTemplate.update({
-      where: { key: "REMINDER_UNFILLED" },
-      data: { bodyText: DEFAULT_REMINDER_BODY },
-    });
-  } else if (!template.bodyText.includes("{{einsaetze}}")) {
+  if (!template.bodyText.includes("{{einsaetze}}")) {
     return {
       error:
         "Die Mail-Vorlage „Reminder für offene Einsätze“ enthält den Platzhalter {{einsaetze}} nicht. Bitte unter Mail-Vorlagen ergänzen.",
     };
   }
 
-  const openSlots = await loadOpenSlots(season.id);
-
-  const memberSlots = openSlots.filter((s) => {
-    if (s.area !== "HELFER") return false;
-    if (role === "STUFENLEITER") return s.ageGroupIds.some((id) => ageGroupIds.includes(id));
-    return s.ageGroupIds.length === 0 || s.ageGroupIds.some((id) => ageGroupIds.includes(id));
+  const members = await prisma.member.findMany({
+    where: {
+      isActive: true,
+      isExternalHelper: false,
+      email: { not: null },
+      OR: [{ user: null }, { user: { role: { notIn: ["FUNKTIONAER", "STUFENLEITER"] } } }],
+      ...(recipientAgeGroupIds ? { ageGroupId: { in: recipientAgeGroupIds } } : {}),
+    },
   });
+  if (members.length === 0) return { error: "Keine Empfänger mit E-Mail-Adresse gefunden." };
 
-  const recipients = new Map<
-    string,
-    { firstName: string; lastName: string; email: string; list: string }
-  >();
-
-  if (ageGroupIds.length > 0 && memberSlots.length > 0) {
-    const list = formatSlotList(memberSlots);
-    const members = await prisma.member.findMany({
-      where: { ageGroupId: { in: ageGroupIds }, email: { not: null }, isActive: true },
-    });
-    for (const m of members) {
-      if (m.email) {
-        recipients.set(m.id, { firstName: m.firstName, lastName: m.lastName, email: m.email, list });
-      }
-    }
-  }
-
-  if (recipients.size === 0) {
-    return {
-      error:
-        memberSlots.length === 0
-          ? "Keine offenen Einsätze — es wurde keine Erinnerung gesendet."
-          : "Keine Empfänger mit E-Mail-Adresse gefunden.",
-    };
-  }
-
-  const link = `${process.env.NEXTAUTH_URL ?? ""}/einsaetze`;
+  const header = `${event.title} – ${formatDate(event.date)}${
+    event.location?.name ?? event.locationText ? `, ${event.location?.name ?? event.locationText}` : ""
+  }`;
+  const list = [
+    header,
+    ...openSlots.map(
+      (s) =>
+        `  • ${s.activity.name} (${formatTime(s.startDateTime)}–${formatTime(s.endDateTime)} Uhr): ${
+          s.capacity - s.signups.length
+        } von ${s.capacity} ${s.capacity === 1 ? "Platz" : "Plätzen"} offen`,
+    ),
+  ].join("\n");
+  const link = `${process.env.NEXTAUTH_URL ?? ""}/einsaetze/event/${event.id}`;
 
   let sent = 0;
-  for (const recipient of recipients.values()) {
-    await sendMail("REMINDER_UNFILLED", recipient.email, {
-      vorname: recipient.firstName,
-      nachname: recipient.lastName,
-      einsaetze: recipient.list,
+  for (const member of members) {
+    if (!member.email) continue;
+    await sendMail("REMINDER_UNFILLED", member.email, {
+      vorname: member.firstName,
+      nachname: member.lastName,
+      event: event.title,
+      einsaetze: list,
       link,
     });
     sent += 1;

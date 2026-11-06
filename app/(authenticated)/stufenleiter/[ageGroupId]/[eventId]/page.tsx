@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { AdminShiftSlotRow } from "@/components/shifts/AdminShiftSlotRow";
 import { EventEditForm } from "@/components/shifts/EventEditForm";
+import { EventReminderCard } from "@/components/shifts/EventReminderCard";
 
 export default async function StufenleiterEventDetailPage({
   params,
@@ -71,6 +72,8 @@ export default async function StufenleiterEventDetailPage({
           canEditAgeGroup={false}
         />
       </Card>
+
+      <EventReminderCard eventId={event.id} stufeName={assignment.ageGroup.name} canChooseScope={false} />
 
       <Card>
         <div className="mb-2 flex items-center justify-between">

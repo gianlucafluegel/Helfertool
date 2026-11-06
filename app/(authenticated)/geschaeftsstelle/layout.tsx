@@ -8,7 +8,6 @@ const TABS = [
   { href: "/geschaeftsstelle/funktionaere", label: "Funktionäre" },
   { href: "/geschaeftsstelle/stufenadmins", label: "Stufenadmins" },
   { href: "/geschaeftsstelle/mail-templates", label: "Mail-Vorlagen" },
-  { href: "/geschaeftsstelle/reminders", label: "Reminder" },
   { href: "/geschaeftsstelle/datenbank", label: "Datenbank" },
 ];
 
