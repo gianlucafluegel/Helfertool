@@ -35,7 +35,7 @@ export async function GET(request: Request) {
   }
 
   const members = await prisma.member.findMany({
-    where: { category },
+    where: { category, isExternalHelper: false },
     include: {
       signups: {
         where: { status: "CONFIRMED" },
