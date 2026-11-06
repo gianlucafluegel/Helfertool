@@ -2,6 +2,9 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { ListSearchForm } from "@/components/ui/ListSearchForm";
+import { Pagination } from "@/components/ui/Pagination";
+import { matchesActiveFilter, paginate, parseListParams, type ListParams } from "@/lib/list-params";
 import { CreateStaffForm } from "../CreateStaffForm";
 import { ManualHoursForm } from "../members/ManualHoursForm";
 import { createFunktionaer } from "@/lib/actions/staff";
@@ -9,9 +12,9 @@ import { createFunktionaer } from "@/lib/actions/staff";
 export default async function FunktionaerePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<ListParams>;
 }) {
-  const { q } = await searchParams;
+  const { q, status, page: pageParam } = parseListParams(await searchParams);
 
   const [locations, allMembers] = await Promise.all([
     prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
@@ -22,11 +25,12 @@ export default async function FunktionaerePage({
   ]);
   const activeMembers = allMembers.filter((m) => m.isActive);
 
-  const members = q
-    ? allMembers.filter((m) =>
-        `${m.firstName} ${m.lastName}`.toLowerCase().includes(q.toLowerCase()),
-      )
-    : allMembers;
+  const filtered = allMembers.filter(
+    (m) =>
+      matchesActiveFilter(m.isActive, status) &&
+      (!q || `${m.firstName} ${m.lastName}`.toLowerCase().includes(q.toLowerCase())),
+  );
+  const { items: members, page, totalPages, total } = paginate(filtered, pageParam);
 
   return (
     <div className="flex flex-col gap-5">
@@ -69,29 +73,7 @@ export default async function FunktionaerePage({
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
           Alle Funktionäre
         </h2>
-        <form className="mb-3 flex gap-2" action="/geschaeftsstelle/funktionaere">
-          <input
-            type="text"
-            name="q"
-            defaultValue={q ?? ""}
-            placeholder="Funktionär suchen…"
-            className="w-full max-w-sm rounded-lg border border-border bg-white px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            className="rounded-full bg-gold px-4 py-2 text-sm font-semibold text-navy hover:bg-gold-hover"
-          >
-            Suchen
-          </button>
-          {q && (
-            <Link
-              href="/geschaeftsstelle/funktionaere"
-              className="rounded-full border border-border px-4 py-2 text-sm font-medium text-text hover:border-navy/40"
-            >
-              Zurücksetzen
-            </Link>
-          )}
-        </form>
+        <ListSearchForm basePath="/geschaeftsstelle/funktionaere" q={q} status={status} placeholder="Funktionär suchen…" />
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -116,7 +98,7 @@ export default async function FunktionaerePage({
                     </Link>
                     {!member.isActive && (
                       <Badge variant="neutral" className="ml-2">
-                        inaktiv
+                        archiviert
                       </Badge>
                     )}
                   </td>
@@ -127,13 +109,14 @@ export default async function FunktionaerePage({
               {members.length === 0 && (
                 <tr>
                   <td colSpan={3} className="py-4 text-center text-muted">
-                    {q ? "Keine Funktionäre gefunden." : "Noch keine Funktionäre erfasst."}
+                    {q || status !== "aktiv" ? "Keine Funktionäre gefunden." : "Noch keine Funktionäre erfasst."}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+        <Pagination basePath="/geschaeftsstelle/funktionaere" q={q} status={status} page={page} totalPages={totalPages} total={total} />
       </Card>
     </div>
   );
