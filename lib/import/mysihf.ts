@@ -72,13 +72,11 @@ export async function parseMysihfWorkbook(
     const spielstatus = cellString(get(row, "Spielstatus")).trim();
 
     // MySIHF's Spielklasse is a league-tier label ("U15-Top", "U21-A", ...)
-    // more granular than our club's Stufen — only the bare "U<n>" survives
-    // into the title, never the "-Top"/"-A" suffix.
-    const ageNumber = extractAgeNumber(spielklasseHt);
-    const stufeLabel = ageNumber !== null ? `U${ageNumber}` : spielklasseHt;
-
-    const title = stufeLabel
-      ? `${stufeLabel} · ${heimteam} – ${gastteam}`
+    // more granular than our club's Stufen. The title keeps it in full; only
+    // the Stufe matching (extractAgeNumber, see below) ignores the
+    // "-Top"/"-A" suffix.
+    const title = spielklasseHt
+      ? `${spielklasseHt} · ${heimteam} – ${gastteam}`
       : `${heimteam} – ${gastteam}`;
 
     rows.push({
@@ -99,9 +97,8 @@ export async function parseMysihfWorkbook(
 /**
  * Extracts the leading "U<number>" age prefix (e.g. "U14-Top" -> 14,
  * "U21-A" -> 21) so MySIHF's league-tier names (which are more granular
- * than our club's Stufen) can still be matched to the right Stufe — and so
- * the title only ever shows the bare "U14"/"U21", never the "-Top"/"-A"
- * league-tier suffix.
+ * than our club's Stufen) can still be matched to the right Stufe, even
+ * though the title keeps the full "-Top"/"-A" label.
  */
 export function extractAgeNumber(text: string | null): number | null {
   if (!text) return null;
