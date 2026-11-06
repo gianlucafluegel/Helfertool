@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { buildListHref, type ActiveFilter } from "@/lib/list-params";
 
@@ -19,11 +22,21 @@ export function ListSearchForm({
   status: ActiveFilter;
   placeholder: string;
 }) {
+  const router = useRouter();
+
   return (
     <div className="mb-3 flex flex-col gap-3">
-      <form className="flex gap-2" action={basePath}>
-        {status !== "aktiv" && <input type="hidden" name="status" value={status} />}
+      <form
+        className="flex gap-2"
+        action={basePath}
+        onSubmit={(event) => {
+          event.preventDefault();
+          const value = String(new FormData(event.currentTarget).get("q") ?? "").trim();
+          router.push(buildListHref(basePath, { q: value || undefined, status }), { scroll: false });
+        }}
+      >
         <input
+          key={q ?? ""}
           type="text"
           name="q"
           defaultValue={q ?? ""}
@@ -39,6 +52,7 @@ export function ListSearchForm({
         {(q || status !== "aktiv") && (
           <Link
             href={basePath}
+            scroll={false}
             className="rounded-full border border-border px-4 py-2 text-sm font-medium text-text hover:border-navy/40"
           >
             Zurücksetzen
@@ -50,6 +64,7 @@ export function ListSearchForm({
           <Link
             key={value}
             href={buildListHref(basePath, { q, status: value })}
+            scroll={false}
             className={clsx(
               "rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors",
               status === value

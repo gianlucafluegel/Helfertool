@@ -38,7 +38,7 @@ export function Pagination({
   return (
     <nav className="mt-3 flex flex-wrap items-center gap-2" aria-label="Seiten">
       {page > 1 && (
-        <Link href={href(page - 1)} className={clsx(linkClass, "border-border text-text hover:border-navy/40")}>
+        <Link href={href(page - 1)} scroll={false} className={clsx(linkClass, "border-border text-text hover:border-navy/40")}>
           ← Zurück
         </Link>
       )}
@@ -51,6 +51,7 @@ export function Pagination({
           <Link
             key={p}
             href={href(p)}
+            scroll={false}
             aria-current={p === page ? "page" : undefined}
             className={clsx(
               linkClass,
@@ -64,7 +65,7 @@ export function Pagination({
         ),
       )}
       {page < totalPages && (
-        <Link href={href(page + 1)} className={clsx(linkClass, "border-border text-text hover:border-navy/40")}>
+        <Link href={href(page + 1)} scroll={false} className={clsx(linkClass, "border-border text-text hover:border-navy/40")}>
           Weiter →
         </Link>
       )}
