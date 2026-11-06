@@ -6,7 +6,8 @@ import type { MemberCategory } from "@/generated/prisma/enums";
 
 /**
  * Season-end export for the club's accounting workflow: just Kontakt-ID and
- * geleistete Stunden, semicolon-separated — nothing else. This is what gets
+ * geleistete Stunden, semicolon-separated (with a "Kontakt-ID;Stunden" header
+ * row) — nothing else. This is what gets
  * fed downstream once the season is done, right before archiving.
  *
  * Nachwuchs and Aktivmannschaften are separate downstream systems with their
@@ -53,7 +54,7 @@ export async function GET(request: Request) {
     return `${member.externalContactId ?? ""};${completedHours}`;
   });
 
-  const csv = lines.join("\r\n") + "\r\n";
+  const csv = ["Kontakt-ID;Stunden", ...lines].join("\r\n") + "\r\n";
   const categoryLabel = category === "NACHWUCHS" ? "Nachwuchs" : "Aktive";
   const filename = `Helferstunden-${categoryLabel}-${season.label.replace("/", "-")}.csv`;
 
