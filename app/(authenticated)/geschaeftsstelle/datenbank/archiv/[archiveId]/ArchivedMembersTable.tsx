@@ -46,6 +46,8 @@ type MemberEinsatz = {
   isManualEntry: boolean;
 };
 
+const PAGE_SIZE = 20;
+
 const norm = (s: string) => s.trim().toLowerCase();
 
 export function ArchivedMembersTable({
@@ -59,6 +61,7 @@ export function ArchivedMembersTable({
   // Standardmässig sind die Einsätze bei einer Suche aufgeklappt und sonst
   // zugeklappt; ein Klick auf den Namen kehrt das für dieses Mitglied um.
   const [toggled, setToggled] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -103,6 +106,9 @@ export function ArchivedMembersTable({
   }, [members, events]);
 
   const searching = query.trim() !== "";
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageMembers = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <>
@@ -112,6 +118,7 @@ export function ArchivedMembersTable({
         onChange={(e) => {
           setQuery(e.target.value);
           setToggled(new Set());
+          setPage(1);
         }}
         placeholder="Mitglied suchen…"
         className="mb-1 w-full max-w-xs rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
@@ -132,7 +139,7 @@ export function ArchivedMembersTable({
             </tr>
           </thead>
           <tbody>
-            {filtered.map((m) => {
+            {pageMembers.map((m) => {
               const open = searching !== toggled.has(m.id);
               const einsaetze = einsaetzeByMember.get(m.id) ?? [];
               return (
@@ -208,6 +215,54 @@ export function ArchivedMembersTable({
           </tbody>
         </table>
       </div>
+      {totalPages > 1 ? (
+        <nav className="mt-3 flex flex-wrap items-center gap-2" aria-label="Seiten">
+          {currentPage > 1 && (
+            <button
+              type="button"
+              onClick={() => setPage(currentPage - 1)}
+              className="rounded-full border border-border px-3 py-1 text-sm font-medium text-text hover:border-navy/40"
+            >
+              ← Zurück
+            </button>
+          )}
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+            .map((p, i, shown) => (
+              <Fragment key={p}>
+                {i > 0 && p - shown[i - 1] > 1 && <span className="px-1 text-sm text-muted">…</span>}
+                <button
+                  type="button"
+                  aria-current={p === currentPage ? "page" : undefined}
+                  onClick={() => setPage(p)}
+                  className={
+                    p === currentPage
+                      ? "rounded-full border border-navy bg-navy px-3 py-1 text-sm font-medium text-white"
+                      : "rounded-full border border-border px-3 py-1 text-sm font-medium text-text hover:border-navy/40"
+                  }
+                >
+                  {p}
+                </button>
+              </Fragment>
+            ))}
+          {currentPage < totalPages && (
+            <button
+              type="button"
+              onClick={() => setPage(currentPage + 1)}
+              className="rounded-full border border-border px-3 py-1 text-sm font-medium text-text hover:border-navy/40"
+            >
+              Weiter →
+            </button>
+          )}
+          <span className="ml-1 text-xs text-muted">
+            Seite {currentPage} von {totalPages} · {filtered.length} Mitglieder
+          </span>
+        </nav>
+      ) : (
+        <p className="mt-3 text-xs text-muted">
+          {filtered.length} {filtered.length === 1 ? "Mitglied" : "Mitglieder"}
+        </p>
+      )}
     </>
   );
 }

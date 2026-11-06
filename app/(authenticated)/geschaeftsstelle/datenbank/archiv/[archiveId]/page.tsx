@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { formatDate } from "@/lib/format";
 import { ArchivedMembersTable } from "./ArchivedMembersTable";
-import { ArchivedEventsList } from "./ArchivedEventsList";
 
 type ArchivedSignup = {
   id: string;
@@ -82,13 +81,6 @@ export default async function SeasonArchiveDetailPage({
           Mitglieder & Helferstunden
         </h2>
         <ArchivedMembersTable members={data.members} events={data.events} />
-      </Card>
-
-      <Card>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
-          Helfereinsätze
-        </h2>
-        <ArchivedEventsList events={realEvents} />
       </Card>
     </div>
   );
