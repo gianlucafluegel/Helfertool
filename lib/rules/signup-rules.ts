@@ -1,4 +1,4 @@
-const CANCELLATION_WINDOW_MS = 4 * 24 * 60 * 60 * 1000;
+const CANCELLATION_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function canCancelSignup(shiftStart: Date, now: Date = new Date()): boolean {
   return shiftStart.getTime() - now.getTime() >= CANCELLATION_WINDOW_MS;

@@ -141,7 +141,7 @@ export async function cancelSignup(signupId: string): Promise<{ error?: string }
   if (!isAdmin && !canCancelSignup(signup.shiftSlot.startDateTime)) {
     return {
       error:
-        "Eine Abmeldung ist nur bis 4 Tage vor dem Einsatz möglich. Bitte kontaktiere die Geschäftsstelle.",
+        "Eine Abmeldung ist nur bis eine Woche vor dem Einsatz möglich. Bitte kontaktiere deinen Stufenleiter.",
     };
   }
 
