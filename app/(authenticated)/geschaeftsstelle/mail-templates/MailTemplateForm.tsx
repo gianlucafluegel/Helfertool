@@ -8,18 +8,20 @@ import { Button } from "@/components/ui/Button";
 const LABELS: Record<MailTemplateKey, string> = {
   SIGNUP_CONFIRMATION: "Bestätigung bei Anmeldung",
   REMINDER_UNFILLED: "Reminder für offene Einsätze",
+  EVENT_RESCHEDULED: "Verschiebung eines Einsatzes",
   ACCOUNT_SETUP: "Login-Einladung",
   PASSWORD_RESET: "Passwort zurücksetzen",
 };
 
 // Muss exakt widerspiegeln, was der jeweilige sendMail(...)-Aufruf im Code
-// tatsächlich übergibt (lib/actions/signups.ts, reminders.ts, staff.ts,
+// tatsächlich übergibt (lib/actions/signups.ts, reminders.ts, mail/reschedule.ts, staff.ts,
 // members.ts, auth.ts) — ein hier gelisteter, aber nicht übergebener
 // Platzhalter würde in der versendeten Mail unverändert als "{{...}}"
 // stehen bleiben, statt ersetzt zu werden.
 const PLACEHOLDERS: Record<MailTemplateKey, string[]> = {
   SIGNUP_CONFIRMATION: ["vorname", "nachname", "event", "datum", "taetigkeit", "standort"],
   REMINDER_UNFILLED: ["vorname", "nachname", "einsaetze", "link"],
+  EVENT_RESCHEDULED: ["vorname", "nachname", "event", "taetigkeit", "standort", "altesDatum", "datum"],
   ACCOUNT_SETUP: ["vorname", "nachname", "link"],
   PASSWORD_RESET: ["vorname", "nachname", "link"],
 };

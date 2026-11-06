@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
 import { parseMysihfWorkbook, extractAgeNumber } from "@/lib/import/mysihf";
 import { revalidatePath } from "next/cache";
+import { notifyRescheduledSlots, type SlotTimes } from "@/lib/mail/reschedule";
 
 async function requireGeschaeftsstelle() {
   const session = await auth();
@@ -192,6 +193,10 @@ export async function commitImport(
       // Standardrollen zusammen aktualisiert, statt wie sonst nur beim
       // Erstellen einer Rolle erfasst zu werden. MySIHF liefert ohnehin nur
       // ein Zeitfenster für das ganze Spiel, das für beide Rollen gilt.
+      const slotsBefore = await prisma.shiftSlot.findMany({
+        where: { eventId: existingEvent.id, deletedAt: null },
+        select: { id: true, startDateTime: true, endDateTime: true },
+      });
       await prisma.shiftSlot.updateMany({
         where: { eventId: existingEvent.id, deletedAt: null },
         data: {
@@ -200,6 +205,7 @@ export async function commitImport(
           creditHours: row.creditHours,
         },
       });
+      await notifyRescheduledSlots(new Map<string, SlotTimes>(slotsBefore.map((s) => [s.id, s])));
       updated += 1;
     } else {
       await prisma.event.create({

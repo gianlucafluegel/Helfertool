@@ -78,7 +78,12 @@ async function main() {
   }
 
   const templateDefs: {
-    key: "SIGNUP_CONFIRMATION" | "REMINDER_UNFILLED" | "ACCOUNT_SETUP" | "PASSWORD_RESET";
+    key:
+      | "SIGNUP_CONFIRMATION"
+      | "REMINDER_UNFILLED"
+      | "EVENT_RESCHEDULED"
+      | "ACCOUNT_SETUP"
+      | "PASSWORD_RESET";
     subject: string;
     bodyText: string;
   }[] = [
@@ -100,6 +105,17 @@ async function main() {
         "{{einsaetze}}\n\n" +
         "Bitte prüft, ob ihr unterstützen könnt, damit der Spielbetrieb gewährleistet ist. " +
         "Anmelden könnt ihr euch hier: {{link}}\n\n" +
+        "Sportliche Grüsse\nHC Dragon Thun",
+    },
+    {
+      key: "EVENT_RESCHEDULED",
+      subject: "Verschiebung: Dein Helfereinsatz bei {{event}}",
+      bodyText:
+        "Hallo {{vorname}} {{nachname}}\n\n" +
+        "Der Einsatz {{event}} ({{taetigkeit}}) in {{standort}}, für den du dich angemeldet hast, wurde verschoben.\n\n" +
+        "Bisher: {{altesDatum}}\n" +
+        "Neu: {{datum}}\n\n" +
+        "Falls du am neuen Termin nicht kannst, melde dich bitte bei der Geschäftsstelle.\n\n" +
         "Sportliche Grüsse\nHC Dragon Thun",
     },
     {

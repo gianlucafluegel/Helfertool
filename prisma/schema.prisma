@@ -53,6 +53,7 @@ enum MailTemplateKey {
   REMINDER_UNFILLED
   ACCOUNT_SETUP
   PASSWORD_RESET
+  EVENT_RESCHEDULED
 }
 
 enum EmailStatus {

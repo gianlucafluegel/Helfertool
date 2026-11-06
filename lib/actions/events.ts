@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
 import { canManageShiftSlot } from "@/lib/visibility";
+import { notifyRescheduledSlots, type SlotTimes } from "@/lib/mail/reschedule";
 
 async function requireGeschaeftsstelle() {
   const session = await auth();
@@ -291,6 +292,12 @@ export async function updateEvent(eventId: string, formData: FormData) {
     return;
   }
 
+  const slotsBefore = await prisma.shiftSlot.findMany({
+    where: { eventId, deletedAt: null },
+    select: { id: true, startDateTime: true, endDateTime: true },
+  });
+  const timesBefore = new Map<string, SlotTimes>(slotsBefore.map((s) => [s.id, s]));
+
   await prisma.event.update({
     where: { id: eventId },
     data: {
@@ -320,6 +327,8 @@ export async function updateEvent(eventId: string, formData: FormData) {
       }),
     ),
   );
+
+  await notifyRescheduledSlots(timesBefore);
 
   // Die Stufe ist wie beim Erstellen nur ein Filter/Label, keine
   // Zugriffsbeschränkung — gilt einheitlich für alle Rollen des Einsatzes.
@@ -501,6 +510,10 @@ export async function updateShiftSlot(
     where: { id: shiftSlotId },
     data: { startDateTime, endDateTime, creditHours },
   });
+
+  await notifyRescheduledSlots(
+    new Map([[shiftSlotId, { startDateTime: shiftSlot.startDateTime, endDateTime: shiftSlot.endDateTime }]]),
+  );
 
   revalidatePath(`/geschaeftsstelle/helfereinsaetze/${shiftSlot.eventId}`);
   revalidatePath("/geschaeftsstelle/helfereinsaetze");

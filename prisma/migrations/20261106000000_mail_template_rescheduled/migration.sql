@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "MailTemplateKey" ADD VALUE 'EVENT_RESCHEDULED';
