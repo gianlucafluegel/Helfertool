@@ -35,7 +35,6 @@ export default async function ProfilPage() {
           memberId={member.id}
           email={member.email ?? ""}
           phone={member.phone ?? ""}
-          iban={member.iban ?? ""}
         />
       </Card>
     </div>

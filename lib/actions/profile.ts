@@ -18,14 +18,12 @@ export async function updateProfile(
 
   const email = String(formData.get("email") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
-  const iban = String(formData.get("iban") ?? "").trim();
 
   await prisma.member.update({
     where: { id: memberId },
     data: {
       email: email || null,
       phone: phone || null,
-      iban: iban || null,
     },
   });
 

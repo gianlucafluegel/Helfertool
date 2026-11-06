@@ -87,11 +87,8 @@ export function SignupForm({
               checked={payoutType === "BARBEZUG"}
               onChange={() => setPayoutType("BARBEZUG")}
             />
-            Barbezug (Auszahlung, IBAN erforderlich)
+            Barbezug (Auszahlung)
           </label>
-          {payoutType === "BARBEZUG" && (
-            <FormField label="IBAN" name="iban" required placeholder="CH00 0000 0000 0000 0000 0" />
-          )}
         </div>
       )}
 

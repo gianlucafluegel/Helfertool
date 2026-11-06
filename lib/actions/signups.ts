@@ -7,7 +7,6 @@ import { isShiftSlotVisible, canManageShiftSlot } from "@/lib/visibility";
 import {
   canCancelSignup,
   requiresWristbandPickupChoice,
-  validatePayoutChoice,
 } from "@/lib/rules/signup-rules";
 import { sendMail } from "@/lib/mail/send";
 import { formatDateTime } from "@/lib/format";
@@ -33,7 +32,6 @@ export async function createSignup(
   const helperEmail = String(formData.get("helperEmail") ?? "").trim();
   const helperPhone = String(formData.get("helperPhone") ?? "").trim() || null;
   const payoutType = (formData.get("payoutType") as SignupPayoutType) || "HELFERKONTINGENT";
-  const iban = String(formData.get("iban") ?? "").trim() || null;
   const wristbandPickup =
     (formData.get("wristbandPickup") as WristbandPickupLocation) || null;
 
@@ -65,18 +63,6 @@ export async function createSignup(
     return "Bitte angeben, wo das Armband abgeholt werden soll.";
   }
 
-  const ageGroupTriggersBarbezug = shiftSlot.ageGroupRestrictions.some(
-    (r) => r.ageGroup.triggersBarbezugChoice,
-  );
-
-  const payoutCheck = validatePayoutChoice({
-    activityRequiresPayoutChoice: shiftSlot.activity.requiresPayoutChoice,
-    ageGroupTriggersBarbezug,
-    payoutType,
-    iban,
-  });
-  if (!payoutCheck.ok) return payoutCheck.error;
-
   const ageGroupSnapshot = shiftSlot.ageGroupRestrictions[0]?.ageGroup.name ?? "Alle Teams";
 
   try {
@@ -105,7 +91,6 @@ export async function createSignup(
           helperEmail,
           helperPhone,
           payoutType,
-          ibanSnapshot: payoutType === "BARBEZUG" ? iban : null,
           wristbandPickup,
         },
       });

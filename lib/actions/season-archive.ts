@@ -143,7 +143,6 @@ export async function archiveSeason(prevState: string | undefined, formData: For
           helperEmail: sg.helperEmail,
           helperPhone: sg.helperPhone,
           payoutType: sg.payoutType,
-          ibanSnapshot: sg.ibanSnapshot,
           status: sg.status,
           ageGroupSnapshot: sg.ageGroupSnapshot,
           createdAt: sg.createdAt.toISOString(),

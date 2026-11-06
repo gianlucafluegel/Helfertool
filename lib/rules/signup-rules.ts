@@ -1,5 +1,3 @@
-import type { SignupPayoutType } from "@/generated/prisma/enums";
-
 const CANCELLATION_WINDOW_MS = 4 * 24 * 60 * 60 * 1000;
 
 export function canCancelSignup(shiftStart: Date, now: Date = new Date()): boolean {
@@ -25,20 +23,4 @@ export function shiftRequiresPayoutChoice(
  */
 export function requiresWristbandPickupChoice(eventTitle: string): boolean {
   return /trucker/i.test(eventTitle);
-}
-
-export function validatePayoutChoice(input: {
-  activityRequiresPayoutChoice: boolean;
-  ageGroupTriggersBarbezug: boolean;
-  payoutType: SignupPayoutType;
-  iban?: string | null;
-}): { ok: true } | { ok: false; error: string } {
-  const isSpecialCase =
-    input.activityRequiresPayoutChoice && input.ageGroupTriggersBarbezug;
-
-  if (isSpecialCase && input.payoutType === "BARBEZUG" && !input.iban) {
-    return { ok: false, error: "IBAN erforderlich für Barbezug." };
-  }
-
-  return { ok: true };
 }
