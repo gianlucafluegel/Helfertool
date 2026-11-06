@@ -125,7 +125,7 @@ export function ArchivedMembersTable({
       />
       <p className="mb-3 text-xs text-muted">
         Nach Namen suchen — die geleisteten Einsätze des Mitglieds werden darunter angezeigt. Ohne
-        Suche lassen sie sich per Klick auf den Namen aufklappen.
+        Suche lassen sie sich per Klick auf die Zeile aufklappen.
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -136,6 +136,7 @@ export function ArchivedMembersTable({
               <th className="py-2 pr-3">Team</th>
               <th className="py-2 pr-3">Soll-Std.</th>
               <th className="py-2 pr-3">Geleistet</th>
+              <th className="py-2 pr-3">Einsätze</th>
             </tr>
           </thead>
           <tbody>
@@ -144,32 +145,38 @@ export function ArchivedMembersTable({
               const einsaetze = einsaetzeByMember.get(m.id) ?? [];
               return (
                 <Fragment key={m.id}>
-                  <tr className="border-b border-border last:border-b-0">
+                  <tr
+                    onClick={() =>
+                      setToggled((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(m.id)) next.delete(m.id);
+                        else next.add(m.id);
+                        return next;
+                      })
+                    }
+                    className="cursor-pointer border-b border-border last:border-b-0 hover:bg-page-bg"
+                  >
                     <td className="py-2 pr-3">{m.externalContactId ?? "–"}</td>
-                    <td className="py-2 pr-3">
-                      <button
-                        type="button"
-                        aria-expanded={open}
-                        onClick={() =>
-                          setToggled((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(m.id)) next.delete(m.id);
-                            else next.add(m.id);
-                            return next;
-                          })
-                        }
-                        className="font-medium text-gold-hover hover:underline"
-                      >
-                        {open ? "▾" : "▸"} {m.firstName} {m.lastName}
-                      </button>
+                    <td className="py-2 pr-3 font-medium text-text">
+                      {m.firstName} {m.lastName}
                     </td>
                     <td className="py-2 pr-3">{m.ageGroupName ?? "–"}</td>
                     <td className="py-2 pr-3">{m.targetHours}</td>
                     <td className="py-2 pr-3">{m.completedHours}</td>
+                    <td className="py-2 pr-3">
+                      <button
+                        type="button"
+                        aria-expanded={open}
+                        className="whitespace-nowrap font-medium text-gold-hover hover:underline"
+                      >
+                        {einsaetze.length} {einsaetze.length === 1 ? "Einsatz" : "Einsätze"}{" "}
+                        {open ? "▾" : "▸"}
+                      </button>
+                    </td>
                   </tr>
                   {open && (
                     <tr className="border-b border-border last:border-b-0">
-                      <td colSpan={5} className="pb-3 pl-6">
+                      <td colSpan={6} className="pb-3 pl-6">
                         {einsaetze.length === 0 ? (
                           <p className="text-sm text-muted">Keine Einsätze in dieser Saison.</p>
                         ) : (
@@ -205,7 +212,7 @@ export function ArchivedMembersTable({
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-4 text-center text-muted">
+                <td colSpan={6} className="py-4 text-center text-muted">
                   {members.length === 0
                     ? "Keine Mitglieder in dieser Saison."
                     : "Keine Mitglieder gefunden."}
