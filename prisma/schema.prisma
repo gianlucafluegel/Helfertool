@@ -30,12 +30,6 @@ enum EventStatus {
   POSTPONED
 }
 
-enum SignupPayoutType {
-  HELFERKONTINGENT
-  PAUSCHALE
-  BARBEZUG
-}
-
 enum SignupStatus {
   CONFIRMED
   CANCELLED
@@ -112,7 +106,6 @@ model AgeGroup {
   name                   String          @unique
   sortOrder              Int             @default(0)
   isActive               Boolean         @default(true)
-  triggersBarbezugChoice Boolean         @default(false)
   // Nachwuchs (U9-U21) vs. Aktivmannschaften (3. Liga, 4. Liga, SWHL B, ...) —
   // see MemberCategory. Defaults to NACHWUCHS so the existing catalog rows
   // don't need a manual backfill; Aktiv rows get tagged explicitly whenever
@@ -142,7 +135,6 @@ model Location {
 model Activity {
   id                   String  @id @default(cuid())
   name                 String  @unique
-  requiresPayoutChoice Boolean @default(false)
   isActive             Boolean @default(true)
 
   shiftSlots ShiftSlot[]
@@ -164,7 +156,6 @@ model Member {
   lastName          String
   email             String?
   phone             String?
-  iban              String?
   externalContactId String?
   // Denormalized copy of the matched AgeGroup's category at import time.
   // Needed as a physical column so it can take part in the compound unique
@@ -330,8 +321,6 @@ model Signup {
   helperLastName   String
   helperEmail      String
   helperPhone      String?
-  payoutType       SignupPayoutType @default(HELFERKONTINGENT)
-  ibanSnapshot     String?
   wristbandPickup  WristbandPickupLocation?
   status           SignupStatus     @default(CONFIRMED)
   cancelledAt      DateTime?

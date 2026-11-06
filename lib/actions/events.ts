@@ -188,7 +188,6 @@ async function createShiftSlotsForEvent(
                   helperLastName: member.lastName,
                   helperEmail: member.email ?? "",
                   helperPhone: member.phone,
-                  payoutType: "HELFERKONTINGENT",
                 },
               },
             }
@@ -599,7 +598,6 @@ export async function assignMemberToShiftSlot(
       helperLastName: member.lastName,
       helperEmail: member.email ?? "",
       helperPhone: member.phone,
-      payoutType: "HELFERKONTINGENT",
     },
   });
 

@@ -18,20 +18,19 @@ async function main() {
   });
 
   const ageGroupDefs = [
-    { name: "U9", sortOrder: 1, triggersBarbezugChoice: true, category: "NACHWUCHS" as const },
-    { name: "U12", sortOrder: 2, triggersBarbezugChoice: true, category: "NACHWUCHS" as const },
-    { name: "U14", sortOrder: 3, triggersBarbezugChoice: false, category: "NACHWUCHS" as const },
-    { name: "U16", sortOrder: 4, triggersBarbezugChoice: false, category: "NACHWUCHS" as const },
-    { name: "U18", sortOrder: 5, triggersBarbezugChoice: false, category: "NACHWUCHS" as const },
-    { name: "U21", sortOrder: 6, triggersBarbezugChoice: false, category: "NACHWUCHS" as const },
-    { name: "3. Liga", sortOrder: 7, triggersBarbezugChoice: false, category: "AKTIV" as const },
-    { name: "4. Liga", sortOrder: 8, triggersBarbezugChoice: false, category: "AKTIV" as const },
-    { name: "SWHL B", sortOrder: 9, triggersBarbezugChoice: false, category: "AKTIV" as const },
-    { name: "SWHL C", sortOrder: 10, triggersBarbezugChoice: false, category: "AKTIV" as const },
+    { name: "U9", sortOrder: 1, category: "NACHWUCHS" as const },
+    { name: "U12", sortOrder: 2, category: "NACHWUCHS" as const },
+    { name: "U14", sortOrder: 3, category: "NACHWUCHS" as const },
+    { name: "U16", sortOrder: 4, category: "NACHWUCHS" as const },
+    { name: "U18", sortOrder: 5, category: "NACHWUCHS" as const },
+    { name: "U21", sortOrder: 6, category: "NACHWUCHS" as const },
+    { name: "3. Liga", sortOrder: 7, category: "AKTIV" as const },
+    { name: "4. Liga", sortOrder: 8, category: "AKTIV" as const },
+    { name: "SWHL B", sortOrder: 9, category: "AKTIV" as const },
+    { name: "SWHL C", sortOrder: 10, category: "AKTIV" as const },
     {
       name: "Senioren",
       sortOrder: 11,
-      triggersBarbezugChoice: false,
       category: "AKTIV" as const,
       // Keine Helferpflicht, wird nur selten gebraucht — Login/Einschreiben
       // funktioniert normal, taucht aber nicht im Team-Filter (Spiele &
@@ -44,7 +43,6 @@ async function main() {
       where: { name: def.name },
       update: {
         sortOrder: def.sortOrder,
-        triggersBarbezugChoice: def.triggersBarbezugChoice,
         category: def.category,
         visibleInTeamFilters: "visibleInTeamFilters" in def ? def.visibleInTeamFilters : true,
       },
@@ -53,17 +51,17 @@ async function main() {
   }
 
   const activityDefs = [
-    { name: "Strafbankbetreuer", requiresPayoutChoice: false },
-    { name: "Speaker", requiresPayoutChoice: false },
-    { name: "Matchuhr", requiresPayoutChoice: false },
-    { name: "Schiedsrichter", requiresPayoutChoice: true },
-    { name: "Reporter", requiresPayoutChoice: false },
-    { name: "Helfer (allgemein)", requiresPayoutChoice: false },
+    { name: "Strafbankbetreuer" },
+    { name: "Speaker" },
+    { name: "Matchuhr" },
+    { name: "Schiedsrichter" },
+    { name: "Reporter" },
+    { name: "Helfer (allgemein)" },
   ];
   for (const def of activityDefs) {
     await prisma.activity.upsert({
       where: { name: def.name },
-      update: { requiresPayoutChoice: def.requiresPayoutChoice },
+      update: {},
       create: def,
     });
   }

@@ -85,9 +85,7 @@ export default async function MemberDetailPage({
               <span className="flex items-center gap-2 text-muted">
                 {formatDate(s.shiftSlot.startDateTime)}
                 {s.shiftSlot.event.isManualEntry && <Badge variant="neutral">manuell</Badge>}
-                <Badge variant={s.payoutType === "HELFERKONTINGENT" ? "filled" : "neutral"}>
-                  {s.payoutType}
-                </Badge>
+                <Badge variant="filled">{Number(s.shiftSlot.creditHours)} Std.</Badge>
               </span>
             </div>
           ))}

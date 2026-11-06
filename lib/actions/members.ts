@@ -276,7 +276,6 @@ export async function addManualHours(prevState: string | undefined, formData: Fo
               helperFirstName: member.firstName,
               helperLastName: member.lastName,
               helperEmail: member.email ?? "",
-              payoutType: "HELFERKONTINGENT",
             },
           },
         },

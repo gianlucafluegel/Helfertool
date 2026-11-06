@@ -48,7 +48,7 @@ export async function GET(request: Request) {
   const now = new Date();
   const lines = members.map((member) => {
     const completedHours = member.signups
-      .filter((s) => s.payoutType === "HELFERKONTINGENT" && s.shiftSlot.startDateTime < now)
+      .filter((s) => s.shiftSlot.startDateTime < now)
       .reduce((sum, s) => sum + Number(s.shiftSlot.creditHours), 0);
     return `${member.externalContactId ?? ""};${completedHours}`;
   });

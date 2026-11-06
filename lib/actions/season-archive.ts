@@ -109,12 +109,7 @@ export async function archiveSeason(prevState: string | undefined, formData: For
       ageGroupName: m.ageGroup?.name ?? null,
       targetHours: Number(m.targetHours),
       completedHours: m.signups
-        .filter(
-          (s) =>
-            s.status === "CONFIRMED" &&
-            s.payoutType === "HELFERKONTINGENT" &&
-            s.shiftSlot.startDateTime < now,
-        )
+        .filter((s) => s.status === "CONFIRMED" && s.shiftSlot.startDateTime < now)
         .reduce((sum, s) => sum + Number(s.shiftSlot.creditHours), 0),
     })),
     events: events.map((e) => ({
@@ -142,7 +137,6 @@ export async function archiveSeason(prevState: string | undefined, formData: For
           helperLastName: sg.helperLastName,
           helperEmail: sg.helperEmail,
           helperPhone: sg.helperPhone,
-          payoutType: sg.payoutType,
           status: sg.status,
           ageGroupSnapshot: sg.ageGroupSnapshot,
           createdAt: sg.createdAt.toISOString(),

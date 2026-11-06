@@ -10,7 +10,6 @@ type ArchivedSignup = {
   id: string;
   helperFirstName: string;
   helperLastName: string;
-  payoutType: string;
   status: string;
 };
 

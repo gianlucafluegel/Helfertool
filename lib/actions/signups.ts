@@ -10,7 +10,7 @@ import {
 } from "@/lib/rules/signup-rules";
 import { sendMail } from "@/lib/mail/send";
 import { formatDateTime } from "@/lib/format";
-import type { SignupPayoutType, WristbandPickupLocation } from "@/generated/prisma/enums";
+import type { WristbandPickupLocation } from "@/generated/prisma/enums";
 
 export async function createSignup(
   prevState: string | undefined,
@@ -31,7 +31,6 @@ export async function createSignup(
   const helperLastName = String(formData.get("helperLastName") ?? "").trim();
   const helperEmail = String(formData.get("helperEmail") ?? "").trim();
   const helperPhone = String(formData.get("helperPhone") ?? "").trim() || null;
-  const payoutType = (formData.get("payoutType") as SignupPayoutType) || "HELFERKONTINGENT";
   const wristbandPickup =
     (formData.get("wristbandPickup") as WristbandPickupLocation) || null;
 
@@ -90,7 +89,6 @@ export async function createSignup(
           helperLastName,
           helperEmail,
           helperPhone,
-          payoutType,
           wristbandPickup,
         },
       });

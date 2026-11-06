@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/Button";
 
 export function SignupForm({
   shiftSlotId,
-  requiresPayoutChoice,
   requiresWristbandPickupChoice,
   defaultFirstName,
   defaultLastName,
@@ -16,7 +15,6 @@ export function SignupForm({
   defaultPhone,
 }: {
   shiftSlotId: string;
-  requiresPayoutChoice: boolean;
   requiresWristbandPickupChoice: boolean;
   defaultFirstName: string;
   defaultLastName: string;
@@ -24,9 +22,6 @@ export function SignupForm({
   defaultPhone: string;
 }) {
   const router = useRouter();
-  const [payoutType, setPayoutType] = useState<"HELFERKONTINGENT" | "BARBEZUG">(
-    "HELFERKONTINGENT",
-  );
   const [wristbandPickup, setWristbandPickup] = useState<"GESCHAEFTSSTELLE" | "TRAINING" | "">(
     "",
   );
@@ -65,32 +60,6 @@ export function SignupForm({
         required
         defaultValue={defaultPhone}
       />
-
-      {requiresPayoutChoice && (
-        <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
-          <p className="text-sm font-medium text-text">Entschädigung</p>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="radio"
-              name="payoutType"
-              value="HELFERKONTINGENT"
-              checked={payoutType === "HELFERKONTINGENT"}
-              onChange={() => setPayoutType("HELFERKONTINGENT")}
-            />
-            Helferkontingent (Stunden werden angerechnet)
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="radio"
-              name="payoutType"
-              value="BARBEZUG"
-              checked={payoutType === "BARBEZUG"}
-              onChange={() => setPayoutType("BARBEZUG")}
-            />
-            Barbezug (Auszahlung)
-          </label>
-        </div>
-      )}
 
       {requiresWristbandPickupChoice && (
         <div className="flex flex-col gap-2 rounded-lg border border-border p-3">

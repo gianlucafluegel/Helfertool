@@ -45,9 +45,7 @@ export default async function MeinKontoPage() {
   const past = signups.filter((s) => s.shiftSlot.startDateTime < now);
 
   const targetHours = member ? Number(member.targetHours) : 0;
-  const completedHours = past
-    .filter((s) => s.payoutType === "HELFERKONTINGENT")
-    .reduce((sum, s) => sum + Number(s.shiftSlot.creditHours), 0);
+  const completedHours = past.reduce((sum, s) => sum + Number(s.shiftSlot.creditHours), 0);
   const pct = targetHours > 0 ? Math.round((completedHours / targetHours) * 100) : 0;
 
   return (
@@ -111,13 +109,7 @@ export default async function MeinKontoPage() {
                   {formatTime(s.shiftSlot.endDateTime)} Uhr · {s.shiftSlot.activity.name}
                 </p>
               </div>
-              <Badge variant={s.payoutType === "HELFERKONTINGENT" ? "filled" : "neutral"}>
-                {s.payoutType === "HELFERKONTINGENT"
-                  ? `${Number(s.shiftSlot.creditHours)} Std.`
-                  : s.payoutType === "BARBEZUG"
-                    ? "Barbezug"
-                    : "Pauschale"}
-              </Badge>
+              <Badge variant="filled">{Number(s.shiftSlot.creditHours)} Std.</Badge>
             </Card>
           ))}
         </div>

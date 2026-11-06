@@ -46,13 +46,12 @@ export async function GET(
   }
 
   const csv = toCsv(
-    ["Vorname", "Name", "E-Mail", "Telefon", "Entschädigung"],
+    ["Vorname", "Name", "E-Mail", "Telefon"],
     shiftSlot.signups.map((s) => [
       s.helperFirstName,
       s.helperLastName,
       s.helperEmail,
       s.helperPhone ?? "",
-      s.payoutType,
     ]),
   );
 
