@@ -133,6 +133,7 @@ export async function archiveSeason(prevState: string | undefined, formData: For
         ageGroupRestrictions: s.ageGroupRestrictions.map((r) => r.ageGroup.name),
         signups: s.signups.map((sg) => ({
           id: sg.id,
+          memberId: sg.memberId,
           helperFirstName: sg.helperFirstName,
           helperLastName: sg.helperLastName,
           helperEmail: sg.helperEmail,

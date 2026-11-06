@@ -8,6 +8,7 @@ import { ArchivedEventsList } from "./ArchivedEventsList";
 
 type ArchivedSignup = {
   id: string;
+  memberId?: string;
   helperFirstName: string;
   helperLastName: string;
   status: string;
@@ -80,7 +81,7 @@ export default async function SeasonArchiveDetailPage({
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
           Mitglieder & Helferstunden
         </h2>
-        <ArchivedMembersTable members={data.members} />
+        <ArchivedMembersTable members={data.members} events={data.events} />
       </Card>
 
       <Card>
