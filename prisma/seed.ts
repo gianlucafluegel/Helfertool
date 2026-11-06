@@ -91,7 +91,8 @@ async function main() {
       bodyText:
         "Hallo {{vorname}} {{nachname}}\n\n" +
         "Danke für deine Anmeldung als {{taetigkeit}} beim Einsatz {{event}} am {{datum}} in {{standort}}.\n\n" +
-        "Bei Fragen oder falls du dich abmelden musst, findest du deine Einsätze jederzeit unter 'Mein Konto'.\n\n" +
+        "Deine Einsätze findest du jederzeit unter 'Mein Konto'. Du kannst dich dort bis 7 Tage vor dem Einsatz selbst abmelden. " +
+        "Danach melde dich bitte bei deinem Stufenleiter.\n\n" +
         "Sportliche Grüsse\nHC Dragon Thun",
     },
     {
