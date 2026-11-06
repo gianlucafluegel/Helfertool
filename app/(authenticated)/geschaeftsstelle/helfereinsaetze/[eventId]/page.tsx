@@ -29,7 +29,7 @@ export default async function EventDetailPage({
     }),
     prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.member.findMany({
-      where: { isActive: true },
+      where: { isActive: true, OR: [{ user: null }, { user: { role: { not: "FUNKTIONAER" } } }] },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       select: { id: true, firstName: true, lastName: true },
     }),

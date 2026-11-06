@@ -11,6 +11,7 @@ export function CreateStaffForm({
   successMessage,
   ageGroups,
   showContactAndHours = true,
+  showTargetHours = true,
 }: {
   action: (prevState: CreateStaffState, formData: FormData) => Promise<CreateStaffState>;
   submitLabel: string;
@@ -19,6 +20,8 @@ export function CreateStaffForm({
   ageGroups?: { id: string; name: string }[];
   /** Off for Stufenadmins — they only need Vorname/Nachname/E-Mail/Stufe(n). */
   showContactAndHours?: boolean;
+  /** Off for Funktionäre — sie haben keine Soll-Stunden. */
+  showTargetHours?: boolean;
 }) {
   const [state, formAction, pending] = useActionState<CreateStaffState, FormData>(action, {
     status: "idle",
@@ -49,7 +52,7 @@ export function CreateStaffForm({
       ) : (
         <FormField label="E-Mail" name="email" type="email" required />
       )}
-      {showContactAndHours && (
+      {showContactAndHours && showTargetHours && (
         <FormField
           label="Soll-Stunden"
           name="targetHours"

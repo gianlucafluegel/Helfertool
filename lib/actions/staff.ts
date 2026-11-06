@@ -42,29 +42,20 @@ async function createStaffMember(
     return { status: "error", message: "Vorname, Name und E-Mail sind Pflichtfelder." };
   }
 
-  // Funktionäre are tracked like a Mitglied (Kontakt-ID/Soll-Stunden for
-  // hours bookkeeping); Stufenadmins are a pure staff role and only need
-  // Name/E-Mail/Stufe(n) — no roster fields to fill in.
+  // Funktionäre are tracked with a Kontakt-ID but have no Soll-Stunden (they
+  // only view Einsätze and their helpers); Stufenadmins are a pure staff role
+  // and only need Name/E-Mail/Stufe(n) — no roster fields to fill in.
   let externalContactId: string | null = null;
-  let targetHours = 0;
+  const targetHours = 0;
 
   if (role === "FUNKTIONAER") {
     externalContactId = String(formData.get("externalContactId") ?? "").trim();
-    const targetHoursRaw = formData.get("targetHours");
-    const targetHoursNum = Number(targetHoursRaw);
-
-    if (
-      !externalContactId ||
-      targetHoursRaw === null ||
-      targetHoursRaw === "" ||
-      !Number.isFinite(targetHoursNum)
-    ) {
+    if (!externalContactId) {
       return {
         status: "error",
-        message: "Kontakt-ID, Vorname, Name, E-Mail und Soll-Stunden sind Pflichtfelder.",
+        message: "Kontakt-ID, Vorname, Name und E-Mail sind Pflichtfelder.",
       };
     }
-    targetHours = targetHoursNum;
   }
 
   // Funktionäre/Stufenadmins never get an ageGroupId on their own Member row,

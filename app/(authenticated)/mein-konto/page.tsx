@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
@@ -12,6 +13,9 @@ import { formatDate, formatDateTime, formatTime } from "@/lib/format";
 export default async function MeinKontoPage() {
   const session = await auth();
   if (!session?.user) return null;
+
+  // Funktionäre haben keine Helferstunden/Anmeldungen — nur ihre Kontaktdaten.
+  if (session.user.role === "FUNKTIONAER") redirect("/mein-konto/profil");
 
   const activeMember = session.user.member;
   if (!activeMember) {
@@ -48,7 +52,7 @@ export default async function MeinKontoPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <MemberTabs active="konto" />
+      <MemberTabs active="konto" role={session.user.role} />
 
       <Card>
         <h1 className="text-base font-semibold text-text">

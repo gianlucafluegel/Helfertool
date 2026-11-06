@@ -43,9 +43,53 @@ export default async function ShiftSignupPage({
     notFound();
   }
 
+  // Funktionäre können sich nicht anmelden — sie sehen die Rolle und, wer sie
+  // übernimmt, inkl. Kontaktdaten.
+  if (session.user.role === "FUNKTIONAER") {
+    return (
+      <div className="flex flex-col gap-5">
+        <Link href="/einsaetze" className="text-sm font-medium text-muted hover:text-navy">
+          ← Zurück zu den Einsätzen
+        </Link>
+        <Card>
+          <h1 className="text-base font-semibold text-text">{shiftSlot.event.title}</h1>
+          <p className="mb-1 text-sm text-muted">
+            {formatDateTime(shiftSlot.startDateTime)} – {formatTime(shiftSlot.endDateTime)} Uhr
+            {(shiftSlot.event.location?.name ?? shiftSlot.event.locationText) &&
+              ` · ${shiftSlot.event.location?.name ?? shiftSlot.event.locationText}`}
+          </p>
+          <p className="mb-2 text-sm font-medium text-text">{shiftSlot.activity.name}</p>
+          <p className="mb-2 text-sm text-muted">{shiftSlot.description}</p>
+          {shiftSlot.requirements && (
+            <p className="mb-2 text-sm text-muted">
+              <span className="font-medium text-text">Anforderungen:</span> {shiftSlot.requirements}
+            </p>
+          )}
+          <div className="mt-3 flex flex-col gap-3">
+            {shiftSlot.signups.map((s) => (
+              <div key={s.id} className="flex flex-col">
+                <p className="text-base font-semibold text-text">
+                  {s.helperFirstName} {s.helperLastName}
+                </p>
+                <p className="text-sm text-muted">{s.helperEmail}</p>
+                {s.helperPhone && <p className="text-sm text-muted">{s.helperPhone}</p>}
+              </div>
+            ))}
+            {shiftSlot.signups.length < shiftSlot.capacity && (
+              <p className="text-sm text-status-open-text">
+                Noch {shiftSlot.capacity - shiftSlot.signups.length} von {shiftSlot.capacity}{" "}
+                {shiftSlot.capacity === 1 ? "Platz" : "Plätzen"} offen.
+              </p>
+            )}
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   if (shiftSlot.signups.length >= shiftSlot.capacity) {
-    // Funktionär (and above) can click through to a filled Einsatz to see
-    // who's doing it; a Mitglied only sees the generic "besetzt" message.
+    // Stufenleiter/Geschäftsstelle can click through to a filled Einsatz to
+    // see who's doing it; a Mitglied only sees the generic "besetzt" message.
     const canViewOccupant = session.user.role !== "MITGLIED";
 
     return (

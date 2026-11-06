@@ -39,10 +39,11 @@ export default async function EinsaetzeEventDetailPage({
 
   if (visibleSlots.length === 0) notFound();
 
-  // Structure matches the list page exactly — Funktionär (and above) see who's
-  // doing an already-filled Einsatz by clicking into it ("Ansehen"), not via
-  // names shown inline in the list.
-  const canViewOccupant = session.user.role !== "MITGLIED";
+  // Stufenleiter/Geschäftsstelle see who's doing an already-filled Einsatz by
+  // clicking into it ("Ansehen"). Funktionäre can't sign up at all — they get
+  // a read-only view with every helper's name and contact details inline.
+  const isFunktionaer = session.user.role === "FUNKTIONAER";
+  const canViewOccupant = session.user.role !== "MITGLIED" && !isFunktionaer;
 
   return (
     <div className="flex flex-col gap-5">
@@ -55,9 +56,10 @@ export default async function EinsaetzeEventDetailPage({
         date={event.date}
         locationName={event.location?.name ?? event.locationText ?? null}
         shiftSlots={visibleSlots}
-        showOccupant={false}
+        showOccupant={isFunktionaer}
         activeMemberId={activeMember?.id ?? null}
-        allowSelfCancel
+        allowSelfCancel={!isFunktionaer}
+        readOnly={isFunktionaer}
         canViewOccupant={canViewOccupant}
       />
     </div>

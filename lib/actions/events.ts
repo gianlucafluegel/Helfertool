@@ -557,11 +557,14 @@ export async function assignMemberToShiftSlot(
         signups: { where: { status: "CONFIRMED" } },
       },
     }),
-    prisma.member.findUnique({ where: { id: memberId } }),
+    prisma.member.findUnique({ where: { id: memberId }, include: { user: true } }),
   ]);
 
   if (!shiftSlot || shiftSlot.deletedAt) return { error: "Rolle nicht gefunden." };
   if (!member) return { error: "Mitglied nicht gefunden." };
+  if (member.user?.role === "FUNKTIONAER") {
+    return { error: "Funktionäre können keinen Einsätzen zugeordnet werden." };
+  }
 
   if (session.user.role === "STUFENLEITER") {
     const assignments = await prisma.stufenleiterAssignment.findMany({

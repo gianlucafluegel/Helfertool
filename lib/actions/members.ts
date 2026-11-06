@@ -88,6 +88,8 @@ export async function updateMember(memberId: string, formData: FormData) {
   const phone = String(formData.get("phone") ?? "").trim() || null;
   const ageGroupId = String(formData.get("ageGroupId") ?? "").trim() || null;
   const targetHours = Number(formData.get("targetHours") ?? 0);
+  // Funktionäre haben keine Soll-Stunden — das Feld fehlt dort im Formular.
+  const hasTargetHours = formData.has("targetHours");
 
   // Keep the denormalized category in sync with the (possibly just-changed)
   // Stufe, so the (Kontakt-ID, Kategorie) uniqueness key never goes stale.
@@ -105,7 +107,7 @@ export async function updateMember(memberId: string, formData: FormData) {
       phone,
       ageGroupId,
       category,
-      targetHours: Number.isFinite(targetHours) ? targetHours : 0,
+      ...(hasTargetHours ? { targetHours: Number.isFinite(targetHours) ? targetHours : 0 } : {}),
     },
   });
 
@@ -191,9 +193,8 @@ function combineDateTime(date: string, time: string): Date {
  * Start/Ende + Tätigkeit/Einsatzbeschrieb/Stunden), because that's exactly
  * what it creates under the hood — a one-slot Event+ShiftSlot with a
  * CONFIRMED Signup for this member — just flagged isManualEntry so it never
- * shows up in the normal Einsätze browsing/overview lists. Bereich kommt
- * nicht vom Formular, sondern vom `defaultArea`-Kontext der aufrufenden
- * Seite (Mitglieder → HELFER, Funktionäre → FUNKTIONAER).
+ * shows up in the normal Einsätze browsing/overview lists. Bereich ist ein
+ * verstecktes Formularfeld (immer HELFER — Funktionäre haben keine Stunden).
  */
 export async function addManualHours(prevState: string | undefined, formData: FormData) {
   await requireGeschaeftsstelle();

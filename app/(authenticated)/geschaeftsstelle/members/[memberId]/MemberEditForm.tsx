@@ -85,16 +85,7 @@ export function MemberEditForm({
             defaultValue={targetHours}
           />
         </div>
-      ) : (
-        <FormField
-          label="Soll-Stunden"
-          name="targetHours"
-          type="number"
-          step="0.5"
-          min={0}
-          defaultValue={targetHours}
-        />
-      )}
+      ) : null}
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={pending} className="self-start">
           {pending ? "Wird gespeichert…" : "Speichern"}

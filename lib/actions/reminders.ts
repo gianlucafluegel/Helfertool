@@ -83,13 +83,12 @@ function formatSlotList(slots: OpenSlot[]): string {
  * Sends one reminder mail per recipient, listing all still-unfilled upcoming
  * Einsätze relevant to them (never one mail per Einsatz). Members in the
  * given Stufe(n) see open Helfer-Rollen restricted to one of those Stufen or
- * unrestricted; Funktionäre see every open Rolle. A Stufenleiter is
- * force-scoped to their own assigned Stufe(n) and only their own restricted
- * Rollen. If nothing is open, no mail goes out at all.
+ * unrestricted. Funktionäre are never reminded (they can't sign up). A
+ * Stufenleiter is force-scoped to their own assigned Stufe(n) and only their
+ * own restricted Rollen. If nothing is open, no mail goes out at all.
  */
 export async function sendReminders(input: {
   ageGroupIds: string[];
-  includeFunktionaere?: boolean;
 }): Promise<{ error?: string; sent?: number }> {
   const session = await auth();
   if (!session?.user) return { error: "Bitte melde dich an." };
@@ -135,7 +134,6 @@ export async function sendReminders(input: {
     if (role === "STUFENLEITER") return s.ageGroupIds.some((id) => ageGroupIds.includes(id));
     return s.ageGroupIds.length === 0 || s.ageGroupIds.some((id) => ageGroupIds.includes(id));
   });
-  const funktionaerSlots = openSlots;
 
   const recipients = new Map<
     string,
@@ -154,30 +152,10 @@ export async function sendReminders(input: {
     }
   }
 
-  if (role === "GESCHAEFTSSTELLE" && input.includeFunktionaere && funktionaerSlots.length > 0) {
-    const list = formatSlotList(funktionaerSlots);
-    const funktionaere = await prisma.user.findMany({
-      where: { role: "FUNKTIONAER", isActive: true },
-      include: { member: true },
-    });
-    for (const u of funktionaere) {
-      const member = u.member;
-      const email = member?.email ?? u.email;
-      if (email) {
-        recipients.set(u.id, {
-          firstName: member?.firstName ?? "",
-          lastName: member?.lastName ?? "",
-          email,
-          list,
-        });
-      }
-    }
-  }
-
   if (recipients.size === 0) {
     return {
       error:
-        memberSlots.length === 0 && (!input.includeFunktionaere || funktionaerSlots.length === 0)
+        memberSlots.length === 0
           ? "Keine offenen Einsätze — es wurde keine Erinnerung gesendet."
           : "Keine Empfänger mit E-Mail-Adresse gefunden.",
     };

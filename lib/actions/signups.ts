@@ -20,6 +20,10 @@ export async function createSignup(
   const session = await auth();
   if (!session?.user) return "Bitte melde dich an.";
 
+  if (session.user.role === "FUNKTIONAER") {
+    return "Funktionäre können sich nicht für Einsätze anmelden.";
+  }
+
   const activeMember = session.user.member;
   if (!activeMember) return "Kein Mitgliedsprofil mit deinem Login verknüpft.";
 

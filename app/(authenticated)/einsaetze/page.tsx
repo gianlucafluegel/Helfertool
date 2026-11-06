@@ -113,7 +113,7 @@ export default async function EinsaetzePage({
 
   return (
     <div className="flex flex-col gap-5">
-      <MemberTabs active="einsaetze" />
+      <MemberTabs active="einsaetze" role={session.user.role} />
 
       <div className="flex flex-wrap gap-2">
         <FilterChipLink
@@ -198,7 +198,7 @@ export default async function EinsaetzePage({
         )}
       </form>
 
-      {activeMember && (
+      {activeMember && session.user.role !== "FUNKTIONAER" && (
         <FilterChipLink
           active={filters.nurMeine === "1"}
           href={buildHref(filters, { nurMeine: filters.nurMeine === "1" ? undefined : "1" })}

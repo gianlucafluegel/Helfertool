@@ -9,17 +9,9 @@ import { SearchableSelect } from "@/components/ui/SearchableSelect";
 export function ManualHoursForm({
   members,
   locations,
-  memberLabel = "Mitglied",
-  defaultArea = "HELFER",
 }: {
   members: { id: string; firstName: string; lastName: string }[];
   locations: { id: string; name: string }[];
-  /** Overrides the "Mitglied" wording, e.g. "Funktionär" on that section. */
-  memberLabel?: string;
-  /** Bereich ist hier kein Formularfeld — er ergibt sich aus dem Kontext der
-   * aufrufenden Seite (Mitglieder → HELFER, Funktionäre → FUNKTIONAER) und
-   * wird als verstecktes Feld mitgeschickt. */
-  defaultArea?: "HELFER" | "FUNKTIONAER";
 }) {
   const [error, formAction, pending] = useActionState(addManualHours, undefined);
 
@@ -37,16 +29,16 @@ export function ManualHoursForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <input type="hidden" name="area" value={defaultArea} />
+      <input type="hidden" name="area" value="HELFER" />
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-text" htmlFor="memberId-search">
-          {memberLabel}
+          Mitglied
         </label>
         <SearchableSelect
           key={resetSignal}
           name="memberId"
           required
-          placeholder={`${memberLabel} suchen…`}
+          placeholder="Mitglied suchen…"
           options={members.map((m) => ({ id: m.id, label: `${m.firstName} ${m.lastName}` }))}
         />
       </div>

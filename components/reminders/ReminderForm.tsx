@@ -8,16 +8,13 @@ import { Button } from "@/components/ui/Button";
 export function ReminderForm({
   availableAgeGroups,
   lockedAgeGroupIds,
-  showFunktionaereOption = false,
 }: {
   availableAgeGroups: { id: string; name: string }[];
   lockedAgeGroupIds?: string[];
-  showFunktionaereOption?: boolean;
 }) {
   // Standardmässig ist nichts ausgewählt — die Geschäftsstelle soll die
   // Gruppe(n) bewusst auswählen, statt versehentlich an alle zu senden.
   const [selected, setSelected] = useState<string[]>(lockedAgeGroupIds ?? []);
-  const [includeFunktionaere, setIncludeFunktionaere] = useState(false);
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
 
@@ -25,7 +22,7 @@ export function ReminderForm({
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
-  const nothingSelected = selected.length === 0 && !includeFunktionaere;
+  const nothingSelected = selected.length === 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -46,20 +43,6 @@ export function ReminderForm({
               {g.name}
             </button>
           ))}
-          {showFunktionaereOption && (
-            <button
-              type="button"
-              onClick={() => setIncludeFunktionaere((prev) => !prev)}
-              className={clsx(
-                "rounded-xl border-2 px-4 py-3 text-left text-base font-semibold transition-colors",
-                includeFunktionaere
-                  ? "border-navy bg-navy text-white"
-                  : "border-border bg-white text-text hover:border-navy/40",
-              )}
-            >
-              Funktionäre
-            </button>
-          )}
         </div>
       )}
       <div className="flex flex-wrap items-center gap-3">
@@ -71,7 +54,6 @@ export function ReminderForm({
             startTransition(async () => {
               const result = await sendReminders({
                 ageGroupIds: selected,
-                includeFunktionaere,
               });
               if (result.error) setMessage(result.error);
               else setMessage(`Erinnerung an ${result.sent ?? 0} Empfänger gesendet.`);
