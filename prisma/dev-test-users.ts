@@ -99,11 +99,54 @@ async function main() {
     create: { userId: slUser.id, ageGroupId: u14.id },
   });
 
+  // Aktive (EHC Thun): ein Mitglied der 3. Liga und ein Stufenadmin dafür.
+  const liga3 = await prisma.ageGroup.findFirstOrThrow({ where: { name: "3. Liga" } });
+
+  const max = await prisma.member.upsert({
+    where: { externalContactId_category: { externalContactId: "TEST-AKTIV", category: "AKTIV" } },
+    update: {},
+    create: {
+      firstName: "Max",
+      lastName: "Aktiv",
+      email: "max.aktiv@example.test",
+      externalContactId: "TEST-AKTIV",
+      category: "AKTIV",
+      ageGroupId: liga3.id,
+      targetHours: 10,
+    },
+  });
+  await prisma.user.upsert({
+    where: { email: "max.aktiv@example.test" },
+    update: { passwordHash, role: "MITGLIED", isActive: true, memberId: max.id },
+    create: { email: "max.aktiv@example.test", passwordHash, role: "MITGLIED", memberId: max.id },
+  });
+
+  const existingSlAktiv = await prisma.member.findFirst({
+    where: { externalContactId: "TEST-SL-AKTIV", category: null },
+  });
+  const slAktivMember =
+    existingSlAktiv ??
+    (await prisma.member.create({
+      data: { firstName: "Anna", lastName: "Aktivchefin", email: "stufenleiter.aktiv@example.test", externalContactId: "TEST-SL-AKTIV" },
+    }));
+  const slAktivUser = await prisma.user.upsert({
+    where: { email: "stufenleiter.aktiv@example.test" },
+    update: { passwordHash, role: "STUFENLEITER", isActive: true, memberId: slAktivMember.id },
+    create: { email: "stufenleiter.aktiv@example.test", passwordHash, role: "STUFENLEITER", memberId: slAktivMember.id },
+  });
+  await prisma.stufenleiterAssignment.upsert({
+    where: { userId_ageGroupId: { userId: slAktivUser.id, ageGroupId: liga3.id } },
+    update: {},
+    create: { userId: slAktivUser.id, ageGroupId: liga3.id },
+  });
+
   console.log("Test users ready (password: TestPass123!):");
   console.log("- Mitglied Lara (eigener Login): lara.muster@example.test");
   console.log("- Mitglied Timo (eigener Login): timo.muster@example.test");
   console.log("- Funktionär: funktionaer@example.test");
   console.log("- Stufenleiter (U14): stufenleiter@example.test");
+  console.log("- Mitglied Aktiv (3. Liga): max.aktiv@example.test");
+  console.log("- Stufenleiter Aktiv (3. Liga): stufenleiter.aktiv@example.test");
 }
 
 main()
