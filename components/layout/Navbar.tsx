@@ -4,6 +4,7 @@ import clsx from "clsx";
 import type { UserRole } from "@/generated/prisma/enums";
 import type { SessionMember } from "@/lib/auth";
 import { logout } from "@/lib/actions/auth";
+import { BRANDS, type Brand } from "@/lib/brand";
 
 // "Einsätze" and "Mein Konto" live in the in-page MemberTabs bar for
 // MITGLIED/FUNKTIONAER instead of here, to match the prototype's layout.
@@ -15,7 +16,16 @@ const NAV_LINKS: { href: string; label: string; roles: UserRole[] }[] = [
   { href: "/geschaeftsstelle", label: "Geschäftsstelle", roles: ["GESCHAEFTSSTELLE"] },
 ];
 
-export function Navbar({ role, member }: { role: UserRole; member: SessionMember | null }) {
+export function Navbar({
+  role,
+  member,
+  brand,
+}: {
+  role: UserRole;
+  member: SessionMember | null;
+  brand: Brand;
+}) {
+  const { clubName, headline, logo, logoWidth, logoHeight } = BRANDS[brand];
   const links = NAV_LINKS.filter((link) => link.roles.includes(role));
 
   return (
@@ -23,16 +33,16 @@ export function Navbar({ role, member }: { role: UserRole; member: SessionMember
       <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3">
         <Link href="/dashboard" className="flex items-center gap-3">
           <Image
-            src="/dragon-logo.png"
-            alt="HC Dragon Thun"
-            width={333}
-            height={400}
+            src={logo}
+            alt={clubName}
+            width={logoWidth}
+            height={logoHeight}
             priority
             className="h-10 w-auto"
           />
           <span>
             <span className="block text-sm font-bold uppercase tracking-wide">
-              Dragon Thun · Helfertool
+              {headline}
             </span>
             {member && (
               <span className="block text-xs text-white/60">

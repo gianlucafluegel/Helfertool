@@ -93,7 +93,7 @@ export default async function DatenbankPage({
           />
           <button
             type="submit"
-            className="rounded-full bg-gold px-4 py-2 text-sm font-semibold text-navy hover:bg-gold-hover"
+            className="rounded-full bg-gold px-4 py-2 text-sm font-semibold text-on-gold hover:bg-gold-hover"
           >
             Suchen
           </button>

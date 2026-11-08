@@ -94,7 +94,7 @@ export function ShiftSlotRow({
           ) : !isFull && !mySignup ? (
             <Link
               href={`/einsaetze/${slot.id}`}
-              className="rounded-full bg-gold px-3.5 py-1.5 text-sm font-semibold text-navy hover:bg-gold-hover"
+              className="rounded-full bg-gold px-3.5 py-1.5 text-sm font-semibold text-on-gold hover:bg-gold-hover"
             >
               Übernehmen
             </Link>

@@ -5,6 +5,7 @@
   --color-navy-light: #1f2030;
   --color-gold: #f0b429;
   --color-gold-hover: #dba01f;
+  --color-on-gold: #14141f;
   --color-page-bg: #f5f5f4;
   --color-card-bg: #ffffff;
   --color-border: #e7e5e4;
@@ -21,11 +22,21 @@
   --color-tag-funktionaer-text: #1d4ed8;
 }
 
+/* EHC Thun (Aktive): gleiches Layout, aber ein dunkleres Rot statt Gelb. */
+html[data-brand="ehc"] {
+  --color-gold: #a8142d;
+  --color-gold-hover: #8a1025;
+  --color-on-gold: #ffffff;
+  --color-tag-helfer-bg: #f5dde1;
+  --color-tag-helfer-text: #7d1b2c;
+}
+
 @theme inline {
   --color-navy: var(--color-navy);
   --color-navy-light: var(--color-navy-light);
   --color-gold: var(--color-gold);
   --color-gold-hover: var(--color-gold-hover);
+  --color-on-gold: var(--color-on-gold);
   --color-page-bg: var(--color-page-bg);
   --color-card-bg: var(--color-card-bg);
   --color-border: var(--color-border);

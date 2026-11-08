@@ -7,6 +7,7 @@ import { signIn, signOut } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createAuthToken, consumeAuthToken } from "@/lib/auth-tokens";
 import { sendMail } from "@/lib/mail/send";
+import { getBrand, rememberBrand } from "@/lib/brand-server";
 
 export async function login(prevState: string | undefined, formData: FormData) {
   try {
@@ -24,6 +25,8 @@ export async function login(prevState: string | undefined, formData: FormData) {
 }
 
 export async function logout() {
+  // Die Anmeldeseite soll nach dem Abmelden in der gleichen Marke erscheinen.
+  await rememberBrand(await getBrand());
   await signOut({ redirectTo: "/login" });
 }
 
