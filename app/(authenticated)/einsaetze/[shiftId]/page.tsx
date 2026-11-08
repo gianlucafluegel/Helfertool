@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isShiftSlotVisible } from "@/lib/visibility";
+import { isShiftSlotVisible, isSlotInViewerScope } from "@/lib/visibility";
+import { getViewerCategories } from "@/lib/viewer-scope";
 import { requiresWristbandPickupChoice } from "@/lib/rules/signup-rules";
 import { Card } from "@/components/ui/Card";
 import { formatDateTime, formatTime } from "@/lib/format";
@@ -36,7 +37,14 @@ export default async function ShiftSignupPage({
     return <p className="text-sm text-status-open-text">Kein Mitgliedsprofil verknüpft.</p>;
   }
 
-  if (!isShiftSlotVisible(shiftSlot, session.user.role)) {
+  if (
+    !isShiftSlotVisible(shiftSlot, session.user.role) ||
+    !isSlotInViewerScope(
+      shiftSlot,
+      shiftSlot.event.type,
+      await getViewerCategories(session.user),
+    )
+  ) {
     notFound();
   }
 

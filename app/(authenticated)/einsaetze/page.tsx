@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSeason } from "@/lib/season";
-import { isShiftSlotVisible } from "@/lib/visibility";
+import { isShiftSlotVisible, isSlotInViewerScope } from "@/lib/visibility";
+import { getViewerCategories } from "@/lib/viewer-scope";
 import { FilterChipLink } from "@/components/ui/FilterChipLink";
 import { LocationPinIcon } from "@/components/ui/LocationPinIcon";
 import { EventSummaryCard } from "@/components/shifts/EventSummaryCard";
@@ -36,11 +37,17 @@ export default async function EinsaetzePage({
   const session = await auth();
   if (!session?.user) return null;
 
+  const viewerCategories = await getViewerCategories(session.user);
+
   const [season, locations, ageGroups] = await Promise.all([
     getCurrentSeason(),
     prisma.location.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     prisma.ageGroup.findMany({
-      where: { isActive: true, visibleInTeamFilters: true },
+      where: {
+        isActive: true,
+        visibleInTeamFilters: true,
+        ...(viewerCategories ? { category: { in: viewerCategories } } : {}),
+      },
       orderBy: { sortOrder: "asc" },
     }),
   ]);
@@ -93,7 +100,10 @@ export default async function EinsaetzePage({
   const eventCards = events
     .map((event) => {
       let slots = event.shiftSlots.filter(
-        (slot) => isShiftSlotVisible(slot, session.user.role) && slot.startDateTime >= now,
+        (slot) =>
+          isShiftSlotVisible(slot, session.user.role) &&
+          isSlotInViewerScope(slot, event.type, viewerCategories) &&
+          slot.startDateTime >= now,
       );
 
       if (filters.stufe) {

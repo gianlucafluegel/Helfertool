@@ -1,4 +1,4 @@
-import type { ShiftArea, UserRole } from "@/generated/prisma/enums";
+import type { EventType, MemberCategory, ShiftArea, UserRole } from "@/generated/prisma/enums";
 
 type VisibilityShiftSlot = {
   area: ShiftArea;
@@ -19,6 +19,40 @@ export function isShiftSlotVisible(slot: VisibilityShiftSlot, role: UserRole): b
   if (slot.area === "HELFER" && role !== "MITGLIED" && role !== "FUNKTIONAER") return false;
 
   return true;
+}
+
+/**
+ * Nachwuchs- und Aktiv-Mitglieder (und Stufenadmins der jeweiligen Kategorie)
+ * sehen nur die Spiele ihrer Kategorie. Externe Events und Rollen ohne Stufe
+ * sind für beide verfügbar. `viewerCategories === null` heisst: keine
+ * Einschränkung (Geschäftsstelle, Funktionäre, Mitglieder ohne Kategorie).
+ */
+export function isSlotInViewerScope(
+  slot: { ageGroupRestrictions: { ageGroup: { category: MemberCategory } }[] },
+  eventType: EventType,
+  viewerCategories: MemberCategory[] | null,
+): boolean {
+  if (!viewerCategories) return true;
+  if (eventType === "EXTERNAL") return true;
+  if (slot.ageGroupRestrictions.length === 0) return true;
+  return slot.ageGroupRestrictions.some((r) => viewerCategories.includes(r.ageGroup.category));
+}
+
+/** Kategorien, in denen ein Spiel stattfindet (leer bei externen Events und Spielen ohne Stufe). */
+export function getEventCategories(
+  eventType: EventType,
+  slots: { ageGroupRestrictions: { ageGroup: { category: MemberCategory } }[] }[],
+): MemberCategory[] {
+  if (eventType === "EXTERNAL") return [];
+  return [...new Set(slots.flatMap((s) => s.ageGroupRestrictions.map((r) => r.ageGroup.category)))];
+}
+
+/** Bezeichnung für "alle Mitglieder, die diesen Einsatz sehen" (z.B. im Reminder). */
+export function allMembersLabel(categories: MemberCategory[]): string {
+  if (categories.length === 1) {
+    return categories[0] === "NACHWUCHS" ? "Alle Nachwuchs-Mitglieder" : "Alle Aktiv-Mitglieder";
+  }
+  return "Alle Mitglieder";
 }
 
 /**

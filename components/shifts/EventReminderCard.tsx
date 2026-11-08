@@ -15,10 +15,13 @@ export function EventReminderCard({
   eventId,
   stufeName,
   canChooseScope,
+  allLabel = "Alle Mitglieder",
 }: {
   eventId: string;
   stufeName: string | null;
   canChooseScope: boolean;
+  /** Bezeichnung für "alle", z.B. "Alle Nachwuchs-Mitglieder". */
+  allLabel?: string;
 }) {
   const [scope, setScope] = useState<ReminderScope>(stufeName ? "STUFE" : "ALL");
   const [confirming, setConfirming] = useState(false);
@@ -26,7 +29,9 @@ export function EventReminderCard({
   const [pending, startTransition] = useTransition();
 
   const recipientLabel =
-    scope === "STUFE" && stufeName ? `Mitglieder der Stufe ${stufeName}` : "alle Mitglieder";
+    scope === "STUFE" && stufeName
+      ? `Mitglieder der Stufe ${stufeName}`
+      : allLabel.charAt(0).toLowerCase() + allLabel.slice(1);
 
   return (
     <Card>
@@ -40,7 +45,7 @@ export function EventReminderCard({
           {(
             [
               ["STUFE", `Nur Mitglieder der Stufe ${stufeName}`],
-              ["ALL", "Alle Mitglieder"],
+              ["ALL", allLabel],
             ] as const
           ).map(([value, label]) => (
             <label key={value} className="flex items-center gap-2 text-sm">
@@ -60,7 +65,10 @@ export function EventReminderCard({
         </div>
       ) : (
         <p className="mb-3 text-sm text-text">
-          Empfänger: {stufeName ? `Mitglieder der Stufe ${stufeName}` : "alle Mitglieder"}
+          Empfänger:{" "}
+          {stufeName
+            ? `Mitglieder der Stufe ${stufeName}`
+            : allLabel.charAt(0).toLowerCase() + allLabel.slice(1)}
         </p>
       )}
 

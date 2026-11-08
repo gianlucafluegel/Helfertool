@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendMail } from "@/lib/mail/send";
 import { formatDate, formatTime } from "@/lib/format";
+import { getEventCategories } from "@/lib/visibility";
 
 export type ReminderScope = "ALL" | "STUFE";
 
@@ -12,8 +13,10 @@ export type ReminderScope = "ALL" | "STUFE";
  * upcoming Rollen. Geschäftsstelle chooses between all Mitglieder and only
  * the Mitglieder of the Stufe the Einsatz is assigned to; a Stufenleiter can
  * only ever remind the Mitglieder of that Stufe (within their own assigned
- * Stufen). An Einsatz without a Stufe (e.g. every externes Event) always
- * goes to all Mitglieder, ignoring `scope`. Funktionäre, Stufenleiter and
+ * Stufen). "All" means every Mitglied of the Einsatz's Kategorie (Nachwuchs
+ * or Aktiv), since members only see Spiele of their own Kategorie. An Einsatz
+ * without a Stufe (e.g. every externes Event) always goes to all Mitglieder,
+ * ignoring `scope`. Funktionäre, Stufenleiter and
  * the "Externer Helfer" are never recipients.
  */
 export async function sendEventReminder(
@@ -36,7 +39,7 @@ export async function sendEventReminder(
         where: { deletedAt: null },
         include: {
           activity: true,
-          ageGroupRestrictions: true,
+          ageGroupRestrictions: { include: { ageGroup: true } },
           signups: { where: { status: "CONFIRMED" } },
         },
         orderBy: { startDateTime: "asc" },
@@ -48,7 +51,11 @@ export async function sendEventReminder(
 
   const eventAgeGroupIds = [...new Set(event.shiftSlots.flatMap((s) => s.ageGroupRestrictions.map((r) => r.ageGroupId)))];
 
-  // null = alle Mitglieder, sonst nur diese Stufe(n)
+  // Spiele sind nur für Nachwuchs bzw. Aktive sichtbar — "alle Mitglieder"
+  // meint deshalb alle Mitglieder dieser Kategorie (externe Events: wirklich alle).
+  const eventCategories = getEventCategories(event.type, event.shiftSlots);
+
+  // null = alle (Mitglieder der Kategorie), sonst nur diese Stufe(n)
   let recipientAgeGroupIds: string[] | null = null;
   if (role === "STUFENLEITER") {
     const assignments = await prisma.stufenleiterAssignment.findMany({
@@ -85,7 +92,11 @@ export async function sendEventReminder(
       isExternalHelper: false,
       email: { not: null },
       OR: [{ user: null }, { user: { role: { notIn: ["FUNKTIONAER", "STUFENLEITER"] } } }],
-      ...(recipientAgeGroupIds ? { ageGroupId: { in: recipientAgeGroupIds } } : {}),
+      ...(recipientAgeGroupIds
+        ? { ageGroupId: { in: recipientAgeGroupIds } }
+        : eventCategories.length > 0
+          ? { category: { in: eventCategories } }
+          : {}),
     },
   });
   if (members.length === 0) return { error: "Keine Empfänger mit E-Mail-Adresse gefunden." };

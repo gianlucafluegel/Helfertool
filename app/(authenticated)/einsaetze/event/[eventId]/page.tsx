@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isShiftSlotVisible } from "@/lib/visibility";
+import { isShiftSlotVisible, isSlotInViewerScope } from "@/lib/visibility";
+import { getViewerCategories } from "@/lib/viewer-scope";
 import { EventCard } from "@/components/shifts/EventCard";
 
 export default async function EinsaetzeEventDetailPage({
@@ -33,8 +34,13 @@ export default async function EinsaetzeEventDetailPage({
   if (!event || event.deletedAt || event.isManualEntry) notFound();
 
   const activeMember = session.user.member;
+  const viewerCategories = await getViewerCategories(session.user);
   const visibleSlots = event.shiftSlots
-    .filter((slot) => isShiftSlotVisible(slot, session.user.role))
+    .filter(
+      (slot) =>
+        isShiftSlotVisible(slot, session.user.role) &&
+        isSlotInViewerScope(slot, event.type, viewerCategories),
+    )
     .map((slot) => ({ ...slot, creditHours: Number(slot.creditHours) }));
 
   if (visibleSlots.length === 0) notFound();

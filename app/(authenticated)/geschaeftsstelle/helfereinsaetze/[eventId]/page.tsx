@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { AdminShiftSlotRow } from "@/components/shifts/AdminShiftSlotRow";
 import { EventEditForm } from "@/components/shifts/EventEditForm";
 import { EventReminderCard } from "@/components/shifts/EventReminderCard";
+import { allMembersLabel, getEventCategories } from "@/lib/visibility";
 import { AddShiftSlotForm } from "./AddShiftSlotForm";
 
 export default async function EventDetailPage({
@@ -60,6 +61,7 @@ export default async function EventDetailPage({
         eventId={event.id}
         stufeName={event.shiftSlots[0]?.ageGroupRestrictions[0]?.ageGroup.name ?? null}
         canChooseScope
+        allLabel={allMembersLabel(getEventCategories(event.type, event.shiftSlots))}
       />
 
       <Card>

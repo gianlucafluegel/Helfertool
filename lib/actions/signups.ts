@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isShiftSlotVisible, canManageShiftSlot } from "@/lib/visibility";
+import { isShiftSlotVisible, isSlotInViewerScope, canManageShiftSlot } from "@/lib/visibility";
+import { getViewerCategories } from "@/lib/viewer-scope";
 import {
   canCancelSignup,
   requiresWristbandPickupChoice,
@@ -52,7 +53,10 @@ export async function createSignup(
     return "Dieser Einsatz existiert nicht mehr.";
   }
 
-  if (!isShiftSlotVisible({ area: shiftSlot.area }, session.user.role)) {
+  if (
+    !isShiftSlotVisible({ area: shiftSlot.area }, session.user.role) ||
+    !isSlotInViewerScope(shiftSlot, shiftSlot.event.type, await getViewerCategories(session.user))
+  ) {
     return "Dieser Einsatz ist für dich nicht freigegeben.";
   }
 
