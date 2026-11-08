@@ -15,10 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { clubName } = BRANDS[await getBrand()];
+  const { clubName, favicon } = BRANDS[await getBrand()];
   return {
     title: `Helfertool | ${clubName}`,
     description: `Helfereinsätze verwalten für den ${clubName}`,
+    icons: { icon: favicon },
   };
 }
 
